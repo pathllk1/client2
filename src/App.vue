@@ -7,7 +7,6 @@ import DefaultLayout from './layouts/DefaultLayout.vue';
     <DefaultLayout>
       <RouterView />
     </DefaultLayout>
-    <UToaster />
   </UApp>
 </template>
 

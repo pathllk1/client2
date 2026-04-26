@@ -16,7 +16,7 @@ const items = computed(() => {
     return [
       [{ label: 'Dashboard', icon: 'i-lucide-layout-dashboard', to: '/' }],
       [{ label: 'Profile', icon: 'i-lucide-user', to: '/profile' }],
-      [{ label: 'Logout', icon: 'i-lucide-log-out', click: handleLogout }]
+      [{ label: 'Logout', icon: 'i-lucide-log-out', onSelect: handleLogout }]
     ];
   }
   return [[{ label: 'Login', icon: 'i-lucide-log-in', to: '/login' }]];
@@ -46,7 +46,7 @@ const items = computed(() => {
 
         <div class="flex items-center gap-2">
           <template v-if="auth.user.value">
-            <UDropdown :items="items" :popper="{ placement: 'bottom-end' }">
+            <UDropdownMenu :items="items" :content="{ align: 'end' }">
               <UButton
                 color="neutral"
                 variant="ghost"
@@ -58,7 +58,7 @@ const items = computed(() => {
                   <UAvatar :alt="auth.user.value.fullname" size="xs" />
                 </template>
               </UButton>
-            </UDropdown>
+            </UDropdownMenu>
           </template>
           <template v-else>
             <UButton to="/login" label="Login" color="primary" />
