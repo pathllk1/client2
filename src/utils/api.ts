@@ -21,6 +21,8 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
     const csrfToken = getCookie('csrfToken');
     if (csrfToken) {
       headers.set('X-CSRF-Token', csrfToken);
+    } else {
+      console.warn('⚠️ No CSRF token found in cookies for state-changing request');
     }
   }
 
