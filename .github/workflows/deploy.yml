@@ -2,7 +2,8 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [ "main" ] # Ensure this matches your default branch name
+    branches: [ "main" ]
+  workflow_dispatch: # This adds the manual "Run workflow" button
 
 permissions:
   contents: read
@@ -21,14 +22,10 @@ jobs:
           node-version: 20
           
       - name: Install Dependencies
-        run: |
-          cd client2
-          npm install
+        run: npm install
           
       - name: Build
-        run: |
-          cd client2
-          npm run build
+        run: npm run build
           
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -36,7 +33,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './client2/dist'
+          path: './dist'
 
   deploy:
     needs: build
