@@ -1,4 +1,5 @@
 import { ref, readonly } from 'vue';
+import { useToast } from '@nuxt/ui/composables';
 import { apiFetch } from '../utils/api';
 
 interface User {
