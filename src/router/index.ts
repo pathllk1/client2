@@ -4,6 +4,12 @@ import { useAuth } from '../composables/useAuth';
 const routes = [
   {
     path: '/',
+    name: 'home',
+    component: () => import('../pages/LandingPage.vue'),
+    meta: { guestOnly: false }
+  },
+  {
+    path: '/dashboard',
     name: 'dashboard',
     component: () => import('../pages/DashboardPage.vue'),
     meta: { requiresAuth: true }
@@ -27,7 +33,7 @@ const router = createRouter({
   routes,
 });
 
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, from) => {
   const auth = useAuth();
   
   if (!auth.initialized.value) {
@@ -37,12 +43,19 @@ router.beforeEach(async (to, from, next) => {
   const isAuthenticated = !!auth.user.value;
 
   if (to.meta.requiresAuth && !isAuthenticated) {
-    next({ name: 'login' });
-  } else if (to.meta.guestOnly && isAuthenticated) {
-    next({ name: 'dashboard' });
-  } else {
-    next();
+    return { name: 'login' };
   }
+  
+  if (to.meta.guestOnly && isAuthenticated) {
+    return { name: 'dashboard' };
+  }
+
+  // Redirect to dashboard if logged in and hitting home
+  if (to.name === 'home' && isAuthenticated) {
+    return { name: 'dashboard' };
+  }
+  
+  return true;
 });
 
 export default router;

@@ -8,13 +8,13 @@ const router = useRouter();
 
 const handleLogout = async () => {
   await auth.logout();
-  router.push('/login');
+  router.push('/');
 };
 
 const items = computed(() => {
   if (auth.user.value) {
     return [
-      [{ label: 'Dashboard', icon: 'i-lucide-layout-dashboard', to: '/' }],
+      [{ label: 'Dashboard', icon: 'i-lucide-layout-dashboard', to: '/dashboard' }],
       [{ label: 'Profile', icon: 'i-lucide-user', to: '/profile' }],
       [{ label: 'Logout', icon: 'i-lucide-log-out', onSelect: handleLogout }]
     ];
@@ -28,7 +28,7 @@ const items = computed(() => {
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between h-16 items-center">
         <div class="flex items-center gap-4">
-          <RouterLink to="/" class="text-xl font-bold text-primary flex items-center gap-2">
+          <RouterLink :to="auth.user.value ? '/dashboard' : '/'" class="text-xl font-bold text-primary flex items-center gap-2">
             <UIcon name="i-lucide-zap" />
             <span>Nuxt UI App</span>
           </RouterLink>
@@ -36,7 +36,7 @@ const items = computed(() => {
           <div class="hidden md:flex items-center gap-1">
             <UButton
               v-if="auth.user.value"
-              to="/"
+              to="/dashboard"
               variant="ghost"
               color="neutral"
               label="Dashboard"
