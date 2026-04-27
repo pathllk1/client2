@@ -1,6 +1,6 @@
 import { ref, readonly } from 'vue';
 import { useToast } from '@nuxt/ui/composables';
-import { apiFetch } from '../utils/api';
+import { apiFetch, setAuthData, clearAuthData } from '../utils/api';
 
 interface User {
   id: string;
@@ -29,6 +29,7 @@ export function useAuth() {
         user.value = data.user;
       } else {
         user.value = null;
+        clearAuthData();
       }
     } catch (e) {
       user.value = null;
@@ -45,8 +46,23 @@ export function useAuth() {
         method: 'POST',
         body: JSON.stringify(credentials),
       });
-      const data = await res.json();
+      
+      let data;
+      try {
+        data = await res.json();
+      } catch (parseError) {
+        console.error('Failed to parse login response:', parseError);
+        throw new Error('Invalid server response');
+      }
+
       if (res.ok && data.success) {
+        // Save tokens and CSRF token
+        setAuthData({
+          accessToken: data.accessToken,
+          refreshToken: data.refreshToken,
+          csrfToken: data.csrfToken
+        });
+
         user.value = data.user;
         toast.add({
           title: 'Login Successful',
@@ -63,6 +79,7 @@ export function useAuth() {
         return { success: false, error: data.error };
       }
     } catch (e) {
+      console.error('Login error:', e);
       toast.add({
         title: 'Error',
         description: 'An unexpected error occurred',
@@ -77,14 +94,16 @@ export function useAuth() {
   async function logout() {
     try {
       await apiFetch('/auth/logout', { method: 'POST' });
+    } catch (e) {
+      console.error('Logout failed', e);
+    } finally {
       user.value = null;
+      clearAuthData();
       toast.add({
         title: 'Logged Out',
         description: 'You have been successfully logged out.',
         color: 'info',
       });
-    } catch (e) {
-      console.error('Logout failed', e);
     }
   }
 
