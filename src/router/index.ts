@@ -33,6 +33,18 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/inventory',
+    name: 'inventory',
+    component: () => import('../pages/InventoryDashboard.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/inventory/purchase',
+    name: 'inventory-purchase',
+    component: () => import('../pages/PurchasePage.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/login',
     name: 'login',
     component: () => import('../pages/LoginPage.vue'),

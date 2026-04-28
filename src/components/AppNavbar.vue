@@ -15,6 +15,7 @@ const items = computed(() => {
   if (auth.user.value) {
     return [
       [{ label: 'Dashboard', icon: 'i-lucide-layout-dashboard', to: '/dashboard' }],
+      [{ label: 'Inventory', icon: 'i-lucide-boxes', to: '/inventory' }],
       [{ label: 'Master Roll', icon: 'i-lucide-users', to: '/master-roll' }],
       [{ label: 'Wages', icon: 'i-lucide-banknote', to: '/wages' }],
       [{ label: 'Profile', icon: 'i-lucide-user', to: '/profile' }],
@@ -42,6 +43,13 @@ const items = computed(() => {
               variant="ghost"
               color="neutral"
               label="Dashboard"
+            />
+            <UButton
+              v-if="auth.user.value"
+              to="/inventory"
+              variant="ghost"
+              color="neutral"
+              label="Inventory"
             />
             <UButton
               v-if="auth.user.value"
