@@ -377,7 +377,7 @@ onMounted(() => {
             <UCheckbox
               :model-value="table.getIsAllPageRowsSelected()"
               :indeterminate="table.getIsSomePageRowsSelected()"
-              @update:model-value="(val) => table.toggleAllPageRowsSelected(!!val)"
+              @update:model-value="(val: boolean | 'indeterminate') => table.toggleAllPageRowsSelected(!!val)"
             />
           </template>
 
@@ -385,7 +385,7 @@ onMounted(() => {
             <UCheckbox
               :model-value="row.getIsSelected()"
               :disabled="!row.getCanSelect()"
-              @update:model-value="(val) => row.toggleSelected(!!val)"
+              @update:model-value="(val: boolean | 'indeterminate') => row.toggleSelected(!!val)"
             />
           </template>
 

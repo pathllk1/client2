@@ -44,8 +44,10 @@ const selectStock = (stock: StockItem) => {
     emit('select-batch', stock);
   } else if (stock.batches && stock.batches.length === 1) {
     const b = stock.batches[0];
-    emit('select', { ...stock, batch: b.batch, qty: b.qty, rate: b.rate, mrp: b.mrp, expiry: b.expiry });
-    isOpen.value = false;
+    if (b) {
+      emit('select', { ...stock, batch: b.batch, qty: b.qty, rate: b.rate, mrp: b.mrp, expiry: b.expiry });
+      isOpen.value = false;
+    }
   } else {
     emit('select', stock);
     isOpen.value = false;
@@ -93,7 +95,7 @@ defineExpose({ open });
                   <template v-if="stock.batches && stock.batches.length > 0">
                     <span>•</span>
                     <span v-if="stock.batches.length === 1" class="font-mono text-primary-600 dark:text-primary-400">
-                      {{ stock.batches[0].batch || 'No Batch' }}
+                      {{ stock.batches[0]?.batch || 'No Batch' }}
                     </span>
                     <span v-else class="bg-primary-50 dark:bg-primary-950/30 text-primary-600 dark:text-primary-400 border border-primary-100 dark:border-primary-900 px-1.5 py-0.5 rounded text-[10px] font-bold">
                       {{ stock.batches.length }} BATCHES
@@ -102,7 +104,7 @@ defineExpose({ open });
                 </div>
               </div>
               <div class="text-right">
-                <div class="text-sm font-bold text-gray-900 dark:text-white">₹{{ stock.rate.toFixed(2) }}</div>
+                <div class="text-sm font-bold text-gray-900 dark:text-white">₹{{ stock.rate?.toFixed(2) }}</div>
                 <div :class="['text-[10px] uppercase font-bold', stock.qty > 0 ? 'text-success' : 'text-error']">
                   Stock: {{ stock.qty }}
                 </div>

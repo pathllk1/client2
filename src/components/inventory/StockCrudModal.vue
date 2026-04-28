@@ -49,7 +49,7 @@ const form = ref<StockItem>({
   expiryDate: ''
 });
 
-const selectedBatchIndex = ref<number | null>(null);
+const selectedBatchIndex = ref<number | undefined>(undefined);
 
 const uomOptions = ['NOS', 'PCS', 'SET', 'BOX', 'MTR', 'KGS'];
 const gstOptions = [0, 5, 12, 18, 28];
@@ -60,12 +60,14 @@ const open = (stockToEdit?: StockItem) => {
     if (form.value.batches && form.value.batches.length > 0) {
       // Default to first batch if exists
       const b = form.value.batches[0];
-      form.value.batch = b.batch;
-      form.value.qty = b.qty;
-      form.value.rate = b.rate;
-      form.value.mrp = b.mrp;
-      form.value.expiryDate = b.expiry ? b.expiry.split('T')[0] : '';
-      selectedBatchIndex.value = 0;
+      if (b) {
+        form.value.batch = b.batch;
+        form.value.qty = b.qty;
+        form.value.rate = b.rate;
+        form.value.mrp = b.mrp;
+        form.value.expiryDate = b.expiry ? b.expiry.split('T')[0] : '';
+        selectedBatchIndex.value = 0;
+      }
     }
   } else {
     form.value = {
@@ -81,7 +83,7 @@ const open = (stockToEdit?: StockItem) => {
       batch: '',
       expiryDate: ''
     };
-    selectedBatchIndex.value = null;
+    selectedBatchIndex.value = undefined;
   }
   isOpen.value = true;
 };
@@ -118,7 +120,7 @@ const save = async () => {
             mrp: payload.mrp ? parseFloat(payload.mrp as any) : null,
         };
 
-        if (props.mode === 'edit' && payload.batches && selectedBatchIndex.value !== null) {
+        if (props.mode === 'edit' && payload.batches && selectedBatchIndex.value !== undefined) {
             payload.batches[selectedBatchIndex.value] = batchData;
         } else if (props.mode === 'create') {
             payload.batches = [batchData];
@@ -169,7 +171,7 @@ defineExpose({ open });
 </script>
 
 <template>
-  <UModal v-model:open="isOpen" :ui="{ width: 'sm:max-w-2xl' }">
+  <UModal v-model:open="isOpen" :ui="{ content: 'sm:max-w-2xl' }">
     <template #content>
       <div class="overflow-hidden rounded-xl shadow-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
         <!-- Enterprise Header -->

@@ -59,7 +59,7 @@ defineExpose({ open });
                 {{ batch.batch || 'No Batch' }}
               </div>
               <div class="flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-gray-500 mt-1.5">
-                <span>Qty: <strong class="text-gray-700 dark:text-gray-300">{{ batch.qty }} {{ selectedStock.uom }}</strong></span>
+                <span>Qty: <strong class="text-gray-700 dark:text-gray-300">{{ batch.qty }} {{ selectedStock?.uom }}</strong></span>
                 <span>Rate: <strong class="text-gray-700 dark:text-gray-300">₹{{ batch.rate }}</strong></span>
                 <span v-if="batch.expiry">Expiry: <strong class="text-gray-700 dark:text-gray-300">{{ batch.expiry }}</strong></span>
                 <span v-if="batch.mrp">MRP: <strong class="text-gray-700 dark:text-gray-300">₹{{ batch.mrp }}</strong></span>
