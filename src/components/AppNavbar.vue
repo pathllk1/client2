@@ -15,6 +15,8 @@ const items = computed(() => {
   if (auth.user.value) {
     return [
       [{ label: 'Dashboard', icon: 'i-lucide-layout-dashboard', to: '/dashboard' }],
+      [{ label: 'Master Roll', icon: 'i-lucide-users', to: '/master-roll' }],
+      [{ label: 'Wages', icon: 'i-lucide-banknote', to: '/wages' }],
       [{ label: 'Profile', icon: 'i-lucide-user', to: '/profile' }],
       [{ label: 'Logout', icon: 'i-lucide-log-out', onSelect: handleLogout }]
     ];
@@ -25,7 +27,7 @@ const items = computed(() => {
 
 <template>
   <nav class="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between h-16 items-center">
         <div class="flex items-center gap-4">
           <RouterLink :to="auth.user.value ? '/dashboard' : '/'" class="text-xl font-bold text-primary flex items-center gap-2">
@@ -40,6 +42,20 @@ const items = computed(() => {
               variant="ghost"
               color="neutral"
               label="Dashboard"
+            />
+            <UButton
+              v-if="auth.user.value"
+              to="/master-roll"
+              variant="ghost"
+              color="neutral"
+              label="Master Roll"
+            />
+            <UButton
+              v-if="auth.user.value"
+              to="/wages"
+              variant="ghost"
+              color="neutral"
+              label="Wages"
             />
           </div>
         </div>

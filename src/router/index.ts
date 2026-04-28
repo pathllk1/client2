@@ -21,6 +21,18 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/master-roll',
+    name: 'master-roll',
+    component: () => import('../pages/MasterRollPage.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/wages',
+    name: 'wages',
+    component: () => import('../pages/WagesPage.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/login',
     name: 'login',
     component: () => import('../pages/LoginPage.vue'),
