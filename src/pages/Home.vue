@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useAuth } from '@/composables/useAuth'
+import { useToast } from '@nuxt/ui/composables'
 
 const toast = useToast()
 

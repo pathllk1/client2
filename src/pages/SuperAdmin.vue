@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue'
 import { useApi } from '@/utils/api'
+import { useToast } from '@nuxt/ui/composables'
 import FirmForm from '@/components/admin/FirmForm.vue'
 
 const api = useApi()

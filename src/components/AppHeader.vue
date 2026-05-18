@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { useRouter } from 'vue-router'
+import { useToast } from '@nuxt/ui/composables'
 
 const { isAuthenticated, user, logout, selectedFirmId, selectFirm } = useAuth()
 const router = useRouter()

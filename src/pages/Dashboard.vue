@@ -2,6 +2,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { useApi } from '@/utils/api'
+import { useToast } from '@nuxt/ui/composables'
 
 const { user, selectedFirmId } = useAuth()
 const api = useApi()

@@ -3,6 +3,7 @@ import { reactive, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useApi } from '@/utils/api'
+import { useToast } from '@nuxt/ui/composables'
 
 const router = useRouter()
 const api = useApi()

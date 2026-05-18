@@ -2,6 +2,7 @@
 import { reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import { useToast } from '@nuxt/ui/composables'
 
 const router = useRouter()
 const { login, state } = useAuth()
