@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, reactive, watch } from 'vue'
+import { ref, onMounted, reactive, watch, computed } from 'vue'
 import { useMasterRoll } from '@/composables/useMasterRoll'
 import { useAuth } from '@/composables/useAuth'
 import MasterRollForm from '@/components/master-roll/MasterRollForm.vue'
@@ -14,7 +14,7 @@ const {
   fetchEmployees, fetchStats, deleteEmployee,
   exportExcel, exportICards, downloadTemplate,
   exportQualityReport, downloadAppointmentLetter,
-  bulkDeleteEmployees
+  bulkDeleteEmployees, fetchUniqueFields
 } = useMasterRoll()
 
 const { selectedFirmId } = useAuth()
@@ -23,12 +23,51 @@ const toast = useToast()
 const filters = reactive({
   q: '',
   status: '',
-  limit: 25, // Optimized for vertical space
+  project: '',
+  site: '',
+  category: '',
+  bank: '',
+  doj_start: '',
+  doj_end: '',
+  limit: 25,
   skip: 0
 })
 
 const page = ref(1)
 const selectedRows = ref<any[]>([])
+
+const showFilterPanel = ref(false)
+const uniqueOptions = ref({
+  projects: [] as string[],
+  sites: [] as string[],
+  categories: [] as string[],
+  banks: [] as string[]
+})
+
+const fetchOptions = async () => {
+  try {
+    const res = await fetchUniqueFields()
+    if (res.success) {
+      uniqueOptions.value = res.data
+    }
+  } catch (err) {
+    console.error('Failed to fetch filter options', err)
+  }
+}
+
+const statusOptions = ['All Status', 'Active', 'Inactive', 'Left']
+const projectOptions = computed(() => ['All Projects', ...uniqueOptions.value.projects])
+const siteOptions = computed(() => ['All Sites', ...uniqueOptions.value.sites])
+const categoryOptions = computed(() => ['All Categories', ...uniqueOptions.value.categories])
+const bankOptions = computed(() => ['All Banks', ...uniqueOptions.value.banks])
+
+const handleFilterUpdate = (key: string, value: string) => {
+  if (value.startsWith('All ')) {
+    (filters as any)[key] = ''
+  } else {
+    (filters as any)[key] = value
+  }
+}
 
 watch(page, (val) => {
   filters.skip = (val - 1) * filters.limit
@@ -47,19 +86,59 @@ const fetchData = async () => {
 }
 
 onMounted(() => {
-  if (selectedFirmId.value) fetchData()
+  if (selectedFirmId.value) {
+    fetchData()
+    fetchOptions()
+  }
 })
 
-const columns = [
-  { id: 'select' },
-  { accessorKey: 'employee_name', header: 'Employee' },
-  { accessorKey: 'aadhar', header: 'Aadhar' },
-  { accessorKey: 'phone_no', header: 'Phone' },
-  { accessorKey: 'category', header: 'Category' },
-  { accessorKey: 'project', header: 'Project' },
-  { accessorKey: 'status', header: 'Status' },
-  { id: 'actions', header: 'Actions' }
+const showColumnPanel = ref(false)
+const allColumns = [
+  { key: 'select', label: 'Select' },
+  { key: 'employee_name', label: 'Employee' },
+  { key: 'father_husband_name', label: 'Father/Husband' },
+  { key: 'date_of_birth', label: 'DOB' },
+  { key: 'aadhar', label: 'Aadhar' },
+  { key: 'pan', label: 'PAN' },
+  { key: 'phone_no', label: 'Phone' },
+  { key: 'address', label: 'Address' },
+  { key: 'bank', label: 'Bank' },
+  { key: 'account_no', label: 'Account No' },
+  { key: 'ifsc', label: 'IFSC' },
+  { key: 'branch', label: 'Branch' },
+  { key: 'uan', label: 'UAN' },
+  { key: 'esic_no', label: 'ESIC' },
+  { key: 's_kalyan_no', label: 'S. Kalyan' },
+  { key: 'category', label: 'Category' },
+  { key: 'p_day_wage', label: 'Wage' },
+  { key: 'project', label: 'Project' },
+  { key: 'site', label: 'Site' },
+  { key: 'date_of_joining', label: 'Joining' },
+  { key: 'date_of_exit', label: 'Exit' },
+  { key: 'status', label: 'Status' },
+  { key: 'actions', label: 'Actions' }
 ]
+
+const visibleColumns = ref(['select', 'employee_name', 'aadhar', 'phone_no', 'category', 'project', 'status', 'actions'])
+
+const toggleColumn = (key: string, val: boolean) => {
+  if (val) {
+    if (!visibleColumns.value.includes(key)) visibleColumns.value.push(key)
+  } else {
+    visibleColumns.value = visibleColumns.value.filter(k => k !== key)
+  }
+}
+
+const columns = computed(() => {
+  return allColumns
+    .filter(col => visibleColumns.value.includes(col.key))
+    .map(col => {
+      if (col.key === 'select' || col.key === 'actions') {
+        return { id: col.key, header: col.key === 'select' ? '' : col.label }
+      }
+      return { accessorKey: col.key, header: col.label }
+    })
+})
 
 const isOpen = ref(false)
 const isImportOpen = ref(false)
@@ -168,6 +247,96 @@ const onBulkDelete = async () => {
           <UTooltip text="Generate Filtered I-Cards">
             <UButton color="neutral" variant="ghost" size="sm" icon="i-heroicons-identification" @click="isICardModalOpen = true" />
           </UTooltip>
+          <UTooltip text="Advanced Filters">
+            <UButton color="neutral" variant="ghost" size="sm" :icon="showFilterPanel ? 'i-heroicons-funnel-slash' : 'i-heroicons-funnel'" @click="showFilterPanel = !showFilterPanel" />
+          </UTooltip>
+          <UTooltip text="Customize Table Columns">
+            <UButton color="neutral" variant="ghost" size="sm" :icon="showColumnPanel ? 'i-heroicons-chevron-up' : 'i-heroicons-view-columns'" @click="showColumnPanel = !showColumnPanel" />
+          </UTooltip>
+        </div>
+      </div>
+
+      <!-- Advanced Filter Panel -->
+      <div v-if="showFilterPanel" class="p-4 bg-primary/5 dark:bg-primary/10 border-b border-primary/10 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <UIcon name="i-heroicons-funnel" class="w-4 h-4 text-primary" />
+            <h3 class="text-[10px] font-black uppercase tracking-widest text-gray-500">Advanced Filters</h3>
+          </div>
+          <div class="flex gap-2">
+            <UButton size="xs" variant="soft" color="neutral" label="Clear All Filters" @click="Object.assign(filters, { status: '', project: '', site: '', category: '', bank: '', doj_start: '', doj_end: '' })" />
+            <UButton size="xs" variant="ghost" color="neutral" icon="i-heroicons-x-mark" @click="showFilterPanel = false" />
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[9px] font-black uppercase tracking-widest text-gray-400 px-1">Status</label>
+            <USelect 
+              :model-value="filters.status || 'All Status'" 
+              @update:model-value="(val: any) => handleFilterUpdate('status', val)"
+              size="sm" :items="statusOptions" variant="outline" />
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[9px] font-black uppercase tracking-widest text-gray-400 px-1">Project</label>
+            <USelect 
+              :model-value="filters.project || 'All Projects'" 
+              @update:model-value="(val: any) => handleFilterUpdate('project', val)"
+              size="sm" :items="projectOptions" variant="outline" />
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[9px] font-black uppercase tracking-widest text-gray-400 px-1">Site</label>
+            <USelect 
+              :model-value="filters.site || 'All Sites'" 
+              @update:model-value="(val: any) => handleFilterUpdate('site', val)"
+              size="sm" :items="siteOptions" variant="outline" />
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[9px] font-black uppercase tracking-widest text-gray-400 px-1">Category</label>
+            <USelect 
+              :model-value="filters.category || 'All Categories'" 
+              @update:model-value="(val: any) => handleFilterUpdate('category', val)"
+              size="sm" :items="categoryOptions" variant="outline" />
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[9px] font-black uppercase tracking-widest text-gray-400 px-1">Bank</label>
+            <USelect 
+              :model-value="filters.bank || 'All Banks'" 
+              @update:model-value="(val: any) => handleFilterUpdate('bank', val)"
+              size="sm" :items="bankOptions" variant="outline" />
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[9px] font-black uppercase tracking-widest text-gray-400 px-1">Joining Date Range</label>
+            <div class="flex items-center gap-2">
+              <UInput v-model="filters.doj_start" type="date" size="sm" class="flex-1" />
+              <span class="text-gray-300">-</span>
+              <UInput v-model="filters.doj_end" type="date" size="sm" class="flex-1" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Column Selection Panel -->
+      <div v-if="showColumnPanel" class="p-4 bg-gray-50/80 dark:bg-gray-900/80 border-b border-gray-100 dark:border-gray-800 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <UIcon name="i-heroicons-adjustments-horizontal" class="w-4 h-4 text-primary" />
+            <h3 class="text-[10px] font-black uppercase tracking-widest text-gray-500">Display Settings: Toggle Columns</h3>
+          </div>
+          <div class="flex gap-2">
+            <UButton size="xs" variant="soft" color="neutral" label="Reset Defaults" @click="visibleColumns = ['select', 'employee_name', 'aadhar', 'phone_no', 'category', 'project', 'status', 'actions']" />
+            <UButton size="xs" variant="ghost" color="neutral" icon="i-heroicons-x-mark" @click="showColumnPanel = false" />
+          </div>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          <div v-for="col in allColumns" :key="col.key" class="flex items-center gap-2">
+            <UCheckbox 
+              :model-value="visibleColumns.includes(col.key)" 
+              @update:model-value="(val: any) => toggleColumn(col.key, !!val)"
+              :label="col.label" 
+              size="sm" 
+              :disabled="col.key === 'employee_name' || col.key === 'actions' || col.key === 'select'"
+              :ui="{ label: 'text-[11px] font-bold uppercase tracking-tighter text-gray-600 dark:text-gray-400 cursor-pointer' }" />
+          </div>
         </div>
       </div>
 
