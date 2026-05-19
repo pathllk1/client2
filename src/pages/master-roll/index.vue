@@ -342,7 +342,22 @@ const onBulkDelete = async () => {
       </div>
 
       <!-- Table Container -->
-      <div class="flex-1 overflow-auto custom-scrollbar">
+      <div class="flex-1 overflow-auto custom-scrollbar relative">
+        <div v-if="loading" class="absolute inset-0 z-20 flex items-center justify-center bg-white/60 dark:bg-gray-950/60 backdrop-blur-[2px] transition-all duration-300">
+          <div class="flex flex-col items-center gap-4 bg-white dark:bg-gray-900 p-8 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-800 animate-in zoom-in-95 duration-200">
+            <div class="relative">
+              <UIcon name="i-heroicons-arrow-path" class="w-12 h-12 animate-spin text-primary" />
+              <div class="absolute inset-0 flex items-center justify-center">
+                <UIcon name="i-heroicons-users" class="w-5 h-5 text-primary/40" />
+              </div>
+            </div>
+            <div class="flex flex-col items-center gap-1">
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-900 dark:text-white">Synchronizing</p>
+              <p class="text-[9px] font-bold uppercase tracking-widest text-primary animate-pulse">Master Roll Engine</p>
+            </div>
+          </div>
+        </div>
+
         <UTable 
           v-model:selection="selectedRows"
           :data="employees" 
@@ -355,7 +370,7 @@ const onBulkDelete = async () => {
             tr: 'hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors'
           }"
         >
-          <template #loading-state>
+          <template #loading>
             <div class="flex flex-col items-center justify-center py-24 gap-4">
               <div class="relative">
                 <UIcon name="i-heroicons-arrow-path" class="w-12 h-12 animate-spin text-primary" />
