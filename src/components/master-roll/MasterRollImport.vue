@@ -24,24 +24,49 @@ const parseFile = (file: File) => {
   const reader = new FileReader()
   reader.onload = (e) => {
     const bstr = e.target?.result
-    const wb = XLSX.read(bstr, { type: 'binary' })
+    const wb = XLSX.read(bstr, { type: 'binary', cellDates: true })
     const wsname = wb.SheetNames[0]
     const ws = wb.Sheets[wsname!]
     const json = XLSX.utils.sheet_to_json(ws!)
     
-    // Simple field mapping - in a real app you'd want more robust validation
+    const formatDate = (val: any) => {
+      if (!val) return undefined
+      if (val instanceof Date) {
+        return val.toISOString().split('T')[0]
+      }
+      // Handle Excel serial numbers if cellDates failed or for other reasons
+      if (typeof val === 'number' && val > 10000) {
+        const date = new Date(Math.round((val - 25569) * 86400 * 1000))
+        return date.toISOString().split('T')[0]
+      }
+      return String(val)
+    }
+
+    // Enhanced field mapping to include all template fields
     data.value = json.map((row: any) => ({
       employee_name: row['Employee Name'] || row.employee_name,
       father_husband_name: row['Father/Husband Name'] || row.father_husband_name,
-      date_of_birth: row['Date of Birth'] || row.date_of_birth,
+      date_of_birth: formatDate(row['Date of Birth'] || row.date_of_birth),
       aadhar: String(row['Aadhar'] || row.aadhar || ''),
       phone_no: String(row['Phone No'] || row.phone_no || ''),
       address: row['Address'] || row.address || 'N/A',
       bank: row['Bank'] || row.bank,
       account_no: String(row['Account No'] || row.account_no || ''),
       ifsc: row['IFSC'] || row.ifsc,
-      date_of_joining: row['Date of Joining'] || row.date_of_joining,
-      status: row['Status'] || row.status || 'Active'
+      date_of_joining: formatDate(row['Date of Joining'] || row.date_of_joining),
+      status: row['Status'] || row.status || 'Active',
+      // Missing fields added below
+      pan: row['PAN'] || row.pan,
+      branch: row['Branch'] || row.branch,
+      uan: String(row['UAN'] || row.uan || ''),
+      esic_no: String(row['ESIC No'] || row.esic_no || ''),
+      s_kalyan_no: row['S. Kalyan No'] || row.s_kalyan_no,
+      category: row['Category'] || row.category,
+      p_day_wage: Number(row['Daily Wage'] || row.p_day_wage || 0),
+      project: row['Project'] || row.project,
+      site: row['Site'] || row.site,
+      date_of_exit: formatDate(row['Date of Exit'] || row.date_of_exit),
+      doe_rem: row['Remarks'] || row.doe_rem
     }))
   }
   reader.readAsBinaryString(file)

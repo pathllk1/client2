@@ -136,7 +136,11 @@ export const useApi = () => {
     post: (endpoint: string, data: any, options?: RequestInit) => request(endpoint, { ...options, method: 'POST', body: JSON.stringify(data) }),
     put: (endpoint: string, data: any, options?: RequestInit) => request(endpoint, { ...options, method: 'PUT', body: JSON.stringify(data) }),
     patch: (endpoint: string, data: any, options?: RequestInit) => request(endpoint, { ...options, method: 'PATCH', body: JSON.stringify(data) }),
-    delete: (endpoint: string, options?: RequestInit) => request(endpoint, { ...options, method: 'DELETE' }),
+    delete: (endpoint: string, data?: any, options?: RequestInit) => {
+      const config: RequestInit = { ...options, method: 'DELETE' }
+      if (data) config.body = JSON.stringify(data)
+      return request(endpoint, config)
+    },
     download
   }
 }
