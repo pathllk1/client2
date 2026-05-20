@@ -34,6 +34,12 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/wages',
+      name: 'wages',
+      component: () => import('../pages/wages/index.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/auth/login',
       name: 'login',
       component: () => import('../pages/auth/Login.vue'),

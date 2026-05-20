@@ -95,14 +95,14 @@ const onGenerate = async (format: 'pdf' | 'xlsx' = 'pdf') => {
       </UFormField>
     </div>
 
-    <div class="flex items-center justify-between pt-6 border-t border-gray-100 dark:border-gray-800">
-      <p class="text-[10px] text-gray-400 max-w-[200px]">
+    <div class="flex flex-col sm:flex-row items-center justify-between pt-6 border-t border-gray-100 dark:border-gray-800 gap-4">
+      <p class="text-[10px] text-gray-400 max-w-full sm:max-w-[200px] text-center sm:text-left">
         Note: Only 'Active' employees will be included in the generation process.
       </p>
-      <div class="flex gap-3">
-        <UButton variant="ghost" color="neutral" label="Cancel" @click="emit('close')" />
-        <UButton :loading="loading" :disabled="fetchingFields" icon="i-heroicons-table-cells" label="Excel" @click="onGenerate('xlsx')" />
-        <UButton :loading="loading" :disabled="fetchingFields" icon="i-heroicons-arrow-down-tray" label="Generate PDF" @click="onGenerate('pdf')" class="px-6" />
+      <div class="flex flex-wrap justify-center sm:justify-end gap-3 w-full sm:w-auto">
+        <UButton variant="ghost" color="neutral" label="Cancel" @click="emit('close')" class="flex-1 sm:flex-none" />
+        <UButton :loading="loading" :disabled="fetchingFields" icon="i-heroicons-table-cells" label="Excel" @click="onGenerate('xlsx')" class="flex-1 sm:flex-none" />
+        <UButton :loading="loading" :disabled="fetchingFields" icon="i-heroicons-arrow-down-tray" label="Generate PDF" @click="onGenerate('pdf')" class="flex-1 sm:flex-none px-6" />
       </div>
     </div>
   </div>

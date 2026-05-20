@@ -90,14 +90,14 @@ const onSubmit = async () => {
 </script>
 
 <template>
-  <form @submit.prevent="onSubmit" class="space-y-8 p-1">
+  <form @submit.prevent="onSubmit" class="space-y-8 p-2 md:p-4">
     <!-- Section 1: Basic Information -->
     <div>
       <div class="flex items-center gap-2 mb-4">
         <UIcon name="i-heroicons-user" class="w-5 h-5 text-primary" />
         <h3 class="font-bold text-gray-900 dark:text-white underline decoration-primary/30 underline-offset-4">Basic Information</h3>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
         <UFormField label="Employee Name" required>
           <UInput v-model="form.employee_name" placeholder="Full Name" required class="w-full" />
         </UFormField>
@@ -122,7 +122,7 @@ const onSubmit = async () => {
           <UInput v-model="form.phone_no" placeholder="10-digit number" required class="w-full" />
         </UFormField>
       </div>
-      <div class="mt-6">
+      <div class="mt-4">
         <UFormField label="Permanent Address" required>
           <UTextarea v-model="form.address" placeholder="Full address details..." required class="w-full" :rows="2" />
         </UFormField>
@@ -135,7 +135,7 @@ const onSubmit = async () => {
         <UIcon name="i-heroicons-briefcase" class="w-5 h-5 text-primary" />
         <h3 class="font-bold text-gray-900 dark:text-white underline decoration-primary/30 underline-offset-4">Employment Details</h3>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
         <UFormField label="Category">
           <USelect v-model="form.category" :items="['UNSKILLED', 'SEMI-SKILLED', 'SKILLED', 'HIGHLY-SKILLED']" class="w-full" />
         </UFormField>
@@ -176,7 +176,7 @@ const onSubmit = async () => {
           <UInput v-model="form.date_of_exit" type="date" class="w-full" />
         </UFormField>
 
-        <UFormField label="Exit Remarks" class="md:col-span-2 lg:col-span-2">
+        <UFormField label="Exit Remarks" class="sm:col-span-2 lg:col-span-2">
           <UInput v-model="form.doe_rem" placeholder="Reason for leaving..." class="w-full" />
         </UFormField>
       </div>
@@ -188,7 +188,7 @@ const onSubmit = async () => {
         <UIcon name="i-heroicons-building-library" class="w-5 h-5 text-primary" />
         <h3 class="font-bold text-gray-900 dark:text-white underline decoration-primary/30 underline-offset-4">Bank Details</h3>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
         <UFormField label="IFSC Code" required>
           <UInput v-model="form.ifsc" placeholder="11 characters" required class="w-full" :loading="fetchingIfsc" icon="i-heroicons-magnifying-glass" />
         </UFormField>
@@ -201,15 +201,15 @@ const onSubmit = async () => {
           <UInput v-model="form.account_no" placeholder="Bank account number" required class="w-full" />
         </UFormField>
 
-        <UFormField label="Branch Name" class="md:col-span-2 lg:col-span-3">
+        <UFormField label="Branch Name" class="sm:col-span-2 lg:col-span-3">
           <UInput v-model="form.branch" placeholder="Branch location" class="w-full" />
         </UFormField>
       </div>
     </div>
 
-    <div class="flex justify-end gap-3 pt-8 mt-4 border-t border-gray-100 dark:border-gray-800">
-      <UButton variant="ghost" color="neutral" size="lg" label="Cancel" @click="emit('close')" />
-      <UButton type="submit" :loading="loading" size="lg" :label="employee ? 'Update Record' : 'Create Record'" class="px-8" />
+    <div class="flex flex-col sm:flex-row justify-end gap-3 pt-8 mt-4 border-t border-gray-100 dark:border-gray-800">
+      <UButton variant="ghost" color="neutral" size="lg" label="Cancel" @click="emit('close')" class="order-2 sm:order-1" />
+      <UButton type="submit" :loading="loading" size="lg" :label="employee ? 'Update Record' : 'Create Record'" class="px-8 order-1 sm:order-2" />
     </div>
   </form>
 </template>

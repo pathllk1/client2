@@ -12,8 +12,9 @@ const file = ref<File | null>(null)
 const data = ref<any[]>([])
 const loading = ref(false)
 
-const onFileChange = (e: any) => {
-  const selectedFile = e.target.files[0]
+const onFileChange = (e: Event) => {
+  const target = e.target as HTMLInputElement
+  const selectedFile = target.files?.[0]
   if (selectedFile) {
     file.value = selectedFile
     parseFile(selectedFile)

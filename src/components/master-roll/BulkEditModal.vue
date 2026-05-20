@@ -167,36 +167,36 @@ watch(() => props.isOpen, (newVal) => {
       </div>
 
       <!-- Toolbar / Filters -->
-      <div class="bg-slate-50 border-b border-slate-200 px-6 py-3 flex flex-wrap items-center gap-4 shrink-0">
-        <div class="flex items-center gap-2">
-          <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Project:</label>
-          <select v-model="filters.project" class="bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none min-w-[140px]">
+      <div class="bg-slate-50 border-b border-slate-200 px-4 md:px-6 py-3 flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-4 shrink-0 overflow-y-auto max-h-48 sm:max-h-none">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
+          <label class="text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0">Project:</label>
+          <select v-model="filters.project" class="w-full sm:w-auto bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none min-w-[140px]">
             <option value="">All Projects</option>
             <option v-for="p in options.projects" :key="p" :value="p">{{ p }}</option>
           </select>
         </div>
-        <div class="flex items-center gap-2">
-          <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Site:</label>
-          <select v-model="filters.site" class="bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none min-w-[140px]">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
+          <label class="text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0">Site:</label>
+          <select v-model="filters.site" class="w-full sm:w-auto bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none min-w-[140px]">
             <option value="">All Sites</option>
             <option v-for="s in options.sites" :key="s" :value="s">{{ s }}</option>
           </select>
         </div>
-        <div class="flex items-center gap-2">
-          <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Category:</label>
-          <select v-model="filters.category" class="bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none min-w-[140px]">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
+          <label class="text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0">Category:</label>
+          <select v-model="filters.category" class="w-full sm:w-auto bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none min-w-[140px]">
             <option value="">All Categories</option>
             <option v-for="c in options.categories" :key="c" :value="c">{{ c }}</option>
           </select>
         </div>
-        <div class="flex items-center gap-2">
-          <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Bank:</label>
-          <select v-model="filters.bank" class="bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none min-w-[140px]">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
+          <label class="text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0">Bank:</label>
+          <select v-model="filters.bank" class="w-full sm:w-auto bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none min-w-[140px]">
             <option value="">All Banks</option>
             <option v-for="b in options.banks" :key="b" :value="b">{{ b }}</option>
           </select>
         </div>
-        <div class="ml-auto flex items-center gap-4">
+        <div class="sm:ml-auto flex items-center justify-between w-full sm:w-auto gap-4 mt-2 sm:mt-0">
           <div class="flex items-center gap-2 bg-white border border-slate-300 rounded-lg px-2 py-1">
             <button @click="filters.page--" :disabled="filters.page === 1" class="p-1 hover:bg-slate-100 disabled:opacity-30 transition-colors">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
@@ -206,8 +206,8 @@ watch(() => props.isOpen, (newVal) => {
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
             </button>
           </div>
-          <span class="text-xs font-medium text-slate-500 bg-slate-200 px-3 py-1 rounded-full whitespace-nowrap">
-            Showing {{ (filters.page - 1) * filters.limit + 1 }}-{{ (filters.page - 1) * filters.limit + employees.length }} of {{ total }}
+          <span class="text-[10px] font-medium text-slate-500 bg-slate-200 px-3 py-1 rounded-full whitespace-nowrap">
+            {{ (filters.page - 1) * filters.limit + 1 }}-{{ (filters.page - 1) * filters.limit + employees.length }} of {{ total }}
           </span>
         </div>
       </div>
