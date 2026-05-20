@@ -4,7 +4,7 @@ import { useWages } from '@/composables/useWages'
 import { useToast } from '@nuxt/ui/composables'
 import { wagePersistence } from '@/utils/wagePersistence'
 
-const { loading, fetchEligibleEmployees, createWagesBulk, fetchBankAccounts, downloadBankReport, downloadEPFESICReport } = useWages()
+const { loading, fetchEligibleEmployees, createWagesBulk, fetchBankAccounts, downloadBankReport, downloadEPFESICReport, exportWages } = useWages()
 const toast = useToast()
 
 const month = ref(new Date().toISOString().slice(0, 7))
@@ -12,6 +12,7 @@ const employees = ref<any[]>([])
 const bankAccounts = ref<any[]>([])
 const selectedEmployeeIds = ref<Set<string>>(new Set())
 const wageData = ref<Record<string, any>>({})
+const sessionMetadata = ref<any>(null)
 
 const commonPaymentData = ref({
   paid_date: '',
@@ -38,11 +39,16 @@ const persistState = () => {
     commonPaymentData: commonPaymentData.value,
     filters: filters.value
   })
+  updateMetadata()
 }
 
 watch([month, employees, selectedEmployeeIds, wageData, commonPaymentData, filters], () => {
   persistState()
 }, { deep: true })
+
+const updateMetadata = () => {
+  sessionMetadata.value = wagePersistence.getMetadata('CREATE')
+}
 
 const restoreState = () => {
   const saved = wagePersistence.load('CREATE')
@@ -53,6 +59,7 @@ const restoreState = () => {
     wageData.value = saved.wageData || {}
     commonPaymentData.value = saved.commonPaymentData || commonPaymentData.value
     filters.value = saved.filters || filters.value
+    updateMetadata()
     return true
   }
   return false
@@ -104,8 +111,8 @@ const loadEmployees = async () => {
       response.data.forEach((emp: any) => {
         data[emp.master_roll_id] = {
           master_roll_id: emp.master_roll_id,
-          p_day_wage: emp.p_day_wage || 0,
-          wage_days: 26,
+          p_day_wage: emp.last_p_day_wage || emp.p_day_wage || 0,
+          wage_days: emp.last_wage_days || 26,
           gross_salary: 0,
           epf_deduction: 0,
           esic_deduction: 0,
@@ -221,6 +228,7 @@ const saveWages = async () => {
 const resetSession = () => {
   if (confirm('Are you sure you want to clear all unsaved work and reset?')) {
     wagePersistence.clear('CREATE')
+    sessionMetadata.value = null
     loadEmployees()
     toast.add({ title: 'Session Cleared', color: 'neutral' })
   }
@@ -228,6 +236,48 @@ const resetSession = () => {
 
 const formatCurrency = (val: number) => {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val)
+}
+
+const onExportExcel = async () => {
+  if (!month.value) return
+  
+  const employeesToExport = filteredEmployees.value.filter(emp => 
+    selectedEmployeeIds.value.size > 0 ? selectedEmployeeIds.value.has(emp.master_roll_id) : true
+  )
+
+  if (employeesToExport.length === 0) {
+    toast.add({ title: 'No employees to export', color: 'warning' })
+    return
+  }
+
+  const exportData = employeesToExport.map(emp => {
+    const wage = wageData.value[emp.master_roll_id] || {}
+    return {
+      employee_name: emp.employee_name,
+      project: emp.project || 'General',
+      site: emp.site || 'N/A',
+      bank: emp.bank || 'N/A',
+      account_no: emp.account_no || 'N/A',
+      p_day_wage: wage.p_day_wage || emp.p_day_wage || 0,
+      wage_days: wage.wage_days || 0,
+      gross_salary: wage.gross_salary || 0,
+      epf_deduction: wage.epf_deduction || 0,
+      esic_deduction: wage.esic_deduction || 0,
+      other_deduction: wage.other_deduction || 0,
+      other_benefit: wage.other_benefit || 0,
+      advance_deduction: wage.advance_deduction || 0,
+      net_salary: wage.net_salary || 0,
+      date_of_joining: emp.date_of_joining,
+      date_of_exit: emp.date_of_exit
+    }
+  })
+
+  try {
+    await exportWages(month.value, exportData)
+    toast.add({ title: 'Success', description: 'Export started', color: 'success' })
+  } catch (err: any) {
+    toast.add({ title: 'Export failed', description: err.message, color: 'error' })
+  }
 }
 
 const onExportBank = () => {
@@ -247,6 +297,22 @@ onMounted(() => {
 
 <template>
   <div class="flex flex-col h-full gap-2">
+    <!-- Session Indicator -->
+    <div v-if="sessionMetadata" class="bg-primary-50 dark:bg-primary-950/20 border border-primary-100 dark:border-primary-900 px-4 py-2 rounded-lg flex items-center justify-between animate-in slide-in-from-top duration-300">
+      <div class="flex items-center gap-3">
+        <div class="p-1.5 bg-primary-100 dark:bg-primary-900/50 rounded-md">
+          <UIcon name="i-heroicons-circle-stack" class="w-4 h-4 text-primary-600 dark:text-primary-400" />
+        </div>
+        <div class="flex flex-col">
+          <span class="text-[10px] font-black text-primary-700 dark:text-primary-300 uppercase tracking-wider">Active Session Restored</span>
+          <span class="text-[9px] text-primary-600/70 dark:text-primary-400/70 font-bold">
+            {{ sessionMetadata.selectedCount }} selected • {{ sessionMetadata.employeeCount }} staff • Saved {{ sessionMetadata.ageMinutes }}m ago for {{ sessionMetadata.month }}
+          </span>
+        </div>
+      </div>
+      <UButton size="xs" variant="ghost" color="neutral" icon="i-heroicons-x-mark" @click="resetSession" />
+    </div>
+
     <!-- Toolbar -->
     <div class="bg-white dark:bg-gray-900 p-2 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 flex items-center justify-between shrink-0">
       <div class="flex items-center gap-4">
@@ -271,6 +337,7 @@ onMounted(() => {
 
       <div class="flex items-center gap-2">
         <UDropdownMenu :items="[[
+          { label: 'Export Excel', icon: 'i-heroicons-table-cells', onSelect: onExportExcel },
           { label: 'Bank Report', icon: 'i-heroicons-building-library', onSelect: onExportBank },
           { label: 'EPF/ESIC Report', icon: 'i-heroicons-document-text', onSelect: onExportEPF }
         ]]">

@@ -95,15 +95,19 @@ export const useApi = () => {
     return performRequest()
   }
 
-  const download = async (endpoint: string, filename: string) => {
+  const download = async (endpoint: string, filename: string, method: string = 'GET', data?: any) => {
     const url = endpoint.startsWith('http') ? endpoint : `${baseUrl}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`
     
     const headers: Record<string, string> = {}
     if (authState.accessToken) headers['Authorization'] = `Bearer ${authState.accessToken}`
     if (authState.selectedFirmId) headers['X-Firm-ID'] = authState.selectedFirmId
+    if (data) headers['Content-Type'] = 'application/json'
 
-    const performDownload = async (retry = true) => {
-      const response = await fetch(url, { headers })
+    const performDownload = async (retry = true): Promise<void> => {
+      const options: RequestInit = { method, headers }
+      if (data) options.body = JSON.stringify(data)
+
+      const response = await fetch(url, options)
 
       if (response.status === 401 && retry) {
         const freshToken = await refreshTokenLogic()
@@ -117,7 +121,8 @@ export const useApi = () => {
       }
 
       if (!response.ok) {
-        throw new Error(`Download failed! status: ${response.status}`)
+        const error = await response.json().catch(() => ({ message: 'Download failed' }))
+        throw new Error(error.message || `Download failed! status: ${response.status}`)
       }
 
       const blob = await response.blob()

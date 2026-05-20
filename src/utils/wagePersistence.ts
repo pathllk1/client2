@@ -50,5 +50,32 @@ export const wagePersistence = {
 
   clear(type: 'CREATE' | 'EDIT') {
     localStorage.removeItem(STORAGE_KEYS[type]);
+  },
+
+  getMetadata(type: 'CREATE' | 'EDIT') {
+    try {
+      const item = localStorage.getItem(STORAGE_KEYS[type]);
+      if (!item) return null;
+
+      const payload: PersistenceData = JSON.parse(item);
+      const now = Date.now();
+      const ageMs = now - payload.timestamp;
+
+      if (ageMs > SESSION_MAX_AGE_MS) {
+        localStorage.removeItem(STORAGE_KEYS[type]);
+        return null;
+      }
+
+      const data = payload.data;
+      return {
+        timestamp: payload.timestamp,
+        ageMinutes: Math.floor(ageMs / 60000),
+        employeeCount: data.employees?.length || 0,
+        selectedCount: data.selectedEmployeeIds?.length || 0,
+        month: data.month
+      };
+    } catch (e) {
+      return null;
+    }
   }
 };

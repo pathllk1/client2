@@ -59,8 +59,8 @@ export const useWages = () => {
     return await api.get(`/wages/job/${jobId}`)
   }
 
-  const exportWages = async (data: any) => {
-    await api.download('/wages/export', 'Wages_Export.xlsx')
+  const exportWages = async (month: string, data: any[]) => {
+    await api.download('/wages/export', `Wages_${month}.xlsx`, 'POST', { month, data })
   }
 
   const downloadBankReport = async (month: string) => {
