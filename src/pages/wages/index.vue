@@ -3,12 +3,14 @@ import { ref } from 'vue'
 import WageCreate from '@/components/wages/WageCreate.vue'
 import WageEdit from '@/components/wages/WageEdit.vue'
 import WageReport from '@/components/wages/WageReport.vue'
+import AdvanceManagement from '@/components/wages/AdvanceManagement.vue'
 
 const activeTab = ref('create')
 
 const tabs = [
   { id: 'create', label: 'Create New Wages', icon: 'i-heroicons-plus-circle' },
   { id: 'edit', label: 'Manage & Edit', icon: 'i-heroicons-pencil-square' },
+  { id: 'advance', label: 'Advances', icon: 'i-heroicons-banknotes' },
   { id: 'report', label: 'Wages Report', icon: 'i-heroicons-document-chart-bar' }
 ]
 </script>
@@ -45,6 +47,7 @@ const tabs = [
         <div :key="activeTab" class="h-full">
           <WageCreate v-if="activeTab === 'create'" />
           <WageEdit v-if="activeTab === 'edit'" />
+          <AdvanceManagement v-if="activeTab === 'advance'" />
           <WageReport v-if="activeTab === 'report'" />
         </div>
       </Transition>

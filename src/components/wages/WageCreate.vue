@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useWages } from '@/composables/useWages'
 import { useToast } from '@nuxt/ui/composables'
+import { wagePersistence } from '@/utils/wagePersistence'
 
-const { loading, fetchEligibleEmployees, createWagesBulk, fetchBankAccounts } = useWages()
+const { loading, fetchEligibleEmployees, createWagesBulk, fetchBankAccounts, downloadBankReport, downloadEPFESICReport } = useWages()
 const toast = useToast()
 
 const month = ref(new Date().toISOString().slice(0, 7))
@@ -21,15 +22,60 @@ const commonPaymentData = ref({
 })
 
 const searchTerm = ref('')
+const filters = ref({
+  project: 'all',
+  site: 'all',
+  bank: 'all'
+})
+
+// Persistence logic
+const persistState = () => {
+  wagePersistence.save('CREATE', {
+    month: month.value,
+    employees: employees.value,
+    selectedEmployeeIds: Array.from(selectedEmployeeIds.value),
+    wageData: wageData.value,
+    commonPaymentData: commonPaymentData.value,
+    filters: filters.value
+  })
+}
+
+watch([month, employees, selectedEmployeeIds, wageData, commonPaymentData, filters], () => {
+  persistState()
+}, { deep: true })
+
+const restoreState = () => {
+  const saved = wagePersistence.load('CREATE')
+  if (saved) {
+    month.value = saved.month || month.value
+    employees.value = saved.employees || []
+    selectedEmployeeIds.value = new Set(saved.selectedEmployeeIds || [])
+    wageData.value = saved.wageData || {}
+    commonPaymentData.value = saved.commonPaymentData || commonPaymentData.value
+    filters.value = saved.filters || filters.value
+    return true
+  }
+  return false
+}
+
+const uniqueProjects = computed(() => ['all', ...new Set(employees.value.map(e => e.project).filter(Boolean))].sort())
+const uniqueSites = computed(() => ['all', ...new Set(employees.value.map(e => e.site).filter(Boolean))].sort())
+const uniqueBanks = computed(() => ['all', ...new Set(employees.value.map(e => e.bank).filter(Boolean))].sort())
 
 const filteredEmployees = computed(() => {
-  if (!searchTerm.value) return employees.value
-  const term = searchTerm.value.toLowerCase()
-  return employees.value.filter(emp => 
-    emp.employee_name.toLowerCase().includes(term) || 
-    emp.project?.toLowerCase().includes(term) ||
-    emp.site?.toLowerCase().includes(term)
-  )
+  return employees.value.filter(emp => {
+    const term = searchTerm.value.toLowerCase()
+    const matchesSearch = !term || 
+      emp.employee_name.toLowerCase().includes(term) || 
+      emp.project?.toLowerCase().includes(term) ||
+      emp.site?.toLowerCase().includes(term)
+    
+    const matchesProject = filters.value.project === 'all' || emp.project === filters.value.project
+    const matchesSite = filters.value.site === 'all' || emp.site === filters.value.site
+    const matchesBank = filters.value.bank === 'all' || emp.bank === filters.value.bank
+    
+    return matchesSearch && matchesProject && matchesSite && matchesBank
+  })
 })
 
 const loadData = async () => {
@@ -38,7 +84,10 @@ const loadData = async () => {
     if (bankRes.success) {
       bankAccounts.value = bankRes.data
     }
-    await loadEmployees()
+    
+    if (!restoreState()) {
+      await loadEmployees()
+    }
   } catch (err: any) {
     toast.add({ title: 'Error loading initial data', description: err.message, color: 'error' })
   }
@@ -161,6 +210,7 @@ const saveWages = async () => {
     const response = await createWagesBulk(wagesToSave)
     if (response.success) {
       toast.add({ title: 'Success', description: `Wages saved for ${wagesToSave.length} employees`, color: 'success' })
+      wagePersistence.clear('CREATE')
       loadEmployees()
     }
   } catch (err: any) {
@@ -168,8 +218,26 @@ const saveWages = async () => {
   }
 }
 
+const resetSession = () => {
+  if (confirm('Are you sure you want to clear all unsaved work and reset?')) {
+    wagePersistence.clear('CREATE')
+    loadEmployees()
+    toast.add({ title: 'Session Cleared', color: 'neutral' })
+  }
+}
+
 const formatCurrency = (val: number) => {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val)
+}
+
+const onExportBank = () => {
+  if (!month.value) return
+  downloadBankReport(month.value)
+}
+
+const onExportEPF = () => {
+  if (!month.value) return
+  downloadEPFESICReport(month.value)
 }
 
 onMounted(() => {
@@ -202,6 +270,16 @@ onMounted(() => {
       </div>
 
       <div class="flex items-center gap-2">
+        <UDropdownMenu :items="[[
+          { label: 'Bank Report', icon: 'i-heroicons-building-library', onSelect: onExportBank },
+          { label: 'EPF/ESIC Report', icon: 'i-heroicons-document-text', onSelect: onExportEPF }
+        ]]">
+          <UButton size="xs" color="neutral" variant="outline" icon="i-heroicons-document-arrow-down">Export Reports</UButton>
+        </UDropdownMenu>
+
+        <UButton v-if="employees.length > 0" size="xs" color="neutral" variant="ghost" icon="i-heroicons-trash" @click="resetSession">
+          Clear Session
+        </UButton>
         <input type="text" v-model="searchTerm" placeholder="Search staff..." class="px-2 py-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-xs w-40" />
         <UButton size="xs" color="success" icon="i-heroicons-check-circle" :disabled="selectedEmployeeIds.size === 0" @click="saveWages">
           Save Payroll ({{ selectedEmployeeIds.size }})
@@ -209,9 +287,23 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Bulk Payment Header -->
+    <!-- Filter & Bulk Pay Bar -->
     <div class="bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900 p-2 rounded-lg flex items-center gap-4 shrink-0 overflow-x-auto">
-      <span class="text-[10px] font-black text-indigo-400 uppercase tracking-widest border-r border-indigo-100 dark:border-indigo-900 pr-3">Bulk Pay</span>
+      <div class="flex items-center gap-3 border-r border-indigo-100 dark:border-indigo-900 pr-3">
+        <div class="flex flex-col gap-0.5">
+          <label class="text-[8px] font-bold text-gray-500 uppercase ml-1">Project</label>
+          <select v-model="filters.project" class="px-2 py-0.5 bg-white dark:bg-gray-900 border border-indigo-100 dark:border-indigo-900 rounded text-[10px] font-bold outline-none min-w-[100px]">
+            <option v-for="p in uniqueProjects" :key="p" :value="p">{{ p === 'all' ? 'All Projects' : p }}</option>
+          </select>
+        </div>
+        <div class="flex flex-col gap-0.5">
+          <label class="text-[8px] font-bold text-gray-500 uppercase ml-1">Site</label>
+          <select v-model="filters.site" class="px-2 py-0.5 bg-white dark:bg-gray-900 border border-indigo-100 dark:border-indigo-900 rounded text-[10px] font-bold outline-none min-w-[100px]">
+            <option v-for="s in uniqueSites" :key="s" :value="s">{{ s === 'all' ? 'All Sites' : s }}</option>
+          </select>
+        </div>
+      </div>
+
       <div class="flex items-center gap-3">
         <div class="flex items-center gap-1.5">
           <label class="text-[9px] font-bold text-indigo-400 uppercase">Date</label>

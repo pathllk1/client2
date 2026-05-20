@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useWages } from '@/composables/useWages'
 import { useToast } from '@nuxt/ui/composables'
+import { wagePersistence } from '@/utils/wagePersistence'
 
-const { loading, fetchWagesByMonth, updateWage, deleteWage, downloadWageSlip, fetchBankAccounts } = useWages()
+const { loading, fetchWagesByMonth, updateWage, deleteWage, downloadWageSlip, fetchBankAccounts, downloadBankReport, downloadEPFESICReport } = useWages()
 const toast = useToast()
 
 const month = ref(new Date().toISOString().slice(0, 7))
@@ -12,6 +13,39 @@ const bankAccounts = ref<any[]>([])
 const selectedWageIds = ref<Set<string>>(new Set())
 const editedWages = ref<Record<string, any>>({})
 const searchTerm = ref('')
+const filters = ref({
+  project: 'all',
+  site: 'all',
+  bank: 'all',
+  status: 'all'
+})
+
+// Persistence logic
+const persistState = () => {
+  if (Object.keys(editedWages.value).length > 0) {
+    wagePersistence.save('EDIT', {
+      month: month.value,
+      editedWages: editedWages.value,
+      filters: filters.value
+    })
+  } else {
+    wagePersistence.clear('EDIT')
+  }
+}
+
+watch([month, editedWages, filters], () => {
+  persistState()
+}, { deep: true })
+
+const restoreState = () => {
+  const saved = wagePersistence.load('EDIT')
+  if (saved && saved.month === month.value) {
+    editedWages.value = saved.editedWages || {}
+    filters.value = saved.filters || filters.value
+    return true
+  }
+  return false
+}
 
 const isBulkEditMode = ref(false)
 const bulkEditData = ref({
@@ -23,14 +57,28 @@ const bulkEditData = ref({
   remarks: ''
 })
 
+const uniqueProjects = computed(() => ['all', ...new Set(existingWages.value.map(w => w.master_roll_id?.project).filter(Boolean))].sort())
+const uniqueSites = computed(() => ['all', ...new Set(existingWages.value.map(w => w.master_roll_id?.site).filter(Boolean))].sort())
+const uniqueBanks = computed(() => ['all', ...new Set(existingWages.value.map(w => w.master_roll_id?.bank).filter(Boolean))].sort())
+
 const filteredWages = computed(() => {
-  if (!searchTerm.value) return existingWages.value
-  const term = searchTerm.value.toLowerCase()
-  return existingWages.value.filter(w => 
-    w.master_roll_id?.employee_name?.toLowerCase().includes(term) || 
-    w.master_roll_id?.project?.toLowerCase().includes(term) ||
-    w.master_roll_id?.site?.toLowerCase().includes(term)
-  )
+  return existingWages.value.filter(wage => {
+    const term = searchTerm.value.toLowerCase()
+    const matchesSearch = !term || 
+      wage.master_roll_id?.employee_name?.toLowerCase().includes(term) || 
+      wage.master_roll_id?.project?.toLowerCase().includes(term) ||
+      wage.master_roll_id?.site?.toLowerCase().includes(term)
+    
+    const matchesProject = filters.value.project === 'all' || wage.master_roll_id?.project === filters.value.project
+    const matchesSite = filters.value.site === 'all' || wage.master_roll_id?.site === filters.value.site
+    const matchesBank = filters.value.bank === 'all' || wage.master_roll_id?.bank === filters.value.bank
+    
+    const matchesStatus = filters.value.status === 'all' || 
+      (filters.value.status === 'paid' && wage.paid_date) ||
+      (filters.value.status === 'unpaid' && !wage.paid_date)
+    
+    return matchesSearch && matchesProject && matchesSite && matchesBank && matchesStatus
+  })
 })
 
 const loadData = async () => {
@@ -40,6 +88,7 @@ const loadData = async () => {
       bankAccounts.value = bankRes.data
     }
     await loadWages()
+    restoreState()
   } catch (err: any) {
     toast.add({ title: 'Error loading data', description: err.message, color: 'error' })
   }
@@ -96,6 +145,7 @@ const saveEditedWages = async () => {
     }
     toast.add({ title: 'Success', description: `${ids.length} wages updated`, color: 'success' })
     editedWages.value = {}
+    wagePersistence.clear('EDIT')
     loadWages()
   } catch (err: any) {
     toast.add({ title: 'Error updating wages', description: err.message, color: 'error' })
@@ -176,6 +226,24 @@ const onDownloadSlip = (wage: any) => {
   downloadWageSlip(wage._id, wage.master_roll_id?.employee_name || 'Employee')
 }
 
+const discardChanges = () => {
+  if (window.confirm('Discard all unsaved changes?')) {
+    editedWages.value = {}
+    wagePersistence.clear('EDIT')
+    toast.add({ title: 'Changes Discarded', color: 'neutral' })
+  }
+}
+
+const onExportBank = () => {
+  if (!month.value) return
+  downloadBankReport(month.value)
+}
+
+const onExportEPF = () => {
+  if (!month.value) return
+  downloadEPFESICReport(month.value)
+}
+
 onMounted(() => {
   loadData()
 })
@@ -194,10 +262,39 @@ onMounted(() => {
       </div>
 
       <div class="flex items-center gap-2">
-        <input type="text" v-model="searchTerm" placeholder="Search..." class="px-2 py-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-xs w-40" />
+        <UDropdownMenu :items="[[
+          { label: 'Bank Report', icon: 'i-heroicons-building-library', onSelect: onExportBank },
+          { label: 'EPF/ESIC Report', icon: 'i-heroicons-document-text', onSelect: onExportEPF }
+        ]]">
+          <UButton size="xs" color="neutral" variant="outline" icon="i-heroicons-document-arrow-down">Export</UButton>
+        </UDropdownMenu>
+
+        <div class="h-4 w-px bg-gray-200 dark:bg-gray-800 mx-1"></div>
+
+        <select v-model="filters.project" class="px-2 py-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-[10px] font-bold outline-none max-w-[100px]">
+          <option v-for="p in uniqueProjects" :key="p" :value="p">{{ p === 'all' ? 'All Proj' : p }}</option>
+        </select>
+        <select v-model="filters.site" class="px-2 py-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-[10px] font-bold outline-none max-w-[100px]">
+          <option v-for="s in uniqueSites" :key="s" :value="s">{{ s === 'all' ? 'All Sites' : s }}</option>
+        </select>
+        <select v-model="filters.bank" class="px-2 py-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-[10px] font-bold outline-none max-w-[100px]">
+          <option v-for="b in uniqueBanks" :key="b" :value="b">{{ b === 'all' ? 'All Banks' : b }}</option>
+        </select>
+        <select v-model="filters.status" class="px-2 py-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-[10px] font-bold outline-none">
+          <option value="all">All</option>
+          <option value="paid">Paid</option>
+          <option value="unpaid">Unpaid</option>
+        </select>
+
+        <div class="h-4 w-px bg-gray-200 dark:bg-gray-800 mx-1"></div>
+
+        <UButton v-if="Object.keys(editedWages).length > 0" size="xs" color="neutral" variant="ghost" icon="i-heroicons-trash" @click="discardChanges">
+          Discard
+        </UButton>
+        <input type="text" v-model="searchTerm" placeholder="Search..." class="px-2 py-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-xs w-32" />
         
         <UButton v-if="Object.keys(editedWages).length > 0" size="xs" color="emerald" @click="saveEditedWages">
-          Save Changes ({{ Object.keys(editedWages).length }})
+          Save ({{ Object.keys(editedWages).length }})
         </UButton>
 
         <UDropdownMenu v-if="selectedWageIds.size > 0" :items="[[
@@ -205,7 +302,7 @@ onMounted(() => {
           { label: 'Delete Selected', icon: 'i-heroicons-trash', color: 'error', onSelect: deleteSelected }
         ]]">
           <UButton size="xs" color="neutral" variant="outline" trailing-icon="i-heroicons-chevron-down">
-            Selected ({{ selectedWageIds.size }})
+            Sel ({{ selectedWageIds.size }})
           </UButton>
         </UDropdownMenu>
       </div>
