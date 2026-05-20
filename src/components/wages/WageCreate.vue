@@ -296,35 +296,35 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full gap-2">
+  <div class="flex flex-col h-full gap-2 p-2 sm:p-0">
     <!-- Session Indicator -->
-    <div v-if="sessionMetadata" class="bg-primary-50 dark:bg-primary-950/20 border border-primary-100 dark:border-primary-900 px-4 py-2 rounded-lg flex items-center justify-between animate-in slide-in-from-top duration-300">
-      <div class="flex items-center gap-3">
-        <div class="p-1.5 bg-primary-100 dark:bg-primary-900/50 rounded-md">
+    <div v-if="sessionMetadata" class="bg-primary-50 dark:bg-primary-950/20 border border-primary-100 dark:border-primary-900 px-3 py-2 rounded-lg flex items-center justify-between animate-in slide-in-from-top duration-300">
+      <div class="flex items-center gap-2 sm:gap-3">
+        <div class="p-1.5 bg-primary-100 dark:bg-primary-900/50 rounded-md shrink-0">
           <UIcon name="i-heroicons-circle-stack" class="w-4 h-4 text-primary-600 dark:text-primary-400" />
         </div>
-        <div class="flex flex-col">
-          <span class="text-[10px] font-black text-primary-700 dark:text-primary-300 uppercase tracking-wider">Active Session Restored</span>
-          <span class="text-[9px] text-primary-600/70 dark:text-primary-400/70 font-bold">
-            {{ sessionMetadata.selectedCount }} selected • {{ sessionMetadata.employeeCount }} staff • Saved {{ sessionMetadata.ageMinutes }}m ago for {{ sessionMetadata.month }}
+        <div class="flex flex-col overflow-hidden">
+          <span class="text-[9px] sm:text-[10px] font-black text-primary-700 dark:text-primary-300 uppercase tracking-wider truncate">Active Session Restored</span>
+          <span class="text-[8px] sm:text-[9px] text-primary-600/70 dark:text-primary-400/70 font-bold truncate">
+            {{ sessionMetadata.selectedCount }} selected • {{ sessionMetadata.employeeCount }} staff • Saved {{ sessionMetadata.ageMinutes }}m ago
           </span>
         </div>
       </div>
-      <UButton size="xs" variant="ghost" color="neutral" icon="i-heroicons-x-mark" @click="resetSession" />
+      <UButton size="xs" variant="ghost" color="neutral" icon="i-heroicons-x-mark" @click="resetSession" class="shrink-0" />
     </div>
 
     <!-- Toolbar -->
-    <div class="bg-white dark:bg-gray-900 p-2 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 flex items-center justify-between shrink-0">
-      <div class="flex items-center gap-4">
-        <div class="flex items-center gap-2">
-          <label class="text-[10px] font-bold text-gray-500 uppercase">Month</label>
-          <input type="month" v-model="month" class="px-2 py-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-xs font-bold" />
+    <div class="bg-white dark:bg-gray-900 p-2 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 shrink-0">
+      <div class="flex flex-wrap items-center gap-2 sm:gap-4">
+        <div class="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded border border-gray-100 dark:border-gray-700">
+          <label class="text-[9px] font-bold text-gray-500 uppercase">Month</label>
+          <input type="month" v-model="month" class="bg-transparent border-none text-xs font-bold focus:ring-0 p-0" />
         </div>
-        <UButton size="xs" icon="i-heroicons-arrow-path" :loading="loading" @click="loadEmployees">Load Staff</UButton>
+        <UButton size="xs" icon="i-heroicons-arrow-path" :loading="loading" @click="loadEmployees" class="flex-1 sm:flex-none">Load Staff</UButton>
         
         <div class="flex items-center gap-3 px-3 py-1 bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-100 dark:border-gray-700">
           <div class="flex flex-col items-center">
-            <span class="text-[8px] text-gray-400 uppercase font-black">Loaded</span>
+            <span class="text-[8px] text-gray-400 uppercase font-black">Staff</span>
             <span class="text-xs font-black text-gray-700 dark:text-gray-200">{{ employees.length }}</span>
           </div>
           <div class="w-px h-4 bg-gray-200 dark:bg-gray-700"></div>
@@ -335,100 +335,143 @@ onMounted(() => {
         </div>
       </div>
 
-      <div class="flex items-center gap-2">
+      <div class="flex flex-wrap items-center gap-2">
         <UDropdownMenu :items="[[
           { label: 'Export Excel', icon: 'i-heroicons-table-cells', onSelect: onExportExcel },
           { label: 'Bank Report', icon: 'i-heroicons-building-library', onSelect: onExportBank },
           { label: 'EPF/ESIC Report', icon: 'i-heroicons-document-text', onSelect: onExportEPF }
-        ]]">
-          <UButton size="xs" color="neutral" variant="outline" icon="i-heroicons-document-arrow-down">Export Reports</UButton>
+        ]]" class="flex-1 sm:flex-none">
+          <UButton size="xs" color="neutral" variant="outline" icon="i-heroicons-document-arrow-down" block>Export</UButton>
         </UDropdownMenu>
 
-        <UButton v-if="employees.length > 0" size="xs" color="neutral" variant="ghost" icon="i-heroicons-trash" @click="resetSession">
-          Clear Session
+        <UButton v-if="employees.length > 0" size="xs" color="neutral" variant="ghost" icon="i-heroicons-trash" @click="resetSession" class="hidden sm:inline-flex">
+          Clear
         </UButton>
-        <input type="text" v-model="searchTerm" placeholder="Search staff..." class="px-2 py-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-xs w-40" />
-        <UButton size="xs" color="success" icon="i-heroicons-check-circle" :disabled="selectedEmployeeIds.size === 0" @click="saveWages">
-          Save Payroll ({{ selectedEmployeeIds.size }})
+        
+        <div class="relative flex-1 sm:flex-none min-w-[120px]">
+          <UIcon name="i-heroicons-magnifying-glass" class="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 w-3 h-3" />
+          <input type="text" v-model="searchTerm" placeholder="Search..." class="pl-7 pr-2 py-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-xs w-full focus:ring-1 focus:ring-primary-500 outline-none" />
+        </div>
+
+        <UButton size="xs" color="success" icon="i-heroicons-check-circle" :disabled="selectedEmployeeIds.size === 0" @click="saveWages" class="flex-1 sm:flex-none">
+          Save ({{ selectedEmployeeIds.size }})
         </UButton>
       </div>
     </div>
 
-    <!-- Filter & Bulk Pay Bar -->
-    <div class="bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900 p-2 rounded-lg flex items-center gap-4 shrink-0 overflow-x-auto">
-      <div class="flex items-center gap-3 border-r border-indigo-100 dark:border-indigo-900 pr-3">
-        <div class="flex flex-col gap-0.5">
-          <label class="text-[8px] font-bold text-gray-500 uppercase ml-1">Project</label>
-          <select v-model="filters.project" class="px-2 py-0.5 bg-white dark:bg-gray-900 border border-indigo-100 dark:border-indigo-900 rounded text-[10px] font-bold outline-none min-w-[100px]">
+    <!-- Filter & Totals Bar -->
+    <div class="flex flex-col md:flex-row gap-2 shrink-0">
+      <!-- Filter Bar -->
+      <div class="bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900 p-2 rounded-lg flex flex-wrap items-center gap-3 flex-1 overflow-x-auto scrollbar-none">
+        <div class="flex items-center gap-2 border-r border-indigo-100 dark:border-indigo-900 pr-2">
+          <select v-model="filters.project" class="px-2 py-1 bg-white dark:bg-gray-900 border border-indigo-100 dark:border-indigo-900 rounded text-[10px] font-bold outline-none min-w-[90px]">
             <option v-for="p in uniqueProjects" :key="p" :value="p">{{ p === 'all' ? 'All Projects' : p }}</option>
           </select>
-        </div>
-        <div class="flex flex-col gap-0.5">
-          <label class="text-[8px] font-bold text-gray-500 uppercase ml-1">Site</label>
-          <select v-model="filters.site" class="px-2 py-0.5 bg-white dark:bg-gray-900 border border-indigo-100 dark:border-indigo-900 rounded text-[10px] font-bold outline-none min-w-[100px]">
+          <select v-model="filters.site" class="px-2 py-1 bg-white dark:bg-gray-900 border border-indigo-100 dark:border-indigo-900 rounded text-[10px] font-bold outline-none min-w-[90px]">
             <option v-for="s in uniqueSites" :key="s" :value="s">{{ s === 'all' ? 'All Sites' : s }}</option>
           </select>
         </div>
-      </div>
 
-      <div class="flex items-center gap-3">
-        <div class="flex items-center gap-1.5">
-          <label class="text-[9px] font-bold text-indigo-400 uppercase">Date</label>
-          <input type="date" v-model="commonPaymentData.paid_date" class="px-1 py-0.5 bg-white dark:bg-gray-900 border border-indigo-100 dark:border-indigo-900 rounded text-[10px] font-bold outline-none" />
-        </div>
-        <div class="flex items-center gap-1.5">
-          <label class="text-[9px] font-bold text-indigo-400 uppercase">Bank</label>
-          <select v-model="commonPaymentData.bank_account_id" class="px-1 py-0.5 bg-white dark:bg-gray-900 border border-indigo-100 dark:border-indigo-900 rounded text-[10px] font-bold outline-none max-w-[150px]">
-            <option value="">Choose Bank</option>
-            <option v-for="bank in bankAccounts" :key="bank._id" :value="bank._id">{{ bank.bank_name }} - {{ bank.account_number }}</option>
+        <div class="flex flex-wrap items-center gap-2">
+          <input type="date" v-model="commonPaymentData.paid_date" class="px-1 py-1 bg-white dark:bg-gray-900 border border-indigo-100 dark:border-indigo-900 rounded text-[10px] font-bold outline-none" title="Paid Date" />
+          <select v-model="commonPaymentData.bank_account_id" class="px-1 py-1 bg-white dark:bg-gray-900 border border-indigo-100 dark:border-indigo-900 rounded text-[10px] font-bold outline-none max-w-[120px]">
+            <option value="">Bank</option>
+            <option v-for="bank in bankAccounts" :key="bank._id" :value="bank._id">{{ bank.bank_name }}</option>
           </select>
-        </div>
-        <div class="flex items-center gap-1.5">
-          <label class="text-[9px] font-bold text-indigo-400 uppercase">Mode</label>
-          <select v-model="commonPaymentData.payment_mode" class="px-1 py-0.5 bg-white dark:bg-gray-900 border border-indigo-100 dark:border-indigo-900 rounded text-[10px] font-bold outline-none">
-            <option value="">Select</option>
-            <option value="CASH">CASH</option>
-            <option value="CHEQUE">CHEQUE</option>
-            <option value="NEFT">NEFT</option>
-            <option value="RTGS">RTGS</option>
-            <option value="IMPS">IMPS</option>
-            <option value="UPI">UPI</option>
+          <select v-model="commonPaymentData.payment_mode" class="px-1 py-1 bg-white dark:bg-gray-900 border border-indigo-100 dark:border-indigo-900 rounded text-[10px] font-bold outline-none">
+            <option value="">Mode</option>
+            <option v-for="m in ['CASH', 'NEFT', 'RTGS', 'UPI', 'CHEQUE']" :key="m" :value="m">{{ m }}</option>
           </select>
-        </div>
-        <div class="flex items-center gap-1.5">
-          <label class="text-[9px] font-bold text-indigo-400 uppercase">Ref</label>
-          <input type="text" v-model="commonPaymentData.cheque_no" placeholder="Cheque/Ref" class="px-1 py-0.5 bg-white dark:bg-gray-900 border border-indigo-100 dark:border-indigo-900 rounded text-[10px] font-bold outline-none w-24" />
+          <input type="text" v-model="commonPaymentData.cheque_no" placeholder="Ref/Cheque" class="px-1 py-1 bg-white dark:bg-gray-900 border border-indigo-100 dark:border-indigo-900 rounded text-[10px] font-bold outline-none w-20" />
         </div>
       </div>
 
-      <div class="ml-auto flex items-center gap-4 bg-gray-900 dark:bg-black px-4 py-1 rounded-md text-white border border-gray-800">
-        <div class="flex flex-col"><span class="text-[8px] text-gray-400 uppercase">Gross</span><span class="text-xs font-mono font-bold">{{ formatCurrency(totals.gross) }}</span></div>
-        <div class="flex flex-col"><span class="text-[8px] text-amber-500 uppercase">EPF</span><span class="text-xs font-mono font-bold text-amber-500">{{ formatCurrency(totals.epf) }}</span></div>
-        <div class="flex flex-col"><span class="text-[8px] text-amber-500 uppercase">ESIC</span><span class="text-xs font-mono font-bold text-amber-500">{{ formatCurrency(totals.esic) }}</span></div>
-        <div class="flex flex-col"><span class="text-[8px] text-rose-500 uppercase">Adv</span><span class="text-xs font-mono font-bold text-rose-500">{{ formatCurrency(totals.adv) }}</span></div>
-        <div class="w-px h-4 bg-gray-700"></div>
-        <div class="flex flex-col"><span class="text-[8px] text-emerald-500 uppercase">Net</span><span class="text-sm font-mono font-black text-emerald-400 italic">{{ formatCurrency(totals.net) }}</span></div>
+      <!-- Totals Bar -->
+      <div class="bg-gray-900 dark:bg-black p-2 rounded-lg text-white border border-gray-800 flex items-center justify-between md:justify-end gap-3 sm:gap-4 px-4 overflow-x-auto scrollbar-none">
+        <div class="flex flex-col"><span class="text-[8px] text-gray-400 uppercase">Gross</span><span class="text-[11px] font-mono font-bold">{{ formatCurrency(totals.gross) }}</span></div>
+        <div class="flex flex-col"><span class="text-[8px] text-amber-500 uppercase">Ded.</span><span class="text-[11px] font-mono font-bold text-amber-500">{{ formatCurrency(totals.epf + totals.esic + totals.adv) }}</span></div>
+        <div class="w-px h-4 bg-gray-700 hidden sm:block"></div>
+        <div class="flex flex-col items-end"><span class="text-[8px] text-emerald-500 uppercase font-black">Net Total</span><span class="text-sm font-mono font-black text-emerald-400 italic">{{ formatCurrency(totals.net) }}</span></div>
       </div>
     </div>
 
-    <!-- Table -->
+    <!-- Table / List View -->
     <div class="flex-1 bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden min-h-0 relative">
-      <div v-if="loading" class="absolute inset-0 z-20 flex items-center justify-center bg-white/60 dark:bg-gray-950/60 backdrop-blur-[2px] transition-all duration-300">
-        <div class="flex flex-col items-center gap-4 bg-white dark:bg-gray-900 p-8 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-800 animate-in zoom-in-95 duration-200">
-          <div class="relative">
-            <UIcon name="i-heroicons-arrow-path" class="w-12 h-12 animate-spin text-primary" />
-            <div class="absolute inset-0 flex items-center justify-center">
-              <UIcon name="i-heroicons-currency-dollar" class="w-5 h-5 text-primary/40" />
-            </div>
-          </div>
-          <div class="flex flex-col items-center gap-1">
-            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-900 dark:text-white">Calculating</p>
-            <p class="text-[9px] font-bold uppercase tracking-widest text-primary animate-pulse">Payroll Engine</p>
-          </div>
+      <div v-if="loading" class="absolute inset-0 z-20 flex items-center justify-center bg-white/60 dark:bg-gray-950/60 backdrop-blur-[2px]">
+        <div class="flex flex-col items-center gap-4 bg-white dark:bg-gray-900 p-8 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-800">
+          <UIcon name="i-heroicons-arrow-path" class="w-10 h-10 animate-spin text-primary" />
+          <p class="text-[10px] font-black uppercase tracking-widest text-primary animate-pulse">Processing Payroll</p>
         </div>
       </div>
 
-      <div class="overflow-auto h-full scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-800">
+      <!-- Mobile List View -->
+      <div class="lg:hidden h-full overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800 p-2">
+        <div v-for="emp in filteredEmployees" :key="emp.master_roll_id" 
+             class="bg-white dark:bg-gray-900 mb-2 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden"
+             :class="{'border-primary-200 dark:border-primary-800 ring-1 ring-primary-500/20 bg-primary-50/30': selectedEmployeeIds.has(emp.master_roll_id)}">
+          <div class="p-3 flex items-start gap-3">
+            <input type="checkbox" :value="emp.master_roll_id" :checked="selectedEmployeeIds.has(emp.master_roll_id)" @change="toggleEmployeeSelection(emp.master_roll_id, $event)" class="mt-1 rounded accent-primary w-4 h-4" />
+            
+            <div class="flex-1 min-w-0">
+              <div class="flex justify-between items-start">
+                <div class="truncate">
+                  <h4 class="text-xs font-black text-gray-900 dark:text-gray-100 leading-none">{{ emp.employee_name }}</h4>
+                  <p class="text-[10px] text-gray-500 font-bold uppercase mt-1">{{ emp.project }} • {{ emp.site }}</p>
+                </div>
+                <div class="text-right">
+                  <div class="text-xs font-black text-primary-600 dark:text-primary-400 font-mono italic">{{ formatCurrency(wageData[emp.master_roll_id].net_salary) }}</div>
+                  <div class="text-[9px] text-gray-400 uppercase font-black tracking-tighter">Net Payable</div>
+                </div>
+              </div>
+
+              <!-- Compact Inputs -->
+              <div class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 pt-3 border-t border-gray-50 dark:border-gray-800">
+                <div class="flex flex-col gap-1">
+                  <label class="text-[9px] font-black text-indigo-400 uppercase">Wage Rate</label>
+                  <div class="flex items-center gap-1 bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded border border-gray-100 dark:border-gray-700">
+                    <span class="text-[9px] text-gray-400 font-bold">₹</span>
+                    <input type="number" v-model.number="wageData[emp.master_roll_id].p_day_wage" @input="calculateEmployeeWages(emp.master_roll_id)" class="w-full bg-transparent border-none text-[11px] font-black focus:ring-0 p-0" />
+                  </div>
+                </div>
+                <div class="flex flex-col gap-1">
+                  <label class="text-[9px] font-black text-indigo-400 uppercase">Paid Days</label>
+                  <div class="flex items-center gap-1 bg-indigo-50/50 dark:bg-indigo-900/20 px-2 py-1 rounded border border-indigo-100 dark:border-indigo-900">
+                    <UIcon name="i-heroicons-calendar" class="w-3 h-3 text-indigo-400" />
+                    <input type="number" v-model.number="wageData[emp.master_roll_id].wage_days" @input="calculateEmployeeWages(emp.master_roll_id)" class="w-full bg-transparent border-none text-[11px] font-black text-indigo-600 dark:text-indigo-400 focus:ring-0 p-0" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Deductions Row -->
+              <div class="mt-2 flex flex-wrap gap-2 pt-2 border-t border-dashed border-gray-100 dark:border-gray-800">
+                <div class="flex flex-col gap-0.5">
+                  <span class="text-[8px] text-amber-500 uppercase font-bold">EPF</span>
+                  <input type="number" v-model.number="wageData[emp.master_roll_id].epf_deduction" @input="updateNetSalary(emp.master_roll_id)" class="w-12 bg-transparent border-none text-[10px] font-black text-amber-600 p-0 focus:ring-0" />
+                </div>
+                <div class="flex flex-col gap-0.5">
+                  <span class="text-[8px] text-amber-500 uppercase font-bold">ESIC</span>
+                  <input type="number" v-model.number="wageData[emp.master_roll_id].esic_deduction" @input="updateNetSalary(emp.master_roll_id)" class="w-12 bg-transparent border-none text-[10px] font-black text-amber-600 p-0 focus:ring-0" />
+                </div>
+                <div class="flex flex-col gap-0.5">
+                  <span class="text-[8px] text-rose-500 uppercase font-bold">Adv.</span>
+                  <input type="number" v-model.number="wageData[emp.master_roll_id].advance_deduction" @input="updateNetSalary(emp.master_roll_id)" class="w-12 bg-transparent border-none text-[10px] font-black text-rose-600 p-0 focus:ring-0" />
+                </div>
+                <div class="ml-auto flex flex-col items-end gap-0.5">
+                  <span class="text-[8px] text-gray-400 uppercase font-bold">Gross</span>
+                  <span class="text-[10px] font-black font-mono">₹{{ Math.round(wageData[emp.master_roll_id].gross_salary) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div v-if="filteredEmployees.length === 0" class="p-12 text-center text-gray-400 text-[10px] font-black uppercase tracking-widest leading-loose">
+          <UIcon name="i-heroicons-user-group" class="w-12 h-12 mb-4 mx-auto opacity-20" />
+          No employees found<br/>Load staff to begin
+        </div>
+      </div>
+
+      <!-- Desktop Table View -->
+      <div class="hidden lg:block h-full overflow-auto scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-800">
         <table class="w-full text-left border-collapse table-fixed">
           <thead class="sticky top-0 z-10">
             <tr class="bg-gray-900 text-gray-400 text-[10px] font-bold uppercase tracking-wider border-b border-gray-800">
@@ -447,50 +490,51 @@ onMounted(() => {
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-            <tr v-for="emp in filteredEmployees" :key="emp.master_roll_id" class="hover:bg-gray-50 dark:hover:bg-gray-800/50 group" :class="{'bg-primary/5': selectedEmployeeIds.has(emp.master_roll_id)}">
+            <tr v-for="emp in filteredEmployees" :key="emp.master_roll_id" class="hover:bg-gray-50 dark:hover:bg-gray-800/50 group transition-colors" :class="{'bg-primary/5': selectedEmployeeIds.has(emp.master_roll_id)}">
               <td class="p-2 text-center border-r border-gray-50 dark:border-gray-800">
                 <input type="checkbox" :value="emp.master_roll_id" :checked="selectedEmployeeIds.has(emp.master_roll_id)" @change="toggleEmployeeSelection(emp.master_roll_id, $event)" class="rounded accent-primary" />
               </td>
               <td class="p-2 border-r border-gray-50 dark:border-gray-800">
-                <div class="text-[11px] font-bold text-gray-900 dark:text-gray-100 truncate">{{ emp.employee_name }}</div>
-                <div class="text-[9px] text-gray-500 uppercase font-medium truncate">{{ emp.project }} • {{ emp.site }}</div>
+                <div class="text-[11px] font-black text-gray-900 dark:text-gray-100 truncate">{{ emp.employee_name }}</div>
+                <div class="text-[9px] text-gray-500 uppercase font-black truncate opacity-60">{{ emp.project }} • {{ emp.site }}</div>
               </td>
               <td class="p-2 border-r border-gray-50 dark:border-gray-800">
-                <div class="text-[10px] text-gray-600 dark:text-gray-400 truncate">{{ emp.bank }}</div>
-                <div class="text-[10px] font-mono text-gray-400 truncate">{{ emp.account_no }}</div>
+                <div class="text-[10px] text-gray-600 dark:text-gray-400 truncate font-bold">{{ emp.bank }}</div>
+                <div class="text-[9px] font-mono text-gray-400 truncate tracking-tighter">{{ emp.account_no }}</div>
               </td>
               <td class="p-1 border-r border-gray-50 dark:border-gray-800">
-                <input type="number" v-model.number="wageData[emp.master_roll_id].p_day_wage" @input="calculateEmployeeWages(emp.master_roll_id)" class="w-full bg-transparent border-none text-center text-[11px] font-bold focus:ring-0" />
+                <input type="number" v-model.number="wageData[emp.master_roll_id].p_day_wage" @input="calculateEmployeeWages(emp.master_roll_id)" class="w-full bg-transparent border-none text-center text-[11px] font-black focus:ring-0" />
               </td>
               <td class="p-1 border-r border-gray-50 dark:border-gray-800">
-                <input type="number" v-model.number="wageData[emp.master_roll_id].wage_days" @input="calculateEmployeeWages(emp.master_roll_id)" class="w-full bg-gray-50 dark:bg-gray-800 border-none rounded text-center text-[12px] font-black text-indigo-600 focus:ring-0" />
+                <input type="number" v-model.number="wageData[emp.master_roll_id].wage_days" @input="calculateEmployeeWages(emp.master_roll_id)" class="w-full bg-gray-50 dark:bg-gray-800 border-none rounded text-center text-[11px] font-black text-indigo-600 dark:text-indigo-400 focus:ring-0" />
               </td>
-              <td class="p-2 text-right border-r border-gray-50 dark:border-gray-800 text-[11px] font-bold font-mono">
+              <td class="p-2 text-right border-r border-gray-50 dark:border-gray-800 text-[11px] font-black font-mono">
                 {{ Math.round(wageData[emp.master_roll_id].gross_salary) }}
               </td>
               <td class="p-1 border-r border-gray-50 dark:border-gray-800">
-                <input type="number" v-model.number="wageData[emp.master_roll_id].epf_deduction" @input="updateNetSalary(emp.master_roll_id)" class="w-full bg-transparent border-none text-center text-[11px] font-bold text-amber-600 focus:ring-0" />
+                <input type="number" v-model.number="wageData[emp.master_roll_id].epf_deduction" @input="updateNetSalary(emp.master_roll_id)" class="w-full bg-transparent border-none text-center text-[10px] font-black text-amber-600 focus:ring-0" />
               </td>
               <td class="p-1 border-r border-gray-50 dark:border-gray-800">
-                <input type="number" v-model.number="wageData[emp.master_roll_id].esic_deduction" @input="updateNetSalary(emp.master_roll_id)" class="w-full bg-transparent border-none text-center text-[11px] font-bold text-amber-600 focus:ring-0" />
+                <input type="number" v-model.number="wageData[emp.master_roll_id].esic_deduction" @input="updateNetSalary(emp.master_roll_id)" class="w-full bg-transparent border-none text-center text-[10px] font-black text-amber-600 focus:ring-0" />
               </td>
               <td class="p-1 border-r border-gray-50 dark:border-gray-800">
-                <input type="number" v-model.number="wageData[emp.master_roll_id].other_deduction" @input="updateNetSalary(emp.master_roll_id)" class="w-full bg-transparent border-none text-center text-[11px] font-bold text-orange-600 focus:ring-0" />
+                <input type="number" v-model.number="wageData[emp.master_roll_id].other_deduction" @input="updateNetSalary(emp.master_roll_id)" class="w-full bg-transparent border-none text-center text-[10px] font-black text-orange-600 focus:ring-0" />
               </td>
               <td class="p-1 border-r border-gray-50 dark:border-gray-800">
-                <input type="number" v-model.number="wageData[emp.master_roll_id].other_benefit" @input="updateNetSalary(emp.master_roll_id)" class="w-full bg-transparent border-none text-center text-[11px] font-bold text-emerald-600 focus:ring-0" />
+                <input type="number" v-model.number="wageData[emp.master_roll_id].other_benefit" @input="updateNetSalary(emp.master_roll_id)" class="w-full bg-transparent border-none text-center text-[10px] font-black text-emerald-600 focus:ring-0" />
               </td>
               <td class="p-1 border-r border-gray-50 dark:border-gray-800">
-                <input type="number" v-model.number="wageData[emp.master_roll_id].advance_deduction" @input="updateNetSalary(emp.master_roll_id)" class="w-full bg-transparent border-none text-center text-[11px] font-bold text-rose-600 focus:ring-0" />
+                <input type="number" v-model.number="wageData[emp.master_roll_id].advance_deduction" @input="updateNetSalary(emp.master_roll_id)" class="w-full bg-transparent border-none text-center text-[10px] font-black text-rose-600 focus:ring-0" />
               </td>
               <td class="p-2 text-right bg-primary/5 font-black text-primary-600 dark:text-primary-400 font-mono text-[12px] italic">
-                {{ wageData[emp.master_roll_id].net_salary.toFixed(0) }}
+                {{ Math.round(wageData[emp.master_roll_id].net_salary) }}
               </td>
             </tr>
           </tbody>
         </table>
-        <div v-if="filteredEmployees.length === 0" class="p-8 text-center text-gray-400 text-xs font-bold uppercase tracking-widest">
-          No employees found. Please load staff for the selected month.
+        <div v-if="filteredEmployees.length === 0" class="p-12 text-center text-gray-400 text-[10px] font-black uppercase tracking-widest leading-loose">
+          <UIcon name="i-heroicons-user-group" class="w-12 h-12 mb-4 mx-auto opacity-20" />
+          No employees found<br/>Load staff for the selected month
         </div>
       </div>
     </div>
