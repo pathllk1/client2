@@ -46,6 +46,12 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/inventory/stocks',
+      name: 'inventory-stocks',
+      component: () => import('../pages/inventory/Stocks.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/inventory/reports',
       name: 'inventory-reports',
       component: () => import('../pages/inventory/InventoryReports.vue'),

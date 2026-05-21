@@ -131,7 +131,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { useBillingState } from '@/composables/useBillingState';
 import PartyManager from '@/components/inventory/PartyManager.vue';
 import CartManager from '@/components/inventory/CartManager.vue';
@@ -143,6 +143,7 @@ import OtherChargesModal from '@/components/inventory/OtherChargesModal.vue';
 import { api } from '@/utils/api';
 
 const router = useRouter();
+const route = useRoute();
 const { state, totals, fetchData, determineGstBillType, populateConsigneeFromBillTo } = useBillingState();
 
 const showStockModal = ref(false);
@@ -164,11 +165,34 @@ onMounted(async () => {
   window.addEventListener('keydown', handleKeydown);
   state.meta.btype = 'PURCHASE';
   await fetchData();
+
+  if (route.query.returnFrom) {
+    state.isReturnMode = true;
+    state.returnFromBillId = route.query.returnFrom as string;
+    await loadExistingBill(state.returnFromBillId);
+  }
 });
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown);
 });
+
+async function loadExistingBill(id: string) {
+  try {
+    const res = await api.get(`/accounting/bills/${id}`);
+    if (res.success) {
+      const bill = res.data;
+      state.currentBill = bill;
+      state.selectedParty = { _id: bill.partyId, name: bill.partyName, address: bill.partyAddress, gstin: bill.partyGstin };
+      state.selectedPartyGstin = bill.partyGstin;
+      state.meta.billType = bill.billSubtype?.toLowerCase() === 'inter-state' ? 'inter-state' : 'intra-state';
+      state.meta.reverseCharge = bill.reverseCharge;
+      state.cart = bill.items.map((item: any) => ({ ...item, returnQty: 0, originalItem: true }));
+    }
+  } catch (err) {
+    console.error('Failed to load original bill', err);
+  }
+}
 
 const canSave = computed(() => {
   return state.selectedParty &&
@@ -232,7 +256,7 @@ async function saveInvoice() {
     const payload = {
       meta: {
         ...state.meta,
-        btype: 'PURCHASE',
+        btype: state.isReturnMode ? 'DEBIT_NOTE' : 'PURCHASE',
         firmGstin: state.activeFirmLocation?.gst_number || null,
         partyGstin: state.selectedPartyGstin || null
       },
@@ -241,12 +265,15 @@ async function saveInvoice() {
       otherCharges: state.otherCharges,
       consignee: state.selectedConsignee
     };
-    const res = await api.post('/accounting/purchases', payload);
+    
+    const endpoint = state.isReturnMode ? '/accounting/debit-notes' : '/accounting/purchases';
+    const res = await api.post(endpoint, payload);
+    
     if (res.success) {
       router.push('/accounting/bills');
     }
   } catch (err: any) {
-    alert(err.response?.data?.error || 'Failed to save bill');
+    alert(err.message || 'Failed to save bill');
   } finally {
     loading.value = false;
   }

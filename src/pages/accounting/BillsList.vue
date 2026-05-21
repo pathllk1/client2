@@ -80,6 +80,11 @@
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 2.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                        </svg>
                     </button>
+                    <button v-if="bill.status === 'ACTIVE' && (bill.btype === 'SALES' || bill.btype === 'PURCHASE')" @click="handleReturn(bill)" class="p-1 text-gray-400 hover:text-amber-600" title="Return / Credit Note">
+                       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z" />
+                       </svg>
+                    </button>
                     <button v-if="bill.status === 'ACTIVE'" @click="handleCancel(bill._id)" class="p-1 text-gray-400 hover:text-red-600" title="Cancel Bill">
                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -97,9 +102,11 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { useBilling } from '@/composables/useBilling';
 import { api } from '@/utils/api';
 
+const router = useRouter();
 const { bills, fetchBills } = useBilling();
 
 const filters = reactive({
@@ -129,6 +136,11 @@ function getTypeColor(type: string) {
     'DEBIT_NOTE': 'text-orange-600'
   };
   return map[type] || 'text-gray-600';
+}
+
+function handleReturn(bill: any) {
+  const path = bill.btype === 'SALES' ? '/accounting/sales/new' : '/accounting/purchases/new';
+  router.push({ path, query: { returnFrom: bill._id } });
 }
 
 async function handleCancel(id: string) {

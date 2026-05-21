@@ -101,12 +101,16 @@
         </div>
       </div>
     </div>
+
+    <!-- Modals -->
+    <PartyModal v-model="showCreateModal" @saved="fetchParties" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useBilling } from '../../composables/useBilling';
+import PartyModal from '@/components/inventory/PartyModal.vue';
 
 const { parties, fetchParties } = useBilling();
 

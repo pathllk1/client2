@@ -47,6 +47,16 @@
              </div>
 
              <div>
+                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Pincode</label>
+                <input type="text" v-model="form.pin" class="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-xl focus:bg-white focus:border-emerald-500 outline-none transition-all font-bold" maxlength="6" />
+             </div>
+
+             <div>
+                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">PAN Number</label>
+                <input type="text" v-model="form.pan" class="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-xl focus:bg-white focus:border-emerald-500 outline-none transition-all font-mono font-bold uppercase" maxlength="10" />
+             </div>
+
+             <div>
                 <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Party Type</label>
                 <select v-model="form.partyType" class="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-xl focus:bg-white focus:border-emerald-500 outline-none transition-all font-bold appearance-none">
                    <option value="CUSTOMER">Customer</option>
@@ -97,30 +107,47 @@ const fetchingGst = ref(false);
 const saving = ref(false);
 
 watch(() => form.gstin, (val) => {
-  if (val.length >= 2 && /^\d{2}/.test(val)) {
-    form.stateCode = val.substring(0, 2);
+  const v = val.toUpperCase();
+  if (v.length >= 2 && /^\d{2}/.test(v)) {
+    form.stateCode = v.substring(0, 2);
   }
-  if (val.length >= 12) {
-    form.pan = val.substring(2, 12);
+  if (v.length >= 12) {
+    form.pan = v.substring(2, 12);
   }
 });
 
 async function fetchGstDetails() {
+  if (!form.gstin || form.gstin.length !== 15) return;
   fetchingGst.value = true;
   try {
     const res = await api.get(`/accounting/gst/lookup?gstin=${form.gstin}`);
-    if (res.data.success) {
-      const data = res.data.data;
+    if (res.success) {
+      const data = res.data;
       form.name = data.trade_name || data.legal_name || form.name;
-      form.state = data.place_of_business_principal?.address?.state || data.state_jurisdiction || form.state;
-      const stateParts = form.state.split(' - ');
-      if (stateParts[0]) form.state = stateParts[0].trim();
+      
+      let stateName = data.place_of_business_principal?.address?.state || data.state_jurisdiction || form.state;
+      stateName = String(stateName).trim();
+      if (stateName.includes(' - ')) stateName = stateName.split(' - ')[0].trim();
+      form.state = stateName;
       
       const addr = data.place_of_business_principal?.address;
       if (addr) {
-        form.address = [addr.door_num, addr.building_name, addr.street, addr.location, addr.city, addr.district].filter(Boolean).join(', ');
-        form.pin = addr.pin_code || '';
+        form.address = [
+          addr.door_num, 
+          addr.building_name, 
+          addr.floor_num,
+          addr.street, 
+          addr.location, 
+          addr.city, 
+          addr.district
+        ].filter(p => p && String(p).trim()).join(', ');
+        
+        const pinCode = addr.pin_code || '';
+        form.pin = /^\d{6}$/.test(String(pinCode).trim()) ? pinCode : '';
       }
+
+      if (form.gstin.length >= 2) form.stateCode = form.gstin.substring(0, 2);
+      if (form.gstin.length >= 12) form.pan = form.gstin.substring(2, 12);
     }
   } catch (err) {
     console.error('GST lookup failed', err);
