@@ -56,6 +56,7 @@
               <th class="px-6 py-4 font-semibold">Type</th>
               <th class="px-6 py-4 font-semibold">Reference</th>
               <th class="px-6 py-4 font-semibold">Item</th>
+              <th class="px-6 py-4 font-semibold">Batch</th>
               <th class="px-6 py-4 font-semibold text-right">Qty Change</th>
               <th class="px-6 py-4 font-semibold text-right">Balance After</th>
               <th class="px-6 py-4 font-semibold text-right">Cost Rate</th>
@@ -74,6 +75,10 @@
                 <div class="text-[10px] text-gray-400 truncate max-w-[150px]">{{ m.supply || 'INTERNAL' }}</div>
               </td>
               <td class="px-6 py-4 font-medium text-gray-800">{{ m.item }}</td>
+              <td class="px-6 py-4">
+                <span v-if="m.batch" class="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px] font-bold">{{ m.batch }}</span>
+                <span v-else class="text-gray-300">—</span>
+              </td>
               <td class="px-6 py-4 text-right font-bold" :class="m.qty > 0 ? 'text-green-600' : 'text-red-600'">
                 {{ m.qty > 0 ? '+' : '' }}{{ m.qty.toLocaleString() }}
               </td>

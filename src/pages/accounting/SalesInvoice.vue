@@ -244,7 +244,7 @@ function addServiceLine() {
     item: '',
     hsn: '',
     qty: 1,
-    uom: 'srv',
+    uom: 'SRV',
     rate: 0,
     grate: 18,
     disc: 0,

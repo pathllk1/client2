@@ -24,7 +24,7 @@
       <div class="p-8 border-b border-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div class="relative group w-full sm:w-96">
           <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-          <input type="text" v-model="searchQuery" placeholder="Search by name, HSN, or category..." class="pl-12 pr-6 py-4 bg-slate-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-blue-500 outline-none transition-all font-bold text-sm w-full" />
+          <input type="text" v-model="searchQuery" placeholder="Search by name, HSN, or Part No..." class="pl-12 pr-6 py-4 bg-slate-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-blue-500 outline-none transition-all font-bold text-sm w-full" />
         </div>
         <div class="flex items-center gap-2">
            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total: {{ filteredStocks.length }} SKUs</span>
@@ -36,37 +36,81 @@
           <thead>
             <tr class="bg-slate-50/50 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
               <th class="px-8 py-5">Item Details</th>
+              <th class="px-6 py-5">Part No / OEM</th>
               <th class="px-6 py-5 text-right">Quantity</th>
               <th class="px-6 py-5 text-right">Avg Rate</th>
-              <th class="px-6 py-5 text-right">GST %</th>
               <th class="px-6 py-5 text-right">Total Value</th>
               <th class="px-8 py-5 text-center">Status</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-50">
-            <tr v-for="stock in filteredStocks" :key="stock.id" class="hover:bg-slate-50 transition-all cursor-pointer group" @click="viewHistory(stock)">
-              <td class="px-8 py-5">
-                <div class="font-black text-slate-900 group-hover:text-blue-600 transition-colors">{{ stock.item }}</div>
-                <div class="text-[10px] text-slate-400 font-bold tracking-widest mt-0.5">HSN: {{ stock.hsn }}</div>
-              </td>
-              <td class="px-6 py-5 text-right">
-                <div class="font-black text-slate-900">{{ stock.qty.toLocaleString() }} <span class="text-[10px] text-slate-400 ml-1">{{ stock.uom }}</span></div>
-              </td>
-              <td class="px-6 py-5 text-right">
-                <div class="font-bold text-slate-600">₹{{ stock.rate.toLocaleString() }}</div>
-              </td>
-              <td class="px-6 py-5 text-right">
-                <div class="font-bold text-slate-600">{{ stock.grate }}%</div>
-              </td>
-              <td class="px-6 py-5 text-right">
-                <div class="font-black text-slate-900">₹{{ stock.total.toLocaleString() }}</div>
-              </td>
-              <td class="px-8 py-5 text-center">
-                <span :class="getStockHealthClass(stock.qty)" class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">
-                  {{ getStockHealthLabel(stock.qty) }}
-                </span>
-              </td>
-            </tr>
+            <template v-for="stock in filteredStocks" :key="stock.id">
+              <tr class="hover:bg-slate-50 transition-all cursor-pointer group" @click="toggleExpand(stock.id)">
+                <td class="px-8 py-5">
+                  <div class="flex items-center gap-3">
+                    <div class="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+                      <svg :class="{'rotate-180': expandedRows.has(stock.id)}" class="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                    </div>
+                    <div>
+                      <div class="font-black text-slate-900 group-hover:text-blue-600 transition-colors">{{ stock.item }}</div>
+                      <div class="text-[10px] text-slate-400 font-bold tracking-widest mt-0.5">HSN: {{ stock.hsn }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-5">
+                  <div class="font-bold text-slate-700">{{ stock.pno || '—' }}</div>
+                  <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{{ stock.oem || '—' }}</div>
+                </td>
+                <td class="px-6 py-5 text-right">
+                  <div class="font-black text-slate-900">{{ stock.qty.toLocaleString() }} <span class="text-[10px] text-slate-400 ml-1">{{ stock.uom }}</span></div>
+                  <div v-if="stock.batches?.length > 1" class="text-[9px] text-blue-500 font-black uppercase tracking-widest">{{ stock.batches.length }} Batches</div>
+                </td>
+                <td class="px-6 py-5 text-right">
+                  <div class="font-bold text-slate-600">₹{{ stock.rate.toLocaleString() }}</div>
+                </td>
+                <td class="px-6 py-5 text-right">
+                  <div class="font-black text-slate-900">₹{{ stock.total.toLocaleString() }}</div>
+                </td>
+                <td class="px-8 py-5 text-center">
+                  <span :class="getStockHealthClass(stock.qty)" class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">
+                    {{ getStockHealthLabel(stock.qty) }}
+                  </span>
+                </td>
+              </tr>
+              <!-- Expanded Batch Details -->
+              <tr v-if="expandedRows.has(stock.id)" class="bg-slate-50/50">
+                <td colspan="6" class="px-12 py-6">
+                  <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                      <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Batch Inventory Breakdown</h4>
+                      <button @click="viewHistory(stock)" class="text-[9px] font-black text-blue-600 uppercase tracking-widest hover:underline">Full History →</button>
+                    </div>
+                    <table class="w-full text-left text-xs">
+                      <thead>
+                        <tr class="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                          <th class="px-6 py-3">Batch Number</th>
+                          <th class="px-6 py-3 text-right">Quantity</th>
+                          <th class="px-6 py-3 text-right">Rate</th>
+                          <th class="px-6 py-3 text-right">GST %</th>
+                          <th class="px-6 py-3 text-right">MRP</th>
+                          <th class="px-6 py-3">Expiry</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-slate-50">
+                        <tr v-for="batch in stock.batches" :key="batch._id" class="text-slate-600">
+                          <td class="px-6 py-3 font-bold">{{ batch.batch || 'DEFAULT' }}</td>
+                          <td class="px-6 py-3 text-right font-black text-slate-900">{{ batch.qty }} {{ batch.uom }}</td>
+                          <td class="px-6 py-3 text-right">₹{{ batch.rate.toLocaleString() }}</td>
+                          <td class="px-6 py-3 text-right">{{ batch.grate }}%</td>
+                          <td class="px-6 py-3 text-right font-bold text-slate-700">{{ batch.mrp ? '₹' + batch.mrp.toLocaleString() : '—' }}</td>
+                          <td class="px-6 py-3">{{ batch.expiry ? new Date(batch.expiry).toLocaleDateString('en-IN') : '—' }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </td>
+              </tr>
+            </template>
           </tbody>
         </table>
         
@@ -85,7 +129,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, reactive } from 'vue';
 import { useInventory } from '@/composables/useInventory';
 import CreateStockModal from '@/components/inventory/CreateStockModal.vue';
 import StockHistoryModal from '@/components/inventory/StockHistoryModal.vue';
@@ -95,6 +139,7 @@ const searchQuery = ref('');
 const showCreateModal = ref(false);
 const showHistoryModal = ref(false);
 const selectedStock = ref<any>(null);
+const expandedRows = ref(new Set<string>());
 
 onMounted(fetchStocks);
 
@@ -103,9 +148,19 @@ const filteredStocks = computed(() => {
   const q = searchQuery.value.toLowerCase();
   return stocks.value.filter(s => 
     s.item.toLowerCase().includes(q) || 
-    s.hsn.toLowerCase().includes(q)
+    s.hsn.toLowerCase().includes(q) ||
+    (s.pno && s.pno.toLowerCase().includes(q)) ||
+    (s.oem && s.oem.toLowerCase().includes(q))
   );
 });
+
+function toggleExpand(id: string) {
+  if (expandedRows.value.has(id)) {
+    expandedRows.value.delete(id);
+  } else {
+    expandedRows.value.add(id);
+  }
+}
 
 function getStockHealthClass(qty: number) {
   if (qty <= 0) return 'bg-rose-100 text-rose-600';

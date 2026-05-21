@@ -212,7 +212,7 @@ function onStockSelect(stock: any) {
       hsn: stock.hsn,
       batch: stock.batches?.[0]?.batch || '',
       qty: 1,
-      uom: stock.uom || 'pcs',
+      uom: stock.uom || 'PCS',
       rate: stock.rate || 0,
       grate: stock.grate || 18,
       disc: 0,

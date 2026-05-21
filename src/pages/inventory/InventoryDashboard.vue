@@ -66,6 +66,7 @@
               <thead>
                 <tr class="bg-slate-50/50 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
                   <th class="px-8 py-5">Item Details</th>
+                  <th class="px-6 py-5">Part No</th>
                   <th class="px-6 py-5 text-right">Quantity</th>
                   <th class="px-6 py-5 text-right">Avg Rate</th>
                   <th class="px-6 py-5 text-right">Total Value</th>
@@ -78,8 +79,13 @@
                     <div class="font-black text-slate-900 group-hover:text-blue-600 transition-colors">{{ stock.item }}</div>
                     <div class="text-[10px] text-slate-400 font-bold tracking-widest mt-0.5">HSN: {{ stock.hsn }}</div>
                   </td>
+                  <td class="px-6 py-5">
+                    <div class="font-bold text-slate-700">{{ stock.pno || '—' }}</div>
+                    <div v-if="stock.oem" class="text-[9px] text-slate-400 font-bold uppercase">{{ stock.oem }}</div>
+                  </td>
                   <td class="px-6 py-5 text-right">
                     <div class="font-black text-slate-900">{{ stock.qty.toLocaleString() }} <span class="text-[10px] text-slate-400 ml-1">{{ stock.uom }}</span></div>
+                    <div v-if="stock.batches?.length > 1" class="text-[9px] text-blue-500 font-black uppercase tracking-widest">{{ stock.batches.length }} Batches</div>
                   </td>
                   <td class="px-6 py-5 text-right">
                     <div class="font-bold text-slate-600">₹{{ stock.rate.toLocaleString() }}</div>

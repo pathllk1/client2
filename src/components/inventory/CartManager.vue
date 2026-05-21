@@ -60,13 +60,19 @@
                 />
               </td>
               <td>
-                <input
+                <select
                   v-if="isEditableDescription(item)"
                   v-model="item.uom"
-                  class="line-input unit-input"
-                  type="text"
-                  placeholder="PCS"
-                />
+                  class="line-input unit-input bg-transparent"
+                >
+                  <option value="PCS">PCS</option>
+                  <option value="NOS">NOS</option>
+                  <option value="SET">SET</option>
+                  <option value="BOX">BOX</option>
+                  <option value="MTR">MTR</option>
+                  <option value="KGS">KGS</option>
+                  <option value="SRV">SRV</option>
+                </select>
                 <span v-else class="unit-text">{{ item.uom }}</span>
               </td>
               <td class="num">

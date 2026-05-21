@@ -5,6 +5,8 @@ export interface Stock {
   id: string;
   item: string;
   hsn: string;
+  pno?: string;
+  oem?: string;
   qty: number;
   uom: string;
   rate: number;
@@ -21,6 +23,7 @@ export interface StockMovement {
   bdate?: string;
   supply?: string;
   item: string;
+  batch?: string;
   qty: number;
   uom?: string;
   rate?: number;
