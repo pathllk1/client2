@@ -9,8 +9,8 @@ const api = useApi()
 const toast = useToast()
 
 const stats = ref([
-  { label: 'Total Contacts', value: '0', icon: 'i-heroicons-users', color: 'primary' },
-  { label: 'Active Firms', value: '0', icon: 'i-heroicons-building-office', color: 'success' },
+  { label: 'Inventory Value', value: '₹0', icon: 'i-heroicons-cube', color: 'primary' },
+  { label: 'Active Bills', value: '0', icon: 'i-heroicons-document-text', color: 'success' },
   { label: 'Security Logs', value: '0', icon: 'i-heroicons-shield-check', color: 'warning' },
 ])
 
@@ -22,13 +22,15 @@ const fetchData = async () => {
   
   loading.value = true
   try {
-    const [contactsRes, logsRes] = await Promise.all([
-      api.get('/contacts?limit=1'),
+    const [stockRes, billsRes, logsRes] = await Promise.all([
+      api.get('/inventory/stock'),
+      api.get('/accounting/bills?limit=1'),
       api.get('/auth/security-logs?limit=5')
     ])
 
-    stats.value[0]!.value = contactsRes.pagination?.total.toString() || '0'
-    stats.value[1]!.value = user.value?.firms.length.toString() || '0'
+    const totalStockValue = stockRes.data?.reduce((sum: number, s: any) => sum + (s.total || 0), 0) || 0;
+    stats.value[0]!.value = `₹${totalStockValue.toLocaleString()}`
+    stats.value[1]!.value = billsRes.data?.length.toString() || '0'
     stats.value[2]!.value = logsRes.logs?.length.toString() || '0'
 
     activity.value = logsRes.logs || []

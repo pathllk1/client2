@@ -27,6 +27,8 @@ const navLinks = computed(() => [
   { label: 'About', to: '/about' },
   ...(isAuthenticated.value ? [
     { label: 'Dashboard', to: '/dashboard' },
+    { label: 'Inventory', to: '/inventory' },
+    { label: 'Accounting', to: '/accounting/bills' },
     { label: 'Master Roll', to: '/master-roll' },
     { label: 'Wages', to: '/wages' }
   ] : []),

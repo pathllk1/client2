@@ -1,0 +1,105 @@
+import { ref } from 'vue';
+import { api } from '../utils/api';
+
+export interface Stock {
+  id: string;
+  item: string;
+  hsn: string;
+  qty: number;
+  uom: string;
+  rate: number;
+  grate: number;
+  total: number;
+  mrp?: number;
+  batches: any[];
+}
+
+export interface StockMovement {
+  id?: string;
+  type: string;
+  bno?: string;
+  bdate?: string;
+  supply?: string;
+  item: string;
+  qty: number;
+  uom?: string;
+  rate?: number;
+  total?: number;
+  qtyh: number;
+  createdAt: string;
+}
+
+export const useInventory = () => {
+  const loading = ref(false);
+  const error = ref<string | null>(null);
+  const stocks = ref<Stock[]>([]);
+  const movements = ref<StockMovement[]>([]);
+  const serviceSuggestions = ref<any[]>([]);
+
+  const fetchStocks = async () => {
+    loading.value = true;
+    error.value = null;
+    try {
+      const response = await api.get('/inventory/stock');
+      if (response.data.success) {
+        stocks.value = response.data.data;
+      }
+    } catch (err: any) {
+      error.value = err.response?.data?.message || 'Failed to fetch stocks';
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const fetchMovements = async (params: { type?: string; stockId?: string; page?: number; limit?: number }) => {
+    loading.value = true;
+    error.value = null;
+    try {
+      const response = await api.get('/inventory/movements', { params });
+      if (response.data.success) {
+        movements.value = response.data.data;
+      }
+    } catch (err: any) {
+      error.value = err.response?.data?.message || 'Failed to fetch movements';
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const fetchServiceSuggestions = async () => {
+    try {
+      const response = await api.get('/inventory/stock/service-suggestions');
+      if (response.data.success) {
+        serviceSuggestions.value = response.data.data;
+      }
+    } catch (err: any) {
+      console.warn('Failed to fetch service suggestions:', err);
+    }
+  };
+
+  const createMovement = async (data: any) => {
+    loading.value = true;
+    error.value = null;
+    try {
+      const response = await api.post('/inventory/movements', data);
+      return response.data;
+    } catch (err: any) {
+      error.value = err.response?.data?.message || 'Failed to record movement';
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  return {
+    loading,
+    error,
+    stocks,
+    movements,
+    serviceSuggestions,
+    fetchStocks,
+    fetchMovements,
+    fetchServiceSuggestions,
+    createMovement,
+  };
+};

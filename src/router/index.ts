@@ -40,6 +40,60 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/inventory',
+      name: 'inventory-dashboard',
+      component: () => import('../pages/inventory/InventoryDashboard.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/inventory/reports',
+      name: 'inventory-reports',
+      component: () => import('../pages/inventory/InventoryReports.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/inventory/movements',
+      name: 'inventory-movements',
+      component: () => import('../pages/inventory/InventoryMovement.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/accounting/bills',
+      name: 'bills-list',
+      component: () => import('../pages/accounting/BillsList.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/accounting/sales/new',
+      name: 'sales-invoice',
+      component: () => import('../pages/accounting/SalesInvoice.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/accounting/purchases/new',
+      name: 'purchase-invoice',
+      component: () => import('../pages/accounting/PurchaseInvoice.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/accounting/parties',
+      name: 'parties-hub',
+      component: () => import('../pages/accounting/PartiesHub.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/accounting/ledger',
+      name: 'ledger-dashboard',
+      component: () => import('../pages/accounting/LedgerDashboard.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/accounting/ledger-view',
+      name: 'ledger-view',
+      component: () => import('../pages/accounting/LedgerView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/auth/login',
       name: 'login',
       component: () => import('../pages/auth/Login.vue'),
