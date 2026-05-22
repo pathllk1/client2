@@ -33,7 +33,7 @@ const navLinks = computed(() => [
     { label: 'Wages', to: '/wages' }
   ] : []),
   ...(isAuthenticated.value && user.value?.role === 'superadmin' ? [
-    { label: 'SuperAdmin', to: '/superadmin' }
+    { label: 'Admin Panel', to: '/superadmin' }
   ] : [])
 ])
 
