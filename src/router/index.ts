@@ -100,6 +100,12 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/accounting/banking',
+      name: 'banking-hub',
+      component: () => import('../pages/accounting/BankingHub.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/auth/login',
       name: 'login',
       component: () => import('../pages/auth/Login.vue'),

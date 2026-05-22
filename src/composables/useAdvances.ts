@@ -51,7 +51,7 @@ export const useAdvances = () => {
   }
 
   const fetchBankAccounts = async () => {
-    return await api.get('/bank-accounts')
+    return await api.get('/banking')
   }
 
   const fetchEligibleEmployees = async () => {

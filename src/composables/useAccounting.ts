@@ -119,6 +119,19 @@ export const useAccounting = () => {
     }
   };
 
+  const chartOfAccounts = ref<any[]>([]);
+
+  const fetchCOA = async () => {
+    try {
+      const response = await api.get('/accounting/coa');
+      if (response.success) {
+        chartOfAccounts.value = response.data;
+      }
+    } catch (err) {
+      console.error('Failed to fetch COA', err);
+    }
+  };
+
   const createVoucher = async (data: { vtype: string; vdate?: string; narration: string; entries: VoucherEntry[] }) => {
     loading.value = true;
     error.value = null;
@@ -162,6 +175,8 @@ export const useAccounting = () => {
     fetchVouchersSummary,
     fetchJournalSummary,
     fetchAccountTypeSummaries,
+    chartOfAccounts,
+    fetchCOA,
     createVoucher,
     createOpeningBalance,
   };

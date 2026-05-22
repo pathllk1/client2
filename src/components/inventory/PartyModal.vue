@@ -153,7 +153,8 @@ function addLocation() {
 function removeLocation(index: number) {
   form.gstLocations.splice(index, 1);
   if (!form.gstLocations.some(l => l.isPrimary) && form.gstLocations.length > 0) {
-    form.gstLocations[0].isPrimary = true;
+    const firstLoc = form.gstLocations[0];
+    if (firstLoc) firstLoc.isPrimary = true;
   }
 }
 
@@ -163,7 +164,7 @@ function setPrimary(index: number) {
 
 async function fetchGstForLocation(index: number) {
   const loc = form.gstLocations[index];
-  if (!loc.gstin || loc.gstin.length !== 15) return;
+  if (!loc || !loc.gstin || loc.gstin.length !== 15) return;
   
   fetchingGstIndices.value.add(index);
   loc.fetchStatus = 'none';

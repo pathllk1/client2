@@ -8,10 +8,13 @@
           </svg>
           Back to Dashboard
         </button>
-        <h1 class="text-3xl font-bold text-gray-900">Account: {{ accountHead || 'Loading...' }}</h1>
-        <div class="mt-2 flex items-center space-x-4">
-           <div class="bg-gray-100 px-3 py-1 rounded text-xs font-bold text-gray-500 uppercase tracking-widest">
-              {{ currentBalance.balanceType }} BALANCE: ₹{{ currentBalance.balance.toLocaleString() }}
+        <h1 class="text-3xl font-bold text-gray-900">Account Ledger</h1>
+        <div class="mt-4 flex items-center gap-4">
+           <select v-model="accountHead" @change="updateHead" class="px-4 py-2 border-2 border-blue-500 rounded-xl font-bold text-sm bg-white outline-none focus:ring-4 focus:ring-blue-100">
+              <option v-for="head in chartOfAccounts" :key="head._id" :value="head.account_name">{{ head.account_name }}</option>
+           </select>
+           <div class="bg-gray-100 px-3 py-2 rounded-xl text-xs font-bold text-gray-500 uppercase tracking-widest border border-gray-200">
+              {{ currentBalance.balanceType }} BALANCE: <span :class="currentBalance.balanceType === 'DR' ? 'text-emerald-600' : 'text-rose-600'" class="font-black font-mono">₹{{ currentBalance.balance.toLocaleString() }}</span>
            </div>
         </div>
       </div>
@@ -77,7 +80,7 @@ import { useRoute } from 'vue-router';
 import { useAccounting } from '../../composables/useAccounting';
 
 const route = useRoute();
-const { ledgerEntries, accountBalance, fetchLedger, fetchAccountBalance } = useAccounting();
+const { ledgerEntries, accountBalance, fetchLedger, fetchAccountBalance, fetchCOA, chartOfAccounts } = useAccounting();
 
 const accountHead = ref<string>('');
 const filters = reactive({
@@ -86,11 +89,16 @@ const filters = reactive({
 });
 
 onMounted(() => {
+  fetchCOA();
   if (route.query.head) {
     accountHead.value = route.query.head as string;
     loadLedger();
   }
 });
+
+async function updateHead() {
+   loadLedger();
+}
 
 watch(() => route.query.head, (newHead) => {
   if (newHead) {

@@ -80,7 +80,7 @@ export const useWages = () => {
   }
 
   const fetchBankAccounts = async () => {
-    return await api.get('/bank-accounts')
+    return await api.get('/banking')
   }
 
   return {
