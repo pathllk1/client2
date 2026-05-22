@@ -1,129 +1,152 @@
 <template>
-  <div v-if="modelValue" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
-    <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col border border-slate-200 animate-scale-in">
+  <div v-if="modelValue" class="fixed inset-0 z-50 flex items-center justify-center p-2 bg-black/50">
+    <div class="bg-white rounded-lg shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[92vh]">
       <!-- Header -->
-      <header class="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+      <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-3 flex justify-between items-center">
         <div>
-           <h2 class="text-2xl font-black text-slate-900 tracking-tight uppercase italic">Create Financial Voucher</h2>
-           <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Double-entry accounting record</p>
+          <h2 class="text-lg font-bold">{{ form.vtype === 'PAYMENT' ? 'Payment Voucher' : form.vtype === 'RECEIPT' ? 'Receipt Voucher' : 'Journal Entry' }}</h2>
+          <p class="text-xs text-blue-100 mt-0.5">Create financial transaction</p>
         </div>
-        <button @click="$emit('update:modelValue', false)" class="w-12 h-12 flex items-center justify-center rounded-2xl bg-white text-slate-400 hover:text-slate-900 shadow-sm border border-slate-200 transition-all">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+        <button @click="$emit('update:modelValue', false)" class="text-white hover:bg-white/20 rounded p-1 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
-      </header>
+      </div>
 
-      <!-- Body -->
-      <div class="p-8 overflow-y-auto flex-1 space-y-8">
-        <!-- Top Metadata -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div class="space-y-2">
-            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Voucher Type</label>
-            <select v-model="form.vtype" class="w-full px-5 py-3 bg-slate-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-violet-500 outline-none transition-all font-black text-xs uppercase tracking-wider appearance-none">
-              <option value="PAYMENT">Payment (Out)</option>
-              <option value="RECEIPT">Receipt (In)</option>
-              <option value="JOURNAL">Journal (Adjustment)</option>
-              <option value="CONTRA">Contra (Internal)</option>
+      <!-- Main Content -->
+      <div class="overflow-y-auto flex-1 p-4">
+        <!-- Top Controls Row -->
+        <div class="grid grid-cols-3 gap-3 mb-4">
+          <!-- Date -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Transaction Date</label>
+            <input v-model="form.vdate" type="date" class="w-full px-2 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+          <!-- Voucher Type -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Type</label>
+            <select v-model="form.vtype" class="w-full px-2 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="PAYMENT">Payment Out</option>
+              <option value="RECEIPT">Receipt In</option>
+              <option value="JOURNAL">Journal Entry</option>
             </select>
           </div>
-          <div class="space-y-2">
-            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Transaction Date</label>
-            <input type="date" v-model="form.vdate" class="w-full px-5 py-3 bg-slate-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-violet-500 outline-none transition-all font-bold" />
+          <!-- Placeholder for alignment -->
+          <div></div>
+        </div>
+
+        <!-- Primary Account Selection - More Prominent -->
+        <div class="mb-4 p-3 bg-blue-50 border-2 border-blue-400 rounded-lg">
+          <label class="block text-xs font-bold text-blue-900 mb-2">
+            {{ form.vtype === 'PAYMENT' ? '💳 PAID FROM' : form.vtype === 'RECEIPT' ? '💰 RECEIPT TO' : '📝 ACCOUNT' }}
+          </label>
+          <select v-model="form.mainAccount" class="w-full px-2 py-2 text-sm font-semibold border-2 border-blue-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white">
+            <option value="">-- Select Account --</option>
+            <optgroup label="💳 Bank Accounts" v-if="bankAccounts.length">
+              <option v-for="account in bankAccounts" :key="account._id" :value="account._id">
+                {{ account.account_name }} ({{ account.bank_name }})
+              </option>
+            </optgroup>
+            <optgroup label="💰 Cash Accounts" v-if="cashAccounts.length">
+              <option v-for="acc in cashAccounts" :key="acc._id" :value="acc.account_name">
+                {{ acc.account_name }}
+              </option>
+            </optgroup>
+            <optgroup label="📊 Other Liquid Accounts" v-if="otherLiquidAccounts.length">
+              <option v-for="acc in otherLiquidAccounts" :key="acc._id" :value="acc.account_name">
+                {{ acc.account_name }}
+              </option>
+            </optgroup>
+          </select>
+        </div>
+
+        <!-- Transaction Lines -->
+        <div class="mb-4">
+          <div class="flex justify-between items-center mb-2">
+            <h3 class="text-xs font-bold text-slate-700">TRANSACTION DETAILS</h3>
+            <button @click="addLine" class="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors font-medium">
+              + Add
+            </button>
           </div>
+
           <div class="space-y-2">
-             <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">General Narration</label>
-             <input type="text" v-model="form.narration" class="w-full px-5 py-3 bg-slate-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-violet-500 outline-none transition-all font-bold placeholder:font-medium" placeholder="Record purpose..." />
+            <!-- Column Headers -->
+            <div class="grid grid-cols-12 gap-2 text-[10px] font-bold text-slate-600 mb-1 px-1">
+              <div class="col-span-5">Account / Payee</div>
+              <div class="col-span-4 text-right">Amount</div>
+              <div class="col-span-3 text-center">Type</div>
+            </div>
+
+            <!-- Transaction Lines -->
+            <div v-for="(entry, index) in form.entries" :key="index" class="grid grid-cols-12 gap-2 items-center p-2 bg-slate-50 rounded border border-slate-200 hover:border-blue-300 transition-colors">
+              <!-- Account Selection -->
+              <select v-model="entry.accountHead" class="col-span-5 px-2 py-1.5 text-xs border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">-- Select --</option>
+                <option v-for="account in chartOfAccounts" :key="account._id" :value="account.account_name">
+                  {{ account.account_name }}
+                </option>
+              </select>
+
+              <!-- Amount Input -->
+              <input v-model.number="entry.amount" type="number" placeholder="0.00" step="0.01" class="col-span-4 px-2 py-1.5 text-xs border border-slate-300 rounded text-right focus:outline-none focus:ring-2 focus:ring-blue-500" />
+
+              <!-- Type Selection -->
+              <select v-model="entry.type" class="col-span-2 px-2 py-1.5 text-xs border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="MAIN">Main</option>
+                <option value="DEDUCTION">Ded</option>
+                <option value="TAX">Tax</option>
+                <option value="OTHER">Other</option>
+              </select>
+
+              <!-- Delete Button -->
+              <button v-if="form.entries.length > 1" @click="removeLine(index)" class="col-span-1 text-red-500 hover:text-red-700 font-bold transition-colors text-sm" title="Remove">
+                ×
+              </button>
+              <div v-else class="col-span-1"></div>
+            </div>
           </div>
         </div>
 
-        <!-- Ledger Lines -->
-        <div class="space-y-4">
-          <div class="flex justify-between items-center px-1">
-            <h3 class="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
-               <span class="w-2 h-2 rounded-full bg-violet-500"></span>
-               Accounting Entries
-            </h3>
-            <button @click="addLine" class="px-4 py-1.5 bg-violet-50 text-violet-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-violet-100 transition-colors border border-violet-100">+ Add Entry</button>
-          </div>
-          
-          <div class="space-y-3">
-             <div v-for="(entry, index) in form.entries" :key="index" class="flex items-start gap-3 group animate-fadeIn">
-                <div class="flex-1 relative">
-                  <input type="text" v-model="entry.accountHead" 
-                         list="coa-suggestions"
-                         @change="handleHeadChange(entry)"
-                         placeholder="Account Head (e.g. Cash, HDFC Bank)" 
-                         class="w-full px-5 py-3 bg-slate-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-violet-500 outline-none transition-all font-bold" />
-                  <p v-if="entry.accountType" class="absolute -bottom-5 left-1 text-[8px] font-black text-slate-400 uppercase tracking-tighter">{{ entry.accountType }}</p>
-                </div>
-                <div class="w-32">
-                   <select v-model="entry.accountType" class="w-full px-4 py-3 bg-slate-100 border-2 border-transparent rounded-2xl focus:bg-white focus:border-violet-500 outline-none transition-all font-black text-[10px] uppercase tracking-tighter appearance-none">
-                      <option value="ASSET">Asset</option>
-                      <option value="LIABILITY">Liability</option>
-                      <option value="INCOME">Income</option>
-                      <option value="EXPENSE">Expense</option>
-                      <option value="BANK">Bank</option>
-                   </select>
-                </div>
-                <div class="w-32">
-                   <input type="number" v-model="entry.debitAmount" placeholder="Debit" 
-                          class="w-full px-4 py-3 bg-rose-50/50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-rose-500 outline-none transition-all text-right font-black font-mono text-xs text-rose-600" />
-                </div>
-                <div class="w-32">
-                   <input type="number" v-model="entry.creditAmount" placeholder="Credit" 
-                          class="w-full px-4 py-3 bg-emerald-50/50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-emerald-500 outline-none transition-all text-right font-black font-mono text-xs text-emerald-600" />
-                </div>
-                <button @click="removeLine(index)" class="mt-3 text-slate-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
-             </div>
-          </div>
+        <!-- Narration -->
+        <div class="mb-4">
+          <label class="block text-xs font-bold text-slate-700 mb-1">Notes</label>
+          <textarea v-model="form.narration" placeholder="Enter details..." class="w-full px-2 py-1.5 text-xs border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" rows="1"></textarea>
         </div>
 
-        <datalist id="coa-suggestions">
-           <option v-for="head in chartOfAccounts" :key="head._id" :value="head.account_name">{{ head.account_type }}</option>
-        </datalist>
-
-        <!-- Totals Footer -->
-        <div class="bg-slate-900 rounded-[2rem] p-8 text-white flex flex-col md:flex-row justify-between items-center shadow-2xl relative overflow-hidden">
-           <div class="absolute inset-0 bg-gradient-to-br from-violet-600/20 to-transparent pointer-events-none"></div>
-           <div class="flex space-x-12 relative z-10">
-              <div class="space-y-1">
-                <p class="text-slate-400 text-[9px] uppercase font-black tracking-widest">Total Debit</p>
-                <p class="text-2xl font-black font-mono text-rose-400">₹{{ totalDebit.toLocaleString(undefined, { minimumFractionDigits: 2 }) }}</p>
-              </div>
-              <div class="w-px h-12 bg-slate-700 hidden md:block"></div>
-              <div class="space-y-1">
-                <p class="text-slate-400 text-[9px] uppercase font-black tracking-widest">Total Credit</p>
-                <p class="text-2xl font-black font-mono text-emerald-400">₹{{ totalCredit.toLocaleString(undefined, { minimumFractionDigits: 2 }) }}</p>
-              </div>
-           </div>
-           <div class="text-right mt-6 md:mt-0 relative z-10">
-              <p class="text-slate-400 text-[9px] uppercase font-black tracking-widest mb-1">Double-Entry Status</p>
-              <div v-if="Math.abs(totalDebit - totalCredit) < 0.01 && totalDebit > 0" class="flex items-center gap-2 text-emerald-400 font-black tracking-tight italic">
-                 <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
-                 PERFECTLY BALANCED
-              </div>
-              <div v-else-if="totalDebit > 0 || totalCredit > 0" class="text-rose-400 font-black flex items-center gap-2 italic">
-                 <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
-                 OUT OF SYNC: ₹{{ Math.abs(totalDebit - totalCredit).toLocaleString() }}
-              </div>
-              <p v-else class="text-slate-500 font-black uppercase text-xs">Waiting for entries...</p>
-           </div>
+        <!-- Summary Section -->
+        <div class="bg-gradient-to-r from-blue-50 to-blue-100 p-3 rounded-lg border border-blue-200">
+          <div class="grid grid-cols-4 gap-3">
+            <div>
+              <p class="text-[10px] text-slate-600 font-semibold">Main</p>
+              <p class="text-lg font-bold text-blue-600">₹ {{ mainAmount.toLocaleString(undefined, { maximumFractionDigits: 0 }) }}</p>
+            </div>
+            <div>
+              <p class="text-[10px] text-slate-600 font-semibold">Deductions</p>
+              <p class="text-lg font-bold text-orange-600">₹ {{ deductionsTotal.toLocaleString(undefined, { maximumFractionDigits: 0 }) }}</p>
+            </div>
+            <div>
+              <p class="text-[10px] text-slate-600 font-semibold">Tax</p>
+              <p class="text-lg font-bold text-orange-600">₹ {{ taxTotal.toLocaleString(undefined, { maximumFractionDigits: 0 }) }}</p>
+            </div>
+            <div class="border-l-2 border-blue-300 pl-3">
+              <p class="text-[10px] text-slate-700 font-bold">NET AMOUNT</p>
+              <p class="text-2xl font-black text-green-600">₹ {{ netAmount.toLocaleString(undefined, { maximumFractionDigits: 0 }) }}</p>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Actions -->
-      <footer class="p-8 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-4 shrink-0">
-        <button @click="$emit('update:modelValue', false)" class="px-8 py-3.5 text-slate-400 font-black uppercase text-xs tracking-widest hover:text-slate-900 transition-colors">Discard Draft</button>
-        <button @click="submitVoucher" :disabled="!isBalanced || loading" class="px-12 py-3.5 bg-violet-600 text-white font-black uppercase text-xs tracking-widest rounded-2xl shadow-xl shadow-violet-200 hover:bg-violet-700 disabled:opacity-30 disabled:shadow-none transition-all transform active:scale-95 flex items-center gap-3">
-          <span v-if="loading" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-          Commit Voucher
+      <!-- Footer -->
+      <div class="bg-slate-100 border-t border-slate-200 p-3 flex justify-end gap-2">
+        <button @click="$emit('update:modelValue', false)" class="px-4 py-2 text-sm text-slate-700 hover:bg-slate-200 rounded transition-colors font-medium">
+          Cancel
         </button>
-      </footer>
+        <button @click="submitVoucher" :disabled="loading || !form.mainAccount || form.entries.length === 0 || mainAmount === 0" class="px-6 py-2 text-sm bg-green-600 hover:bg-green-700 disabled:bg-slate-400 disabled:cursor-not-allowed text-white rounded transition-colors font-bold flex items-center gap-2">
+          <span v-if="loading" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+          {{ loading ? 'Processing...' : 'Save' }}
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -131,6 +154,13 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useAccounting } from '../../composables/useAccounting';
+import { useBanking } from '../../composables/useBanking';
+
+interface LocalVoucherEntry {
+  accountHead: string;
+  amount: number;
+  type: 'MAIN' | 'DEDUCTION' | 'TAX' | 'OTHER';
+}
 
 const props = defineProps<{
   modelValue: boolean;
@@ -139,60 +169,149 @@ const props = defineProps<{
 const emit = defineEmits(['update:modelValue', 'saved']);
 
 const { createVoucher, loading, fetchCOA, chartOfAccounts } = useAccounting();
+const { fetchBankAccounts, bankAccounts } = useBanking();
 
 const form = reactive({
-  vtype: 'JOURNAL',
+  mainAccount: '',
+  vtype: 'PAYMENT',
   vdate: new Date().toISOString().split('T')[0],
   narration: '',
   entries: [
-    { accountHead: '', accountType: 'ASSET', debitAmount: 0, creditAmount: 0 },
-    { accountHead: '', accountType: 'LIABILITY', debitAmount: 0, creditAmount: 0 }
-  ]
+    { accountHead: '', amount: 0, type: 'MAIN' }
+  ] as LocalVoucherEntry[]
 });
 
-onMounted(() => {
-  fetchCOA();
+onMounted(async () => {
+  await Promise.all([
+    fetchCOA(),
+    fetchBankAccounts()
+  ]);
+  
+  // Set default main account to default bank account if available
+  const defaultBank = bankAccounts.value.find(acc => acc.is_default);
+  if (defaultBank) {
+    form.mainAccount = defaultBank._id;
+  }
 });
 
-const totalDebit = computed(() => form.entries.reduce((sum, e) => sum + (parseFloat(e.debitAmount as any) || 0), 0));
-const totalCredit = computed(() => form.entries.reduce((sum, e) => sum + (parseFloat(e.creditAmount as any) || 0), 0));
-const isBalanced = computed(() => Math.abs(totalDebit.value - totalCredit.value) < 0.01 && totalDebit.value > 0);
+// Filter accounts that can be used as main account (Bank, Cash type accounts)
+const mainAccountHeads = computed(() => {
+  const cashLikeTypes = ['BANK', 'CASH', 'ASSET', 'CASH_IN_HAND', 'BANK_ACCOUNT', 'CURRENT_ASSET'];
+  return chartOfAccounts.value.filter(acc => {
+    const type = acc.account_type?.toUpperCase() || '';
+    const name = acc.account_name?.toUpperCase() || '';
+    // Include if type matches OR if name contains cash/bank indicators
+    return cashLikeTypes.some(t => type.includes(t)) || 
+           name.includes('CASH') || 
+           name.includes('BANK') ||
+           name.includes('HAND');
+  });
+});
+
+// Specifically filter for cash accounts from COA
+const cashAccounts = computed(() => {
+  return mainAccountHeads.value.filter(acc => {
+    const type = acc.account_type?.toUpperCase() || '';
+    const name = acc.account_name?.toUpperCase() || '';
+    return type.includes('CASH') || 
+           type.includes('CASH_IN_HAND') ||
+           name.includes('CASH') || 
+           name.includes('HAND') ||
+           name === 'CASH';
+  });
+});
+
+// Bank accounts that are not cash
+const otherLiquidAccounts = computed(() => {
+  return mainAccountHeads.value.filter(acc => !cashAccounts.value.includes(acc));
+});
+
+// Calculate amounts
+const mainAmount = computed(() => {
+  return form.entries
+    .filter(e => e.type === 'MAIN')
+    .reduce((sum, e) => sum + (e.amount || 0), 0);
+});
+
+const deductionsTotal = computed(() => {
+  return form.entries
+    .filter(e => e.type === 'DEDUCTION')
+    .reduce((sum, e) => sum + (e.amount || 0), 0);
+});
+
+const taxTotal = computed(() => {
+  return form.entries
+    .filter(e => e.type === 'TAX')
+    .reduce((sum, e) => sum + (e.amount || 0), 0);
+});
+
+const otherTotal = computed(() => {
+  return form.entries
+    .filter(e => e.type === 'OTHER')
+    .reduce((sum, e) => sum + (e.amount || 0), 0);
+});
+
+const netAmount = computed(() => {
+  return mainAmount.value - deductionsTotal.value + taxTotal.value + otherTotal.value;
+});
 
 function addLine() {
-  form.entries.push({ accountHead: '', accountType: 'EXPENSE', debitAmount: 0, creditAmount: 0 });
+  form.entries.push({ accountHead: '', amount: 0, type: 'MAIN' });
 }
 
 function removeLine(index: number) {
   form.entries.splice(index, 1);
-  if (form.entries.length < 2) addLine();
-}
-
-function handleHeadChange(entry: any) {
-   const head = chartOfAccounts.value.find(h => h.account_name === entry.accountHead);
-   if (head) {
-      entry.accountType = head.account_type;
-   }
 }
 
 async function submitVoucher() {
+  if (!form.mainAccount) {
+    alert('Please select a bank/cash account');
+    return;
+  }
+
+  if (mainAmount.value === 0) {
+    alert('Please enter a main transaction amount');
+    return;
+  }
+
+  if (form.entries.some(e => !e.accountHead)) {
+    alert('All lines must have an account selected');
+    return;
+  }
+
   try {
-    const result = await createVoucher(form);
+    const payload = {
+      vtype: form.vtype,
+      vdate: form.vdate,
+      narration: form.narration,
+      mainAccount: form.mainAccount,
+      entries: form.entries.filter(e => e.amount > 0 && e.accountHead),
+      summary: {
+        mainAmount: mainAmount.value,
+        deductions: deductionsTotal.value,
+        tax: taxTotal.value,
+        other: otherTotal.value,
+        netAmount: netAmount.value
+      }
+    };
+
+    const result = await createVoucher(payload as any);
     if (result.success) {
       emit('saved');
       emit('update:modelValue', false);
       resetForm();
     }
   } catch (err: any) {
-    alert(err.message || 'Failed to post voucher');
+    alert(err.message || 'Failed to create voucher');
   }
 }
 
 function resetForm() {
-  form.vtype = 'JOURNAL';
+  form.mainAccount = bankAccounts.value.find(acc => acc.is_default)?._id || '';
+  form.vtype = 'PAYMENT';
   form.narration = '';
   form.entries = [
-    { accountHead: '', accountType: 'ASSET', debitAmount: 0, creditAmount: 0 },
-    { accountHead: '', accountType: 'LIABILITY', debitAmount: 0, creditAmount: 0 }
+    { accountHead: '', amount: 0, type: 'MAIN' }
   ];
 }
 </script>

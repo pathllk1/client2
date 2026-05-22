@@ -26,8 +26,8 @@
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4.5v15m7.5-7.5h-15"/></svg>
           New Voucher
         </button>
-        <button @click="$router.push('/accounting/bills')" class="px-6 py-3 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition-all">
-          Invoices
+        <button @click="$router.push('/accounting/coa')" class="px-6 py-3 bg-white text-slate-900 border-2 border-slate-200 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-50 transition-all">
+          Account Heads
         </button>
         <button @click="refreshData" class="p-3 bg-slate-100 text-slate-600 rounded-2xl hover:bg-slate-200 transition-all">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
@@ -112,6 +112,15 @@
           
           <div class="mt-8 space-y-4">
              <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Quick Workflows</h3>
+             <button @click="$router.push('/accounting/coa')" class="w-full p-4 flex items-center gap-4 rounded-3xl bg-slate-50 hover:bg-slate-100 transition-all border border-slate-100 group">
+                <div class="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                </div>
+                <div class="text-left">
+                   <h4 class="text-sm font-black text-slate-900 tracking-tight">Chart of Accounts</h4>
+                   <p class="text-[10px] text-slate-400 font-bold uppercase">Manage Account Heads</p>
+                </div>
+             </button>
              <button @click="$router.push('/accounting/parties')" class="w-full p-4 flex items-center gap-4 rounded-3xl bg-slate-50 hover:bg-slate-100 transition-all border border-slate-100 group">
                 <div class="w-10 h-10 rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center group-hover:scale-110 transition-transform">
                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/></svg>

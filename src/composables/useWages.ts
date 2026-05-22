@@ -28,10 +28,10 @@ export const useWages = () => {
     }
   }
 
-  const createWagesBulk = async (wages: any[]) => {
+  const createWagesBulk = async (month: string, wages: any[]) => {
     loading.value = true
     try {
-      return await api.post('/wages/bulk', { wages })
+      return await api.post('/wages/bulk', { month, wages })
     } finally {
       loading.value = false
     }

@@ -214,7 +214,7 @@ const saveWages = async () => {
   })
 
   try {
-    const response = await createWagesBulk(wagesToSave)
+    const response = await createWagesBulk(month.value, wagesToSave)
     if (response.success) {
       toast.add({ title: 'Success', description: `Wages saved for ${wagesToSave.length} employees`, color: 'success' })
       wagePersistence.clear('CREATE')

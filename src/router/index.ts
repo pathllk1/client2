@@ -94,6 +94,12 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/accounting/coa',
+      name: 'chart-of-accounts',
+      component: () => import('../pages/accounting/ChartOfAccounts.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/accounting/ledger-view',
       name: 'ledger-view',
       component: () => import('../pages/accounting/LedgerView.vue'),
