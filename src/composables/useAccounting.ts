@@ -37,14 +37,17 @@ export const useAccounting = () => {
   const ledgerEntries = ref<LedgerEntry[]>([]);
   const accountBalance = ref({ totalDebit: 0, totalCredit: 0, balance: 0, balanceType: 'DR' });
   const trialBalance = ref<any[]>([]);
+  const vouchersSummary = ref<any>({});
+  const journalSummary = ref<any>({});
+  const accountTypeSummaries = ref<any[]>([]);
 
   const fetchLedger = async (params: { accountHead?: string; fromDate?: string; toDate?: string }) => {
     loading.value = true;
     error.value = null;
     try {
       const response = await api.get('/accounting/ledger', { params });
-      if (response.data.success) {
-        ledgerEntries.value = response.data.data;
+      if (response.success) {
+        ledgerEntries.value = response.data;
       }
     } catch (err: any) {
       error.value = err.response?.data?.message || 'Failed to fetch ledger';
@@ -58,8 +61,8 @@ export const useAccounting = () => {
     error.value = null;
     try {
       const response = await api.get('/accounting/ledger/balance', { params: { accountHead, toDate } });
-      if (response.data.success) {
-        accountBalance.value = response.data.data;
+      if (response.success) {
+        accountBalance.value = response.data;
       }
     } catch (err: any) {
       error.value = err.response?.data?.message || 'Failed to fetch balance';
@@ -73,8 +76,8 @@ export const useAccounting = () => {
     error.value = null;
     try {
       const response = await api.get('/accounting/ledger/trial-balance', { params: { toDate } });
-      if (response.data.success) {
-        trialBalance.value = response.data.data;
+      if (response.success) {
+        trialBalance.value = response.data;
       }
     } catch (err: any) {
       error.value = err.response?.data?.message || 'Failed to fetch trial balance';
@@ -83,12 +86,45 @@ export const useAccounting = () => {
     }
   };
 
+  const fetchVouchersSummary = async () => {
+    try {
+      const response = await api.get('/accounting/ledger/vouchers-summary');
+      if (response.success) {
+        vouchersSummary.value = response.data;
+      }
+    } catch (err) {
+      console.error('Failed to fetch vouchers summary', err);
+    }
+  };
+
+  const fetchJournalSummary = async () => {
+    try {
+      const response = await api.get('/accounting/ledger/journal-summary');
+      if (response.success) {
+        journalSummary.value = response.data;
+      }
+    } catch (err) {
+      console.error('Failed to fetch journal summary', err);
+    }
+  };
+
+  const fetchAccountTypeSummaries = async (toDate?: string) => {
+    try {
+      const response = await api.get('/accounting/ledger/account-types', { params: { toDate } });
+      if (response.success) {
+        accountTypeSummaries.value = response.data;
+      }
+    } catch (err) {
+      console.error('Failed to fetch account type summaries', err);
+    }
+  };
+
   const createVoucher = async (data: { vtype: string; vdate?: string; narration: string; entries: VoucherEntry[] }) => {
     loading.value = true;
     error.value = null;
     try {
       const response = await api.post('/accounting/vouchers', data);
-      return response.data;
+      return response;
     } catch (err: any) {
       error.value = err.response?.data?.message || 'Failed to create voucher';
       throw err;
@@ -102,7 +138,7 @@ export const useAccounting = () => {
     error.value = null;
     try {
       const response = await api.post('/accounting/opening-balances', data);
-      return response.data;
+      return response;
     } catch (err: any) {
       error.value = err.response?.data?.message || 'Failed to create opening balance';
       throw err;
@@ -117,9 +153,15 @@ export const useAccounting = () => {
     ledgerEntries,
     accountBalance,
     trialBalance,
+    vouchersSummary,
+    journalSummary,
+    accountTypeSummaries,
     fetchLedger,
     fetchAccountBalance,
     fetchTrialBalance,
+    fetchVouchersSummary,
+    fetchJournalSummary,
+    fetchAccountTypeSummaries,
     createVoucher,
     createOpeningBalance,
   };
