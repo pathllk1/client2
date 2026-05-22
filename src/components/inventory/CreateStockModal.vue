@@ -170,10 +170,9 @@ async function saveStock() {
        // We'll send batches array and expect the server to handle it
        batches: form.batches
     });
-    
-    if (res.data.success) {
-      emit('saved');
-      emit('update:modelValue', false);
+
+    if (res.success) {
+      emit('saved');      emit('update:modelValue', false);
       resetForm();
     }
   } catch (err: any) {

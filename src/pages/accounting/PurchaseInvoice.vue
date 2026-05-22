@@ -144,7 +144,7 @@ import { api } from '@/utils/api';
 
 const router = useRouter();
 const route = useRoute();
-const { state, totals, fetchData, determineGstBillType, populateConsigneeFromBillTo } = useBillingState();
+const { state, totals, fetchData, fetchNextBillNo, determineGstBillType, populateConsigneeFromBillTo } = useBillingState();
 
 const showStockModal = ref(false);
 const showPartyModal = ref(false);
@@ -170,6 +170,8 @@ onMounted(async () => {
     state.isReturnMode = true;
     state.returnFromBillId = route.query.returnFrom as string;
     await loadExistingBill(state.returnFromBillId);
+  } else {
+    await fetchNextBillNo('PURCHASE');
   }
 });
 

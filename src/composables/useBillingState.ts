@@ -166,6 +166,17 @@ export const useBillingState = () => {
     }
   };
 
+  const fetchNextBillNo = async (type: string) => {
+    try {
+      const res = await api.get('/accounting/bills/get-next-number', { params: { type } });
+      if (res.success) {
+        state.meta.billNo = res.data;
+      }
+    } catch (err) {
+      console.warn('Failed to fetch next bill number', err);
+    }
+  };
+
   const populateConsigneeFromBillTo = () => {
     if (!state.selectedParty) return;
     state.selectedConsignee = {
@@ -182,6 +193,7 @@ export const useBillingState = () => {
     loading,
     totals,
     fetchData,
+    fetchNextBillNo,
     determineGstBillType,
     populateConsigneeFromBillTo
   };

@@ -160,8 +160,8 @@ async function saveParty() {
   saving.value = true;
   try {
     const res = await api.post('/accounting/parties', form);
-    if (res.data.success) {
-      emit('saved', res.data.data);
+    if (res.success) {
+      emit('saved', res.data);
       emit('update:modelValue', false);
       Object.assign(form, { name: '', gstin: '', contact: '', state: '', stateCode: '', address: '', pin: '', pan: '', partyType: 'CUSTOMER' });
     }

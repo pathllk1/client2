@@ -146,7 +146,7 @@ import { api } from '@/utils/api';
 
 const router = useRouter();
 const route = useRoute();
-const { state, totals, fetchData, determineGstBillType, populateConsigneeFromBillTo } = useBillingState();
+const { state, totals, fetchData, fetchNextBillNo, determineGstBillType, populateConsigneeFromBillTo } = useBillingState();
 
 const showStockModal = ref(false);
 const showPartyModal = ref(false);
@@ -166,12 +166,15 @@ const handleKeydown = (e: KeyboardEvent) => {
 
 onMounted(async () => {
   window.addEventListener('keydown', handleKeydown);
+  state.meta.btype = 'SALES';
   await fetchData();
 
   if (route.query.returnFrom) {
     state.isReturnMode = true;
     state.returnFromBillId = route.query.returnFrom as string;
     await loadExistingBill(state.returnFromBillId);
+  } else {
+    await fetchNextBillNo('SALES');
   }
 });
 
@@ -384,7 +387,7 @@ textarea {
   outline: none;
 }
 .readonly-input {
-  width: 106px;
+  width: 160px;
   background: #f1f5f9;
   color: #64748b;
   font-weight: 800;
