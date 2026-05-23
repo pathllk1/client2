@@ -87,7 +87,7 @@ const rawRequest = async (endpoint: string, options: any = {}): Promise<any> => 
         return retryRes.json()
       }
       clearAuth()
-      window.location.href = '/auth/login'
+      window.location.href = `${import.meta.env.BASE_URL}auth/login`
       throw new Error('Session expired. Please login again.')
     }
 

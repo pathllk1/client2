@@ -46,15 +46,16 @@ export const useAuth = () => {
     authState.loading = true
     try {
       const response = await api.post('/auth/signup', data)
-      authState.user = response.user
-      setTokens(response.accessToken, response.refreshToken)
+      if (response.accessToken) {
+        authState.user = response.user
+        setTokens(response.accessToken, response.refreshToken)
 
-      // Select first firm by default
-      if (response.user.firms && response.user.firms.length > 0) {
-        const firstFirm = response.user.firms[0]
-        selectFirm(firstFirm.firm.id || firstFirm.firm._id)
+        // Select first firm by default
+        if (response.user.firms && response.user.firms.length > 0) {
+          const firstFirm = response.user.firms[0]
+          selectFirm(firstFirm.firm.id || firstFirm.firm._id)
+        }
       }
-
       return response
     } finally {
       authState.loading = false

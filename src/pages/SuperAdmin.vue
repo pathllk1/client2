@@ -86,9 +86,69 @@ const userColumns = [
   { accessorKey: 'name', header: 'Full Name' },
   { accessorKey: 'email', header: 'Email' },
   { accessorKey: 'role', header: 'System Role' },
+  { accessorKey: 'status', header: 'Status' },
   { accessorKey: 'createdAt', header: 'Joined' },
   { id: 'actions', header: 'Actions' }
 ]
+
+// User Modal Logic
+const isUserModalOpen = ref(false)
+const selectedUser = ref<any>(null)
+const savingUser = ref(false)
+
+const userForm = reactive({
+  name: '',
+  email: '',
+  role: 'standard',
+  status: 'active'
+})
+
+const roleOptions = [
+  { label: 'SuperAdmin', value: 'superadmin' },
+  { label: 'Owner', value: 'Owner' },
+  { label: 'Admin', value: 'Admin' },
+  { label: 'Manager', value: 'Manager' },
+  { label: 'Staff', value: 'Staff' }
+]
+
+const statusOptions = [
+  { label: 'Active', value: 'active' },
+  { label: 'Pending Approval', value: 'pending' },
+  { label: 'Suspended', value: 'suspended' }
+]
+
+const getUserRoleDisplay = (user: any) => {
+  if (user.role === 'superadmin') return 'SuperAdmin'
+  if (user.firms && user.firms.length > 0) {
+    return user.firms[0].grade
+  }
+  return 'Staff'
+}
+
+const openUserModal = (user: any) => {
+  selectedUser.value = user
+  userForm.name = user.name
+  userForm.email = user.email
+  userForm.role = user.role === 'superadmin' ? 'superadmin' : (user.firms && user.firms.length > 0 ? user.firms[0].grade : 'Staff')
+  userForm.status = user.status || 'active'
+  isUserModalOpen.value = true
+}
+
+const onUserSubmit = async () => {
+  savingUser.value = true
+  try {
+    const res = await api.put(`/auth/users/${selectedUser.value._id}/status`, userForm)
+    if (res.success) {
+      toast.add({ title: 'User Updated', description: 'User role/status updated successfully', color: 'success' })
+      isUserModalOpen.value = false
+      fetchData()
+    }
+  } catch (err: any) {
+    toast.add({ title: 'Update Failed', description: err.message, color: 'error' })
+  } finally {
+    savingUser.value = false
+  }
+}
 </script>
 
 <template>
@@ -147,7 +207,13 @@ const userColumns = [
             <UTable :data="users" :columns="userColumns" :loading="loading" class="w-full text-sm">
               <template #role-cell="{ row }">
                 <UBadge :color="row.original.role === 'superadmin' ? 'primary' : 'neutral'" variant="subtle" size="sm" class="uppercase font-black text-[10px]">
-                  {{ row.original.role }}
+                  {{ getUserRoleDisplay(row.original) }}
+                </UBadge>
+              </template>
+
+              <template #status-cell="{ row }">
+                <UBadge :color="row.original.status === 'active' ? 'success' : row.original.status === 'pending' ? 'warning' : 'error'" variant="subtle" size="sm" class="uppercase font-black text-[10px]">
+                  {{ row.original.status || 'active' }}
                 </UBadge>
               </template>
 
@@ -156,7 +222,7 @@ const userColumns = [
               </template>
 
               <template #actions-cell="{ row }">
-                <UButton size="xs" variant="ghost" color="neutral" icon="i-heroicons-eye" />
+                <UButton size="xs" variant="ghost" color="neutral" icon="i-heroicons-pencil-square" @click="openUserModal(row.original)" />
               </template>
             </UTable>
           </div>
@@ -172,6 +238,32 @@ const userColumns = [
         <div class="max-h-[85vh] overflow-y-auto custom-scrollbar px-4">
           <FirmForm :firm="selectedFirm" @success="fetchData" @close="isFirmModalOpen = false" />
         </div>
+      </template>
+    </UModal>
+
+    <!-- User Management Modal -->
+    <UModal v-model:open="isUserModalOpen" 
+            title="Edit User Status & Role"
+            :ui="{ content: 'sm:max-w-md' }">
+      <template #body>
+        <form @submit.prevent="onUserSubmit" class="space-y-4 px-4 py-2">
+          <UFormField label="Name" class="w-full">
+            <UInput v-model="userForm.name" required class="w-full" />
+          </UFormField>
+          <UFormField label="Email" class="w-full">
+            <UInput v-model="userForm.email" type="email" required class="w-full" />
+          </UFormField>
+          <UFormField label="System Role" class="w-full">
+            <USelect v-model="userForm.role" :items="roleOptions" class="w-full" />
+          </UFormField>
+          <UFormField label="Account Status" class="w-full">
+            <USelect v-model="userForm.status" :items="statusOptions" class="w-full" />
+          </UFormField>
+          <div class="flex justify-end gap-2 mt-6">
+            <UButton variant="ghost" label="Cancel" @click="isUserModalOpen = false" />
+            <UButton type="submit" label="Save Changes" :loading="savingUser" />
+          </div>
+        </form>
       </template>
     </UModal>
   </div>

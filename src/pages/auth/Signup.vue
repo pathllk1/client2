@@ -36,9 +36,18 @@ onMounted(async () => {
 
 const onSubmit = async () => {
   try {
-    await signup(form)
-    toast.add({ title: 'Account created!', color: 'success' })
-    router.push('/')
+    const res = await signup(form)
+    if (res && !res.accessToken) {
+      toast.add({ 
+        title: 'Registration successful!', 
+        description: 'Your account is pending administrator approval before you can log in.', 
+        color: 'success'
+      })
+      router.push('/auth/login')
+    } else {
+      toast.add({ title: 'Account created!', color: 'success' })
+      router.push('/')
+    }
   } catch (err: any) {
     toast.add({ title: 'Signup failed', description: err.message, color: 'error' })
   }
