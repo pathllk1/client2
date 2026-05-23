@@ -97,6 +97,12 @@
               <td class="px-6 py-4 text-right font-bold text-gray-900">₹{{ (bill.netTotal || 0).toLocaleString() }}</td>
               <td class="px-6 py-4 text-center">
                  <div class="flex justify-center space-x-2">
+                    <button @click="viewBillDetails(bill._id)" class="p-1 text-gray-400 hover:text-indigo-600" title="View Details">
+                       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                       </svg>
+                    </button>
                     <button @click="downloadPDF(bill)" class="p-1 text-gray-400 hover:text-blue-600" title="View PDF">
                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 2.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -119,6 +125,13 @@
         </table>
       </div>
     </div>
+
+    <BillDetailsModal
+      v-model="showDetailsModal"
+      :billId="selectedBillId"
+      @cancelled="fetchBills(filters)"
+      @view-bill="viewBillDetails"
+    />
   </div>
 </template>
 
@@ -127,9 +140,18 @@ import { ref, reactive, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useBilling } from '@/composables/useBilling';
 import { api } from '@/utils/api';
+import BillDetailsModal from '@/components/accounting/BillDetailsModal.vue';
 
 const router = useRouter();
 const { bills, fetchBills } = useBilling();
+
+const selectedBillId = ref<string | null>(null);
+const showDetailsModal = ref(false);
+
+function viewBillDetails(id: string) {
+  selectedBillId.value = id;
+  showDetailsModal.value = true;
+}
 
 const filters = reactive({
   btype: ''

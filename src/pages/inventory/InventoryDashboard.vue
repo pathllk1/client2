@@ -183,6 +183,13 @@
                  <h4 class="text-white text-sm font-black tracking-tight">Adjustment</h4>
                  <p class="text-[10px] text-slate-500 font-bold mt-1 uppercase">Stock Fix</p>
               </button>
+              <button @click="$router.push('/accounting/bills')" class="p-4 rounded-3xl bg-white/5 border border-white/10 text-left hover:bg-white/10 transition-all group">
+                 <div class="w-10 h-10 rounded-2xl bg-sky-500/20 text-sky-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <DocumentTextIcon class="w-5 h-5" />
+                 </div>
+                 <h4 class="text-white text-sm font-black tracking-tight">Invoices & Notes</h4>
+                 <p class="text-[10px] text-slate-500 font-bold mt-1 uppercase">Billing Hub</p>
+              </button>
            </div>
         </div>
 

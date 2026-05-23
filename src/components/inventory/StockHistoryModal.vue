@@ -52,6 +52,8 @@
                       <p class="text-sm font-black text-slate-900 truncate">{{ m.bno || 'MANUAL ADJ' }}</p>
                       <span class="text-[10px] font-bold text-slate-300">|</span>
                       <p class="text-[10px] text-slate-500 font-bold uppercase truncate">{{ m.supply || 'INTERNAL SYSTEM' }}</p>
+                      <span v-if="m.batch" class="text-[10px] font-bold text-slate-300">|</span>
+                      <span v-if="m.batch" class="px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-[9px] font-black uppercase tracking-wide border border-blue-100">Batch {{ m.batch }}</span>
                    </div>
                 </div>
 

@@ -86,7 +86,7 @@
               <td class="px-6 py-4 text-right text-gray-500 italic">₹{{ (m.rate || 0).toFixed(2) }}</td>
             </tr>
             <tr v-if="filteredMovements.length === 0">
-              <td colspan="7" class="px-6 py-20 text-center text-gray-400 italic">No movements match your filters.</td>
+              <td colspan="8" class="px-6 py-20 text-center text-gray-400 italic">No movements match your filters.</td>
             </tr>
           </tbody>
         </table>
@@ -135,8 +135,8 @@ function getTypeClass(type: string) {
 
 async function exportExcel() {
   try {
-    const response = await api.get('/inventory/movements/export', { responseType: 'blob' });
-    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const blob = await api.get('/inventory/movements/export', { responseType: 'blob' });
+    const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.setAttribute('download', 'stock-movements.xlsx');

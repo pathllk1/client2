@@ -15,10 +15,34 @@
 
        <div class="p-8 space-y-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
           <div v-for="(charge, index) in otherCharges" :key="index" class="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex items-start gap-4 group">
-             <div class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="md:col-span-1">
+             <div class="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="relative">
                    <label class="block text-[9px] font-black text-slate-400 uppercase mb-1 ml-1">Charge Name</label>
-                   <input type="text" v-model="charge.name" placeholder="e.g. Freight" class="w-full px-3 py-2 bg-white border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-bold" />
+                   <input 
+                     type="text" 
+                     v-model="charge.name" 
+                     @focus="focusedIndex = index" 
+                     @blur="onBlur(index)"
+                     placeholder="e.g. Freight" 
+                     class="w-full px-3 py-2 bg-white border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-bold" 
+                   />
+                   <!-- Suggestions Dropdown -->
+                   <div v-if="focusedIndex === index && filteredSuggestions(charge.name).length > 0" class="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-50 max-h-40 overflow-y-auto divide-y divide-slate-100">
+                      <button 
+                        v-for="sug in filteredSuggestions(charge.name)" 
+                        :key="sug.name" 
+                        type="button"
+                        @mousedown="selectSuggestion(index, sug)"
+                        class="w-full px-4 py-2.5 text-left text-xs hover:bg-slate-50 transition-colors flex items-center justify-between font-bold"
+                      >
+                         <span class="text-slate-800">{{ sug.name }}</span>
+                         <span class="text-[10px] text-slate-400 font-bold font-mono">GST {{ sug.grate }}%</span>
+                      </button>
+                   </div>
+                </div>
+                <div>
+                   <label class="block text-[9px] font-black text-slate-400 uppercase mb-1 ml-1">HSN/SAC</label>
+                   <input type="text" v-model="charge.hsnSac" placeholder="e.g. 9965" class="w-full px-3 py-2 bg-white border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-mono font-bold uppercase" />
                 </div>
                 <div>
                    <label class="block text-[9px] font-black text-slate-400 uppercase mb-1 ml-1">Amount (₹)</label>
@@ -55,7 +79,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { ref, computed, watch } from 'vue';
+import { api } from '@/utils/api';
 
 const props = defineProps<{
   modelValue: boolean;
@@ -68,8 +93,52 @@ const totalAmount = computed(() => {
   return props.otherCharges.reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
 });
 
+const historicalTypes = ref<any[]>([]);
+const focusedIndex = ref<number | null>(null);
+
+async function fetchHistoricalTypes() {
+  try {
+    const res = await api.get('/accounting/other-charges/types');
+    if (res.success) {
+      historicalTypes.value = res.data;
+    }
+  } catch (err) {
+    console.error('Failed to fetch other charges types:', err);
+  }
+}
+
+watch(() => props.modelValue, (newVal) => {
+  if (newVal) {
+    fetchHistoricalTypes();
+    focusedIndex.value = null;
+  }
+});
+
+function filteredSuggestions(name: string) {
+  const query = (name || '').toLowerCase().trim();
+  if (!query) return historicalTypes.value;
+  return historicalTypes.value.filter(s => 
+    s.name.toLowerCase().includes(query)
+  );
+}
+
+function onBlur(index: number) {
+  setTimeout(() => {
+    if (focusedIndex.value === index) {
+      focusedIndex.value = null;
+    }
+  }, 200);
+}
+
+function selectSuggestion(index: number, sug: any) {
+  props.otherCharges[index].name = sug.name;
+  props.otherCharges[index].hsnSac = sug.hsnSac || '';
+  props.otherCharges[index].grate = sug.grate || 0;
+  focusedIndex.value = null;
+}
+
 function addCharge() {
-  props.otherCharges.push({ name: '', amount: 0, grate: 18 });
+  props.otherCharges.push({ name: '', hsnSac: '', amount: 0, grate: 18 });
 }
 
 function removeCharge(index: number) {

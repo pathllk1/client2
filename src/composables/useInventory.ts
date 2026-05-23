@@ -44,8 +44,8 @@ export const useInventory = () => {
     error.value = null;
     try {
       const response = await api.get('/inventory/stock');
-      if (response.data.success) {
-        stocks.value = response.data.data;
+      if (response.success) {
+        stocks.value = response.data;
       }
     } catch (err: any) {
       error.value = err.response?.data?.message || 'Failed to fetch stocks';
@@ -59,8 +59,8 @@ export const useInventory = () => {
     error.value = null;
     try {
       const response = await api.get('/inventory/movements', { params });
-      if (response.data.success) {
-        movements.value = response.data.data;
+      if (response.success) {
+        movements.value = response.data;
       }
     } catch (err: any) {
       error.value = err.response?.data?.message || 'Failed to fetch movements';
@@ -72,8 +72,8 @@ export const useInventory = () => {
   const fetchServiceSuggestions = async () => {
     try {
       const response = await api.get('/inventory/stock/service-suggestions');
-      if (response.data.success) {
-        serviceSuggestions.value = response.data.data;
+      if (response.success) {
+        serviceSuggestions.value = response.data;
       }
     } catch (err: any) {
       console.warn('Failed to fetch service suggestions:', err);
@@ -85,7 +85,7 @@ export const useInventory = () => {
     error.value = null;
     try {
       const response = await api.post('/inventory/movements', data);
-      return response.data;
+      return response;
     } catch (err: any) {
       error.value = err.response?.data?.message || 'Failed to record movement';
       throw err;

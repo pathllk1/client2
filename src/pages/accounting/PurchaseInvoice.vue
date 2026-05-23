@@ -142,10 +142,12 @@ import CreateStockModal from '@/components/inventory/CreateStockModal.vue';
 import PartyModal from '@/components/inventory/PartyModal.vue';
 import OtherChargesModal from '@/components/inventory/OtherChargesModal.vue';
 import { api } from '@/utils/api';
+import { useToast } from '@nuxt/ui/composables';
 
 const router = useRouter();
 const route = useRoute();
 const { state, totals, fetchData, fetchNextBillNo, determineGstBillType, populateConsigneeFromBillTo } = useBillingState();
+const toast = useToast();
 
 const showStockModal = ref(false);
 const showPartyModal = ref(false);
@@ -282,10 +284,19 @@ async function saveInvoice() {
     const res = await api.post(endpoint, payload);
     
     if (res.success) {
+      toast.add({
+        title: 'Success',
+        description: state.isReturnMode ? 'Debit Note created successfully' : 'Purchase Bill created successfully',
+        color: 'success'
+      });
       router.push('/accounting/bills');
     }
   } catch (err: any) {
-    alert(err.message || 'Failed to save bill');
+    toast.add({
+      title: 'Error',
+      description: err.message || 'Failed to save bill',
+      color: 'error'
+    });
   } finally {
     loading.value = false;
   }

@@ -35,8 +35,8 @@ export const useBilling = () => {
     error.value = null;
     try {
       const response = await api.get('/accounting/bills', { params });
-      if (response.data.success) {
-        bills.value = response.data.data;
+      if (response.success) {
+        bills.value = response.data;
       }
     } catch (err: any) {
       error.value = err.response?.data?.message || 'Failed to fetch bills';
@@ -48,8 +48,8 @@ export const useBilling = () => {
   const fetchParties = async () => {
     try {
       const response = await api.get('/accounting/parties');
-      if (response.data.success) {
-        parties.value = response.data.data;
+      if (response.success) {
+        parties.value = response.data;
       }
     } catch (err) {
       console.warn('Failed to fetch parties');
