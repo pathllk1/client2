@@ -223,7 +223,11 @@ const cashAccounts = computed(() => {
 
 // Bank accounts that are not cash
 const otherLiquidAccounts = computed(() => {
-  return mainAccountHeads.value.filter(acc => !cashAccounts.value.includes(acc));
+  return mainAccountHeads.value.filter(acc => {
+    const type = acc.account_type?.toUpperCase() || '';
+    const isCash = cashAccounts.value.includes(acc);
+    return !isCash && type !== 'BANK' && type !== 'BANK_ACCOUNT';
+  });
 });
 
 // Calculate amounts
