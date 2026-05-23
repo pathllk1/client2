@@ -77,6 +77,7 @@
                                  <option value="SET">SET</option>
                                  <option value="BOX">BOX</option>
                                  <option value="MTR">MTR</option>
+                                 <option value="LTR">LTR</option>
                                  <option value="KGS">KGS</option>
                               </select>
                            </td>

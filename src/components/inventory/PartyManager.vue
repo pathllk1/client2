@@ -25,6 +25,27 @@
           Change
         </button>
       </div>
+
+      <!-- GST Location Selector -->
+      <div v-if="state.selectedParty?.gstLocations?.length > 1" class="gst-selector-container">
+        <label class="gst-select-label">
+          <span>Billing to GSTIN</span>
+          <select 
+            :value="state.selectedPartyLocation?.gstin || state.selectedPartyGstin || ''" 
+            @change="onPartyGstinChange" 
+            class="gst-select"
+          >
+            <option 
+              v-for="loc in state.selectedParty.gstLocations" 
+              :key="loc.gstin || loc.stateCode || loc.state" 
+              :value="loc.gstin || ''"
+            >
+              {{ loc.gstin || 'UNREGISTERED' }} - {{ loc.state || loc.stateCode || '' }}{{ loc.isPrimary ? ' (Primary)' : '' }}
+            </option>
+          </select>
+        </label>
+      </div>
+
       <dl class="party-meta">
         <div>
           <dt>State</dt>
@@ -93,7 +114,15 @@ const props = withDefaults(defineProps<{
   emptySubtitle: 'Customer or supplier record'
 });
 
-defineEmits(['open-modal', 'create-party']);
+const emit = defineEmits(['open-modal', 'create-party', 'location-change']);
+
+function onPartyGstinChange(event: Event) {
+  const gstin = (event.target as HTMLSelectElement).value;
+  const loc = props.state.selectedParty?.gstLocations?.find((l: any) => l.gstin === gstin) || null;
+  props.state.selectedPartyLocation = loc;
+  props.state.selectedPartyGstin = gstin || 'UNREGISTERED';
+  emit('location-change');
+}
 
 function handleConsigneeToggle() {
   if (props.state.consigneeSameAsBillTo) {
@@ -228,6 +257,38 @@ dd {
   font-size: 12px;
   font-weight: 650;
   line-height: 1.35;
+}
+.gst-selector-container {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #bfdbfe;
+}
+.gst-select-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.gst-select-label span {
+  color: #1e3a8a;
+  font-size: 10px;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.gst-select {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 12px;
+  font-weight: 800;
+  outline: none;
+  background-color: white;
+  color: #0f172a;
+}
+.gst-select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 .consignee-block {
   margin-top: 10px;

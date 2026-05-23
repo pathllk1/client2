@@ -60,43 +60,126 @@
                   </tr>
                </thead>
                <tbody class="divide-y divide-slate-100">
-                  <tr 
-                    v-for="(row, idx) in flatStockRows" 
-                    :key="row._id + '-' + row.batchNo + '-' + idx"
-                    class="hover:bg-blue-50/30 transition-colors cursor-pointer group text-xs font-bold text-slate-700"
-                    @click="selectRow(row)"
-                  >
-                     <td class="px-5 py-3">
-                        <div class="font-black text-slate-900 text-sm leading-tight">{{ row.item }}</div>
-                        <div class="flex items-center gap-2 mt-1 text-[10px] text-slate-400 font-semibold">
-                           <span v-if="row.pno">P/N: {{ row.pno }}</span>
-                           <span v-if="row.pno && row.oem" class="w-1 h-1 bg-slate-300 rounded-full"></span>
-                           <span v-if="row.oem">OEM: {{ row.oem }}</span>
-                        </div>
-                     </td>
-                     <td class="px-4 py-3 font-mono text-[10px] uppercase tracking-wider text-slate-500">{{ row.hsn }}</td>
-                     <td class="px-4 py-3">
-                        <span :class="row.batchNo !== '-' ? 'bg-indigo-50 text-indigo-700 border-indigo-100' : 'bg-slate-50 text-slate-400 border-slate-100'" class="px-2 py-0.5 border rounded-md text-[10px] font-black uppercase">
-                           {{ row.batchNo }}
-                        </span>
-                     </td>
-                     <td class="px-4 py-3 text-slate-500 font-medium">{{ row.expiry }}</td>
-                     <td class="px-4 py-3 text-right">
-                        <span class="text-sm font-black text-slate-900" :class="row.qty <= 0 ? 'text-red-500 animate-pulse' : ''">{{ row.qty.toLocaleString() }}</span>
-                        <span class="text-[9px] font-black text-slate-400 uppercase ml-1">{{ row.uom }}</span>
-                     </td>
-                     <td class="px-4 py-3 text-right font-mono text-slate-900">₹{{ row.rate.toFixed(2) }}</td>
-                     <td class="px-4 py-3 text-right text-slate-500 font-medium">{{ row.grate }}%</td>
-                     <td class="px-4 py-3 text-right font-mono text-slate-900">
-                        {{ row.mrp ? '₹' + row.mrp.toFixed(2) : '-' }}
-                     </td>
-                     <td class="px-5 py-3 text-center">
-                        <button class="px-3 py-1 bg-slate-100 text-slate-700 rounded-lg text-[10px] font-black uppercase tracking-widest group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                           Select
-                        </button>
-                     </td>
-                  </tr>
-                  <tr v-if="flatStockRows.length === 0">
+                  <template v-for="stock in filteredStocks" :key="stock._id">
+                     <!-- Main Stock Item Row -->
+                     <tr 
+                       class="hover:bg-blue-50/20 transition-colors cursor-pointer group text-xs font-bold text-slate-700"
+                       @click="toggleStock(stock)"
+                     >
+                        <td class="px-5 py-3.5">
+                           <div class="font-black text-slate-900 text-sm leading-tight">{{ stock.item }}</div>
+                           <div class="flex items-center gap-2 mt-1 text-[10px] text-slate-400 font-semibold">
+                              <span v-if="stock.pno">P/N: {{ stock.pno }}</span>
+                              <span v-if="stock.pno && stock.oem" class="w-1 h-1 bg-slate-300 rounded-full"></span>
+                              <span v-if="stock.oem">OEM: {{ stock.oem }}</span>
+                           </div>
+                        </td>
+                        <td class="px-4 py-3.5 font-mono text-[10px] uppercase tracking-wider text-slate-500">{{ stock.hsn }}</td>
+                        <td class="px-4 py-3.5">
+                           <div v-if="stock.batches && stock.batches.length > 1" class="flex items-center gap-1.5">
+                              <span class="bg-indigo-50 text-indigo-700 border-indigo-100 px-2 py-0.5 border rounded-md text-[10px] font-black uppercase">
+                                 {{ stock.batches.length }} Batches
+                              </span>
+                              <svg 
+                                class="w-3.5 h-3.5 text-indigo-500 transition-transform duration-200"
+                                :class="expandedStockId === stock._id ? 'rotate-180' : ''"
+                                fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                              >
+                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+                              </svg>
+                           </div>
+                           <span v-else-if="stock.batches && stock.batches.length === 1" class="bg-slate-50 text-slate-700 border-slate-100 px-2 py-0.5 border rounded-md text-[10px] font-black uppercase">
+                              {{ stock.batches[0].batch || '-' }}
+                           </span>
+                           <span v-else class="text-slate-400">-</span>
+                        </td>
+                        <td class="px-4 py-3.5 text-slate-500 font-medium">
+                           <span v-if="stock.batches && stock.batches.length > 1" class="text-slate-400 italic">Various</span>
+                           <span v-else-if="stock.batches && stock.batches.length === 1">
+                              {{ stock.batches[0].expiry ? formatDate(stock.batches[0].expiry) : '-' }}
+                           </span>
+                           <span v-else>-</span>
+                        </td>
+                        <td class="px-4 py-3.5 text-right">
+                           <span class="text-sm font-black text-slate-900" :class="stock.qty <= 0 ? 'text-red-500 animate-pulse' : ''">{{ stock.qty.toLocaleString() }}</span>
+                           <span class="text-[9px] font-black text-slate-400 uppercase ml-1">{{ stock.uom }}</span>
+                        </td>
+                        <td class="px-4 py-3.5 text-right font-mono text-slate-900">₹{{ stock.rate.toFixed(2) }}</td>
+                        <td class="px-4 py-3.5 text-right text-slate-500 font-medium">{{ stock.grate }}%</td>
+                        <td class="px-4 py-3.5 text-right font-mono text-slate-900">
+                           <span v-if="stock.batches && stock.batches.length > 1" class="text-slate-400 italic">Various</span>
+                           <span v-else-if="stock.batches && stock.batches.length === 1">
+                              {{ stock.batches[0].mrp ? '₹' + stock.batches[0].mrp.toFixed(2) : '-' }}
+                           </span>
+                           <span v-else-if="stock.mrp">₹{{ stock.mrp.toFixed(2) }}</span>
+                           <span v-else>-</span>
+                        </td>
+                        <td class="px-5 py-3.5 text-center">
+                           <button 
+                             class="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-colors"
+                             :class="stock.batches && stock.batches.length > 1 
+                               ? (expandedStockId === stock._id ? 'bg-indigo-600 text-white' : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white') 
+                               : 'bg-slate-100 text-slate-700 hover:bg-blue-600 hover:text-white'"
+                           >
+                              {{ stock.batches && stock.batches.length > 1 ? (expandedStockId === stock._id ? 'Close' : 'Expand') : 'Select' }}
+                           </button>
+                        </td>
+                     </tr>
+
+                     <!-- Nested Batches Sub-Table Row -->
+                     <tr v-if="expandedStockId === stock._id && stock.batches && stock.batches.length > 1" class="bg-slate-50/50">
+                        <td colspan="9" class="px-8 py-4">
+                           <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm max-w-4xl animate-scale-in">
+                              <div class="bg-slate-50 px-4 py-2.5 border-b border-slate-100 flex items-center justify-between">
+                                 <span class="text-[9px] font-black text-indigo-700 uppercase tracking-widest">Select Batch for {{ stock.item }}</span>
+                                 <span class="text-[9px] text-slate-400 font-bold uppercase">{{ stock.batches.length }} Batches Available</span>
+                              </div>
+                              <table class="w-full text-left text-xs border-collapse">
+                                 <thead>
+                                    <tr class="bg-slate-50/50 text-[9px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                                       <th class="px-4 py-2.5">Batch No</th>
+                                       <th class="px-4 py-2.5">Expiry</th>
+                                       <th class="px-4 py-2.5 text-right">Available Qty</th>
+                                       <th class="px-4 py-2.5 text-right">Rate</th>
+                                       <th class="px-4 py-2.5 text-right">GST %</th>
+                                       <th class="px-4 py-2.5 text-right">MRP</th>
+                                       <th class="px-4 py-2.5 text-center">Action</th>
+                                    </tr>
+                                 </thead>
+                                 <tbody class="divide-y divide-slate-100 font-bold text-slate-600">
+                                    <tr 
+                                      v-for="batch in stock.batches" 
+                                      :key="batch._id || batch.batch"
+                                      class="hover:bg-blue-50/20 transition-colors cursor-pointer"
+                                      @click.stop="selectRow(stock, batch)"
+                                    >
+                                       <td class="px-4 py-2">
+                                          <span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-[10px] font-black uppercase">
+                                             {{ batch.batch || '-' }}
+                                          </span>
+                                       </td>
+                                       <td class="px-4 py-2 text-slate-500 font-medium">
+                                          {{ batch.expiry ? formatDate(batch.expiry) : '-' }}
+                                       </td>
+                                       <td class="px-4 py-2 text-right text-slate-900">
+                                          {{ batch.qty.toLocaleString() }} <span class="text-[9px] text-slate-400 uppercase ml-0.5">{{ batch.uom }}</span>
+                                       </td>
+                                       <td class="px-4 py-2 text-right text-slate-900 font-mono">₹{{ batch.rate.toFixed(2) }}</td>
+                                       <td class="px-4 py-2 text-right text-slate-500 font-medium">{{ batch.grate }}%</td>
+                                       <td class="px-4 py-2 text-right text-slate-900 font-mono">{{ batch.mrp ? '₹' + batch.mrp.toFixed(2) : '-' }}</td>
+                                       <td class="px-4 py-2 text-center">
+                                          <button class="px-3 py-1 bg-indigo-600 text-white rounded-lg text-[9px] font-black uppercase tracking-wider hover:bg-indigo-700 transition-colors">
+                                             Select
+                                          </button>
+                                       </td>
+                                    </tr>
+                                 </tbody>
+                              </table>
+                           </div>
+                        </td>
+                     </tr>
+                  </template>
+                  <tr v-if="filteredStocks.length === 0">
                      <td colspan="9" class="px-5 py-12 text-center text-slate-400 font-black uppercase text-xs tracking-widest">
                         No stock items match your search
                      </td>
@@ -143,8 +226,11 @@ const emit = defineEmits(['update:modelValue', 'select', 'create-stock']);
 const search = ref('');
 const searchInput = ref<HTMLInputElement | null>(null);
 
+const expandedStockId = ref<string | null>(null);
+
 watch(() => props.modelValue, (isOpen) => {
   if (isOpen) {
+    expandedStockId.value = null;
     nextTick(() => searchInput.value?.focus());
   }
 });
@@ -160,50 +246,26 @@ const filteredStocks = computed(() => {
   );
 });
 
-const flatStockRows = computed(() => {
-  const rows: any[] = [];
-  props.stocks.forEach(stock => {
-    // Apply search filter on stock level properties
-    const q = search.value.toLowerCase();
-    const matchesSearch = !search.value || 
-      stock.item.toLowerCase().includes(q) || 
-      stock.hsn?.toLowerCase().includes(q) ||
-      stock.pno?.toLowerCase().includes(q) ||
-      stock.oem?.toLowerCase().includes(q);
-      
-    if (!matchesSearch) return;
+function toggleStock(stock: any) {
+  if (stock.batches && stock.batches.length > 1) {
+    expandedStockId.value = expandedStockId.value === stock._id ? null : stock._id;
+  } else {
+    // Select immediately with single batch or null
+    selectRow(stock, stock.batches?.[0] || null);
+  }
+}
 
-    if (stock.batches && stock.batches.length > 0) {
-      stock.batches.forEach((batch: any) => {
-        rows.push({
-          ...stock,
-          selectedBatch: batch,
-          qty: batch.qty,
-          rate: batch.rate,
-          grate: batch.grate,
-          mrp: batch.mrp,
-          batchNo: batch.batch || '-',
-          expiry: batch.expiry ? new Date(batch.expiry).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' }) : '-'
-        });
-      });
-    } else {
-      rows.push({
-        ...stock,
-        selectedBatch: null,
-        batchNo: '-',
-        expiry: '-'
-      });
-    }
-  });
-  return rows;
-});
-
-function selectRow(row: any) {
+function selectRow(stock: any, batch: any) {
   const stockObj = {
-    ...row,
-    selectedBatch: row.selectedBatch
+    ...stock,
+    selectedBatch: batch
   };
   emit('select', stockObj);
+}
+
+function formatDate(dateString: any) {
+  if (!dateString) return '-';
+  return new Date(dateString).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
 }
 </script>
 

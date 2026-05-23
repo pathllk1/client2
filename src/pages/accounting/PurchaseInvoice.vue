@@ -65,6 +65,7 @@
           empty-subtitle="Supplier record"
           @open-modal="showPartyModal = true"
           @create-party="showCreatePartyModal = true"
+          @location-change="onPartyLocationChange"
         />
 
         <section class="detail-panel">
@@ -231,10 +232,17 @@ function onStockSelect(stock: any) {
 
 function onPartySelect(party: any) {
   state.selectedParty = party;
-  state.selectedPartyGstin = party.gstin;
+  const primaryLoc = party.gstLocations?.find((l: any) => l.isPrimary) || party.gstLocations?.[0] || null;
+  state.selectedPartyLocation = primaryLoc;
+  state.selectedPartyGstin = primaryLoc?.gstin || party.gstin || 'UNREGISTERED';
   state.meta.billType = determineGstBillType();
   populateConsigneeFromBillTo();
   showPartyModal.value = false;
+}
+
+function onPartyLocationChange() {
+  state.meta.billType = determineGstBillType();
+  populateConsigneeFromBillTo();
 }
 
 function onFirmGstinChange(event: Event) {
