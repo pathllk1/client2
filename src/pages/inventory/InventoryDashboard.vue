@@ -223,6 +223,7 @@
 
     <StockHistoryModal v-model="showHistoryModal" :stock="selectedStock" />
     <CreateStockModal v-model="showCreateModal" @saved="fetchStocks" />
+    <StockAdjustmentModal v-model="showAdjustmentModal" @saved="refreshAll" />
   </div>
 </template>
 
@@ -232,6 +233,7 @@ import { useInventory } from '@/composables/useInventory';
 import { useBilling } from '@/composables/useBilling';
 import StockHistoryModal from '@/components/inventory/StockHistoryModal.vue';
 import CreateStockModal from '@/components/inventory/CreateStockModal.vue';
+import StockAdjustmentModal from '@/components/inventory/StockAdjustmentModal.vue';
 import { 
   CubeIcon, 
   ExclamationTriangleIcon, 

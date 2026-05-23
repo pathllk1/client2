@@ -57,19 +57,29 @@
         </div>
       </div>
     </div>
+
+    <StockValuationModal v-if="showValuation" v-model="showValuation" />
+    <SalesAnalysisModal v-if="showSalesAnalysis" v-model="showSalesAnalysis" />
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import StockValuationModal from '@/components/inventory/StockValuationModal.vue';
+import SalesAnalysisModal from '@/components/inventory/SalesAnalysisModal.vue';
 
 const router = useRouter();
+const showValuation = ref(false);
+const showSalesAnalysis = ref(false);
 
 function generateReport(type: string) {
   if (type === 'movement') {
     router.push('/inventory/movements');
-  } else {
-    alert('Report generation for ' + type + ' is coming soon!');
+  } else if (type === 'valuation') {
+    showValuation.value = true;
+  } else if (type === 'consumption') {
+    showSalesAnalysis.value = true;
   }
 }
 </script>

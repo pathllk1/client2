@@ -41,6 +41,7 @@
               <th class="px-6 py-5 text-right">Avg Rate</th>
               <th class="px-6 py-5 text-right">Total Value</th>
               <th class="px-8 py-5 text-center">Status</th>
+              <th class="px-6 py-5 text-center">Actions</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-50">
@@ -76,10 +77,15 @@
                     {{ getStockHealthLabel(stock.qty) }}
                   </span>
                 </td>
+                <td class="px-6 py-5 text-center" @click.stop>
+                  <button @click="editStock(stock)" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit Item">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                  </button>
+                </td>
               </tr>
               <!-- Expanded Batch Details -->
               <tr v-if="expandedRows.has(stock.id)" class="bg-slate-50/50">
-                <td colspan="6" class="px-12 py-6">
+                <td colspan="7" class="px-12 py-6">
                   <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                     <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
                       <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Batch Inventory Breakdown</h4>
@@ -124,6 +130,7 @@
     </div>
 
     <CreateStockModal v-model="showCreateModal" @saved="fetchStocks" />
+    <EditStockModal v-model="showEditModal" :stock="selectedStock" @saved="fetchStocks" />
     <StockHistoryModal v-model="showHistoryModal" :stock="selectedStock" />
   </div>
 </template>
@@ -132,11 +139,13 @@
 import { ref, computed, onMounted, reactive } from 'vue';
 import { useInventory } from '@/composables/useInventory';
 import CreateStockModal from '@/components/inventory/CreateStockModal.vue';
+import EditStockModal from '@/components/inventory/EditStockModal.vue';
 import StockHistoryModal from '@/components/inventory/StockHistoryModal.vue';
 
 const { stocks, fetchStocks } = useInventory();
 const searchQuery = ref('');
 const showCreateModal = ref(false);
+const showEditModal = ref(false);
 const showHistoryModal = ref(false);
 const selectedStock = ref<any>(null);
 const expandedRows = ref(new Set<string>());
@@ -179,5 +188,10 @@ function getStockHealthLabel(qty: number) {
 function viewHistory(stock: any) {
   selectedStock.value = stock;
   showHistoryModal.value = true;
+}
+
+function editStock(stock: any) {
+  selectedStock.value = stock;
+  showEditModal.value = true;
 }
 </script>

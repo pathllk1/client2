@@ -94,6 +94,48 @@ export const useInventory = () => {
     }
   };
 
+  const updateStock = async (id: string, data: any) => {
+    loading.value = true;
+    error.value = null;
+    try {
+      const response = await api.put(`/inventory/stock/${id}`, data);
+      return response;
+    } catch (err: any) {
+      error.value = err.response?.data?.message || 'Failed to update stock';
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const fetchStockValuation = async () => {
+    loading.value = true;
+    error.value = null;
+    try {
+      const response = await api.get('/inventory/stock/valuation');
+      return response;
+    } catch (err: any) {
+      error.value = err.response?.data?.message || 'Failed to fetch valuation';
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const fetchSalesAnalysis = async (params: { startDate?: string; endDate?: string }) => {
+    loading.value = true;
+    error.value = null;
+    try {
+      const response = await api.get('/inventory/stock/sales-analysis', { params });
+      return response;
+    } catch (err: any) {
+      error.value = err.response?.data?.message || 'Failed to fetch sales analysis';
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
   return {
     loading,
     error,
@@ -104,5 +146,8 @@ export const useInventory = () => {
     fetchMovements,
     fetchServiceSuggestions,
     createMovement,
+    updateStock,
+    fetchStockValuation,
+    fetchSalesAnalysis,
   };
 };
