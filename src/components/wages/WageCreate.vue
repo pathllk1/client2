@@ -30,7 +30,11 @@ const filters = ref({
 })
 
 // Persistence logic
+let skipPersist = false
+
 const persistState = () => {
+  if (skipPersist) return
+  
   wagePersistence.save('CREATE', {
     month: month.value,
     employees: employees.value,
@@ -217,20 +221,45 @@ const saveWages = async () => {
     const response = await createWagesBulk(month.value, wagesToSave)
     if (response.success) {
       toast.add({ title: 'Success', description: `Wages saved for ${wagesToSave.length} employees`, color: 'success' })
+      skipPersist = true
       wagePersistence.clear('CREATE')
-      loadEmployees()
+      sessionMetadata.value = null
+      
+      commonPaymentData.value = {
+        paid_date: '',
+        cheque_no: '',
+        payment_mode: '',
+        bank_account_id: '',
+        remarks: ''
+      }
+      
+      await loadEmployees()
+      
+      setTimeout(() => { skipPersist = false }, 100)
     }
   } catch (err: any) {
     toast.add({ title: 'Error saving wages', description: err.message, color: 'error' })
   }
 }
 
-const resetSession = () => {
+const resetSession = async () => {
   if (confirm('Are you sure you want to clear all unsaved work and reset?')) {
+    skipPersist = true
     wagePersistence.clear('CREATE')
     sessionMetadata.value = null
-    loadEmployees()
+    
+    commonPaymentData.value = {
+      paid_date: '',
+      cheque_no: '',
+      payment_mode: '',
+      bank_account_id: '',
+      remarks: ''
+    }
+    
+    await loadEmployees()
     toast.add({ title: 'Session Cleared', color: 'neutral' })
+    
+    setTimeout(() => { skipPersist = false }, 100)
   }
 }
 

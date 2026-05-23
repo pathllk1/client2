@@ -7,15 +7,19 @@ const getBaseUrl = () => import.meta.env.VITE_API_BASE_URL || '/api'
 
 const refreshTokenLogic = async () => {
   const baseUrl = getBaseUrl()
-  if (!authState.refreshToken) return null
+  const latestRefreshToken = localStorage.getItem('refresh_token') || authState.refreshToken
+  if (!latestRefreshToken) return null
   try {
     if (!isRefreshing) {
       isRefreshing = true
       refreshPromise = fetch(`${baseUrl}/auth/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken: authState.refreshToken })
-      }).then(res => res.json())
+        body: JSON.stringify({ refreshToken: latestRefreshToken })
+      }).then(async res => {
+        if (!res.ok) throw new Error('Refresh failed')
+        return res.json()
+      })
     }
     const data = await refreshPromise
     if (data && data.accessToken) {
@@ -62,6 +66,19 @@ const rawRequest = async (endpoint: string, options: any = {}): Promise<any> => 
     if (newToken) setAccessToken(newToken)
 
     if (response.status === 401 && !endpoint.includes('/auth/login') && !endpoint.includes('/auth/refresh') && retry) {
+      // Check if another tab already refreshed the token
+      const latestAccessToken = localStorage.getItem('access_token')
+      if (latestAccessToken && latestAccessToken !== authState.accessToken) {
+        setAccessToken(latestAccessToken)
+        const latestRefreshToken = localStorage.getItem('refresh_token')
+        if (latestRefreshToken) setRefreshToken(latestRefreshToken)
+        
+        headers['Authorization'] = `Bearer ${latestAccessToken}`
+        const retryRes = await fetch(finalUrl, { ...options, headers })
+        if (!retryRes.ok) throw new Error(`Retry failed! status: ${retryRes.status}`)
+        return retryRes.json()
+      }
+
       const freshToken = await refreshTokenLogic()
       if (freshToken) {
         headers['Authorization'] = `Bearer ${freshToken}`

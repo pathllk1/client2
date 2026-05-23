@@ -63,8 +63,10 @@ export const useWages = () => {
     await api.download('/wages/export', `Wages_${month}.xlsx`, 'POST', { month, data })
   }
 
-  const downloadBankReport = async (month: string) => {
-    await api.download(`/wages/bank-report?month=${month}`, `Bank_Report_${month}.xlsx`)
+  const downloadBankReport = async (month: string, chequeNo?: string) => {
+    let url = `/wages/bank-report?month=${month}`
+    if (chequeNo) url += `&chequeNo=${encodeURIComponent(chequeNo)}`
+    await api.download(url, `Bank_Report_${month}.xlsx`)
   }
 
   const downloadEPFESICReport = async (month: string) => {

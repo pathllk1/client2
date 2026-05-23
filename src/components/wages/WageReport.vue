@@ -9,10 +9,27 @@ const toast = useToast()
 const month = ref(new Date().toISOString().slice(0, 7))
 const reportWages = ref<any[]>([])
 const paymentModeFilter = ref('all')
+const chequeNoFilter = ref('')
+
+const uniqueChequeNos = computed(() => {
+  const nos = new Set<string>()
+  reportWages.value.forEach(w => {
+    if (w.cheque_no) {
+      nos.add(w.cheque_no)
+    }
+  })
+  return Array.from(nos).sort()
+})
 
 const filteredWages = computed(() => {
-  if (paymentModeFilter.value === 'all') return reportWages.value
-  return reportWages.value.filter(w => w.payment_mode === paymentModeFilter.value)
+  let result = reportWages.value
+  if (paymentModeFilter.value !== 'all') {
+    result = result.filter(w => w.payment_mode === paymentModeFilter.value)
+  }
+  if (chequeNoFilter.value) {
+    result = result.filter(w => w.cheque_no === chequeNoFilter.value)
+  }
+  return result
 })
 
 const totals = computed(() => {
@@ -53,7 +70,7 @@ const formatCurrency = (val: number) => {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val)
 }
 
-const onDownloadBankReport = () => downloadBankReport(month.value)
+const onDownloadBankReport = () => downloadBankReport(month.value, chequeNoFilter.value.trim() || undefined)
 const onDownloadEPFESICReport = () => downloadEPFESICReport(month.value)
 const onDownloadAllSlips = () => downloadBulkWageSlips(month.value)
 const onDownloadSlip = (wage: any) => downloadWageSlip(wage._id, wage.master_roll_id?.employee_name || 'Employee')
@@ -63,12 +80,12 @@ const onDownloadSlip = (wage: any) => downloadWageSlip(wage._id, wage.master_rol
   <div class="flex flex-col h-full gap-4">
     <!-- Filters & Actions -->
     <div class="bg-white dark:bg-gray-900 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 flex items-end justify-between shrink-0">
-      <div class="grid grid-cols-2 gap-4">
-        <div class="flex flex-col gap-1.5">
+      <div class="flex flex-wrap gap-4">
+        <div class="flex flex-col gap-1.5 min-w-[150px]">
           <label class="text-xs font-bold text-gray-500 uppercase">Select Month</label>
           <input type="month" v-model="month" @change="loadReport" class="px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium outline-none bg-gray-50 dark:bg-gray-800" />
         </div>
-        <div class="flex flex-col gap-1.5">
+        <div class="flex flex-col gap-1.5 min-w-[150px]">
           <label class="text-xs font-bold text-gray-500 uppercase">Payment Mode</label>
           <select v-model="paymentModeFilter" class="px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium outline-none bg-gray-50 dark:bg-gray-800">
             <option value="all">All Modes</option>
@@ -78,6 +95,13 @@ const onDownloadSlip = (wage: any) => downloadWageSlip(wage._id, wage.master_rol
             <option value="RTGS">RTGS</option>
             <option value="IMPS">IMPS</option>
             <option value="UPI">UPI</option>
+          </select>
+        </div>
+        <div class="flex flex-col gap-1.5 min-w-[150px]">
+          <label class="text-xs font-bold text-gray-500 uppercase">Cheque/Ref No</label>
+          <select v-model="chequeNoFilter" class="px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium outline-none bg-gray-50 dark:bg-gray-800">
+            <option value="">All Ref Nos</option>
+            <option v-for="no in uniqueChequeNos" :key="no" :value="no">{{ no }}</option>
           </select>
         </div>
       </div>
@@ -130,7 +154,7 @@ const onDownloadSlip = (wage: any) => downloadWageSlip(wage._id, wage.master_rol
               <th class="p-3 w-48">Employee</th>
               <th class="p-3 w-40">Project / Site</th>
               <th class="p-3 w-28 text-center">Paid Date</th>
-              <th class="p-3 w-20 text-center">Mode</th>
+              <th class="p-3 w-24 text-center">Mode/Ref</th>
               <th class="p-3 w-24 text-right">Gross</th>
               <th class="p-3 w-20 text-right text-amber-500">EPF(E)</th>
               <th class="p-3 w-20 text-right text-amber-500">ESIC(E)</th>
@@ -153,9 +177,10 @@ const onDownloadSlip = (wage: any) => downloadWageSlip(wage._id, wage.master_rol
                 {{ wage.paid_date?.slice(0, 10) || '-' }}
               </td>
               <td class="p-3 text-center border-r border-gray-50 dark:border-gray-800">
-                <span class="px-1.5 py-0.5 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 text-[9px] font-black rounded uppercase">
+                <span class="px-1.5 py-0.5 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 text-[9px] font-black rounded uppercase block mb-1">
                   {{ wage.payment_mode || 'N/A' }}
                 </span>
+                <span v-if="wage.cheque_no" class="text-[9px] text-gray-500 font-mono">{{ wage.cheque_no }}</span>
               </td>
               <td class="p-3 text-right border-r border-gray-50 dark:border-gray-800 text-[11px] font-bold font-mono">
                 {{ formatCurrency(wage.gross_salary) }}
