@@ -4,7 +4,7 @@ import { useWages } from '@/composables/useWages'
 import { useToast } from '@nuxt/ui/composables'
 import { wagePersistence } from '@/utils/wagePersistence'
 
-const { loading, fetchEligibleEmployees, createWagesBulk, fetchBankAccounts, downloadBankReport, downloadEPFESICReport, exportWages } = useWages()
+const { loading, fetchEligibleEmployees, createWagesBulk, fetchBankAccounts, downloadBankReport, downloadEPFESICReport, exportWages, getJobStatus } = useWages()
 const toast = useToast()
 
 const month = ref(new Date().toISOString().slice(0, 7))
@@ -13,6 +13,14 @@ const bankAccounts = ref<any[]>([])
 const selectedEmployeeIds = ref<Set<string>>(new Set())
 const wageData = ref<Record<string, any>>({})
 const sessionMetadata = ref<any>(null)
+
+// Background Job processing state
+const isProcessingJob = ref(false)
+const jobProgress = ref(0)
+const jobStatusText = ref('')
+const processedWagesCount = ref(0)
+const totalWagesCount = ref(0)
+const failedWagesCount = ref(0)
 
 const commonPaymentData = ref({
   paid_date: '',
@@ -201,6 +209,25 @@ const totals = computed(() => {
   return { gross, epf, esic, adv, net }
 })
 
+const finalizeSave = async () => {
+  skipPersist = true
+  wagePersistence.clear('CREATE')
+  sessionMetadata.value = null
+  
+  commonPaymentData.value = {
+    paid_date: '',
+    cheque_no: '',
+    payment_mode: '',
+    bank_account_id: '',
+    remarks: ''
+  }
+  
+  await loadEmployees()
+  
+  setTimeout(() => { skipPersist = false }, 100)
+  isProcessingJob.value = false
+}
+
 const saveWages = async () => {
   if (selectedEmployeeIds.value.size === 0) return
   
@@ -220,22 +247,50 @@ const saveWages = async () => {
   try {
     const response = await createWagesBulk(month.value, wagesToSave)
     if (response.success) {
-      toast.add({ title: 'Success', description: `Wages saved for ${wagesToSave.length} employees`, color: 'success' })
-      skipPersist = true
-      wagePersistence.clear('CREATE')
-      sessionMetadata.value = null
-      
-      commonPaymentData.value = {
-        paid_date: '',
-        cheque_no: '',
-        payment_mode: '',
-        bank_account_id: '',
-        remarks: ''
+      if (response.statusCode === 202) {
+        const jobId = response.data.job_id
+        isProcessingJob.value = true
+        jobProgress.value = 0
+        jobStatusText.value = 'Preparing bulk wage creation...'
+        processedWagesCount.value = 0
+        totalWagesCount.value = wagesToSave.length
+        failedWagesCount.value = 0
+
+        const pollInterval = setInterval(async () => {
+          try {
+            const jobRes = await getJobStatus(jobId)
+            if (jobRes.success && jobRes.data) {
+              const job = jobRes.data
+              processedWagesCount.value = job.processed_wages || 0
+              failedWagesCount.value = job.failed_wages || 0
+              jobProgress.value = job.progress_percentage || 0
+              
+              if (job.status === 'PROCESSING') {
+                jobStatusText.value = `Processing wages... (${processedWagesCount.value}/${totalWagesCount.value})`
+              } else {
+                jobStatusText.value = `Status: ${job.status}`
+              }
+
+              if (job.status === 'COMPLETED') {
+                clearInterval(pollInterval)
+                toast.add({ title: 'Success', description: `Wages saved for ${totalWagesCount.value} employees`, color: 'success' })
+                await finalizeSave()
+              } else if (job.status === 'FAILED') {
+                clearInterval(pollInterval)
+                isProcessingJob.value = false
+                toast.add({ title: 'Job Failed', description: job.error_message || 'Background processing failed', color: 'error' })
+              }
+            }
+          } catch (pollErr: any) {
+            clearInterval(pollInterval)
+            isProcessingJob.value = false
+            toast.add({ title: 'Error checking job status', description: pollErr.message, color: 'error' })
+          }
+        }, 1500)
+      } else {
+        toast.add({ title: 'Success', description: `Wages saved for ${wagesToSave.length} employees`, color: 'success' })
+        await finalizeSave()
       }
-      
-      await loadEmployees()
-      
-      setTimeout(() => { skipPersist = false }, 100)
     }
   } catch (err: any) {
     toast.add({ title: 'Error saving wages', description: err.message, color: 'error' })
@@ -426,10 +481,37 @@ onMounted(() => {
 
     <!-- Table / List View -->
     <div class="flex-1 bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden min-h-0 relative">
+      <!-- Standard Loading Overlay -->
       <div v-if="loading" class="absolute inset-0 z-20 flex items-center justify-center bg-white/60 dark:bg-gray-950/60 backdrop-blur-[2px]">
         <div class="flex flex-col items-center gap-4 bg-white dark:bg-gray-900 p-8 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-800">
           <UIcon name="i-heroicons-arrow-path" class="w-10 h-10 animate-spin text-primary" />
           <p class="text-[10px] font-black uppercase tracking-widest text-primary animate-pulse">Processing Payroll</p>
+        </div>
+      </div>
+
+      <!-- Bulk Job Processing Progress Overlay -->
+      <div v-if="isProcessingJob" class="absolute inset-0 z-30 flex items-center justify-center bg-white/85 dark:bg-gray-950/85 backdrop-blur-[4px]">
+        <div class="flex flex-col items-center gap-5 bg-white dark:bg-gray-900 p-8 rounded-3xl shadow-2xl border border-gray-150 dark:border-gray-800 max-w-sm w-full mx-4">
+          <div class="relative flex items-center justify-center">
+            <UIcon name="i-heroicons-arrow-path" class="w-12 h-12 animate-spin text-primary" />
+            <span class="absolute text-[11px] font-mono font-bold text-gray-700 dark:text-gray-200">{{ jobProgress }}%</span>
+          </div>
+          
+          <div class="w-full text-center">
+            <h4 class="text-xs font-black uppercase tracking-widest text-primary mb-1">Creating Wages Bulk</h4>
+            <p class="text-[10px] text-gray-500 font-bold uppercase truncate">{{ jobStatusText }}</p>
+          </div>
+
+          <!-- Progress Bar -->
+          <div class="w-full bg-gray-100 dark:bg-gray-800 h-2 rounded-full overflow-hidden border border-gray-200 dark:border-gray-800">
+            <div class="bg-primary h-full transition-all duration-300 rounded-full" :style="{ width: `${jobProgress}%` }"></div>
+          </div>
+
+          <div class="flex justify-between w-full text-[9px] font-mono text-gray-400 font-bold uppercase tracking-wider">
+            <span>Processed: {{ processedWagesCount }}</span>
+            <span v-if="failedWagesCount > 0" class="text-rose-500">Failed: {{ failedWagesCount }}</span>
+            <span>Total: {{ totalWagesCount }}</span>
+          </div>
         </div>
       </div>
 
