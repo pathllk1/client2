@@ -42,52 +42,67 @@
          </div>
       </div>
 
-      <!-- Advanced Stock Grid -->
-      <div class="flex-1 overflow-y-auto p-8 pt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 custom-scrollbar bg-slate-50/50">
-         <div 
-           v-for="stock in filteredStocks" 
-           :key="stock._id" 
-           class="bg-white border-2 border-transparent rounded-3xl p-5 hover:border-blue-600 hover:shadow-2xl hover:shadow-blue-100 transition-all cursor-pointer group flex flex-col relative overflow-hidden active:scale-95"
-           @click="selectStock(stock)"
-         >
-            <!-- Background Accent -->
-            <div class="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full -mr-16 -mt-16 group-hover:bg-blue-600 transition-colors duration-500 opacity-20 group-hover:opacity-10"></div>
-            
-            <div class="flex items-start gap-4 mb-4 relative z-10">
-               <div class="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all shrink-0 shadow-sm">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                  </svg>
-               </div>
-               <div class="min-w-0 flex-1">
-                  <h3 class="font-black text-slate-900 text-base truncate leading-tight tracking-tight group-hover:text-blue-700 transition-colors">{{ stock.item }}</h3>
-                  <div class="flex flex-wrap items-center gap-1.5 mt-2">
-                     <span class="px-2 py-0.5 bg-slate-100 text-slate-500 text-[8px] font-black rounded-lg uppercase tracking-widest border border-slate-200 group-hover:bg-blue-50 group-hover:text-blue-600 group-hover:border-blue-100">{{ stock.hsn }}</span>
-                     <span v-if="stock.pno" class="px-2 py-0.5 bg-slate-100 text-slate-500 text-[8px] font-black rounded-lg uppercase tracking-widest border border-slate-200">{{ stock.pno }}</span>
-                  </div>
-               </div>
-            </div>
-
-            <div class="mt-auto grid grid-cols-2 gap-2 border-t border-slate-50 pt-4 relative z-10">
-               <div class="bg-slate-50 group-hover:bg-blue-50/50 rounded-2xl p-3 transition-colors">
-                  <span class="text-[8px] font-black uppercase text-slate-400 tracking-widest block mb-1">Available</span>
-                  <div class="flex items-baseline gap-1">
-                     <span class="text-xl font-black text-slate-900" :class="stock.qty <= 0 ? 'text-red-500 animate-pulse' : ''">{{ stock.qty.toLocaleString() }}</span>
-                     <span class="text-[9px] font-black text-slate-400 uppercase">{{ stock.uom }}</span>
-                  </div>
-               </div>
-               <div class="bg-slate-50 group-hover:bg-blue-50/50 rounded-2xl p-3 transition-colors text-right">
-                  <span class="text-[8px] font-black uppercase text-slate-400 tracking-widest block mb-1">Avg. Rate</span>
-                  <p class="font-mono font-black text-blue-600 text-sm mt-1">₹{{ stock.rate.toFixed(2) }}</p>
-               </div>
-            </div>
-
-            <!-- Hover Action Overlay -->
-            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-               <div class="bg-blue-600 text-white px-6 py-2 rounded-full font-black text-[10px] uppercase tracking-widest shadow-xl transform translate-y-4 group-hover:translate-y-0 transition-transform">
-                  + Add to Cart
-               </div>
-            </div>
+      <!-- Advanced Stock Table (Compact) -->
+      <div class="flex-1 overflow-y-auto px-8 pb-8 custom-scrollbar bg-slate-50/50">
+         <div class="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm">
+            <table class="w-full text-left border-collapse">
+               <thead>
+                  <tr class="bg-slate-100 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-200">
+                     <th class="px-5 py-3.5">Item Description</th>
+                     <th class="px-4 py-3.5">HSN</th>
+                     <th class="px-4 py-3.5">Batch</th>
+                     <th class="px-4 py-3.5">Expiry</th>
+                     <th class="px-4 py-3.5 text-right">Available</th>
+                     <th class="px-4 py-3.5 text-right">Rate</th>
+                     <th class="px-4 py-3.5 text-right">GST %</th>
+                     <th class="px-4 py-3.5 text-right">MRP</th>
+                     <th class="px-5 py-3.5 text-center">Action</th>
+                  </tr>
+               </thead>
+               <tbody class="divide-y divide-slate-100">
+                  <tr 
+                    v-for="(row, idx) in flatStockRows" 
+                    :key="row._id + '-' + row.batchNo + '-' + idx"
+                    class="hover:bg-blue-50/30 transition-colors cursor-pointer group text-xs font-bold text-slate-700"
+                    @click="selectRow(row)"
+                  >
+                     <td class="px-5 py-3">
+                        <div class="font-black text-slate-900 text-sm leading-tight">{{ row.item }}</div>
+                        <div class="flex items-center gap-2 mt-1 text-[10px] text-slate-400 font-semibold">
+                           <span v-if="row.pno">P/N: {{ row.pno }}</span>
+                           <span v-if="row.pno && row.oem" class="w-1 h-1 bg-slate-300 rounded-full"></span>
+                           <span v-if="row.oem">OEM: {{ row.oem }}</span>
+                        </div>
+                     </td>
+                     <td class="px-4 py-3 font-mono text-[10px] uppercase tracking-wider text-slate-500">{{ row.hsn }}</td>
+                     <td class="px-4 py-3">
+                        <span :class="row.batchNo !== '-' ? 'bg-indigo-50 text-indigo-700 border-indigo-100' : 'bg-slate-50 text-slate-400 border-slate-100'" class="px-2 py-0.5 border rounded-md text-[10px] font-black uppercase">
+                           {{ row.batchNo }}
+                        </span>
+                     </td>
+                     <td class="px-4 py-3 text-slate-500 font-medium">{{ row.expiry }}</td>
+                     <td class="px-4 py-3 text-right">
+                        <span class="text-sm font-black text-slate-900" :class="row.qty <= 0 ? 'text-red-500 animate-pulse' : ''">{{ row.qty.toLocaleString() }}</span>
+                        <span class="text-[9px] font-black text-slate-400 uppercase ml-1">{{ row.uom }}</span>
+                     </td>
+                     <td class="px-4 py-3 text-right font-mono text-slate-900">₹{{ row.rate.toFixed(2) }}</td>
+                     <td class="px-4 py-3 text-right text-slate-500 font-medium">{{ row.grate }}%</td>
+                     <td class="px-4 py-3 text-right font-mono text-slate-900">
+                        {{ row.mrp ? '₹' + row.mrp.toFixed(2) : '-' }}
+                     </td>
+                     <td class="px-5 py-3 text-center">
+                        <button class="px-3 py-1 bg-slate-100 text-slate-700 rounded-lg text-[10px] font-black uppercase tracking-widest group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                           Select
+                        </button>
+                     </td>
+                  </tr>
+                  <tr v-if="flatStockRows.length === 0">
+                     <td colspan="9" class="px-5 py-12 text-center text-slate-400 font-black uppercase text-xs tracking-widest">
+                        No stock items match your search
+                     </td>
+                  </tr>
+               </tbody>
+            </table>
          </div>
       </div>
 
@@ -145,8 +160,50 @@ const filteredStocks = computed(() => {
   );
 });
 
-function selectStock(stock: any) {
-  emit('select', stock);
+const flatStockRows = computed(() => {
+  const rows: any[] = [];
+  props.stocks.forEach(stock => {
+    // Apply search filter on stock level properties
+    const q = search.value.toLowerCase();
+    const matchesSearch = !search.value || 
+      stock.item.toLowerCase().includes(q) || 
+      stock.hsn?.toLowerCase().includes(q) ||
+      stock.pno?.toLowerCase().includes(q) ||
+      stock.oem?.toLowerCase().includes(q);
+      
+    if (!matchesSearch) return;
+
+    if (stock.batches && stock.batches.length > 0) {
+      stock.batches.forEach((batch: any) => {
+        rows.push({
+          ...stock,
+          selectedBatch: batch,
+          qty: batch.qty,
+          rate: batch.rate,
+          grate: batch.grate,
+          mrp: batch.mrp,
+          batchNo: batch.batch || '-',
+          expiry: batch.expiry ? new Date(batch.expiry).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' }) : '-'
+        });
+      });
+    } else {
+      rows.push({
+        ...stock,
+        selectedBatch: null,
+        batchNo: '-',
+        expiry: '-'
+      });
+    }
+  });
+  return rows;
+});
+
+function selectRow(row: any) {
+  const stockObj = {
+    ...row,
+    selectedBatch: row.selectedBatch
+  };
+  emit('select', stockObj);
 }
 </script>
 

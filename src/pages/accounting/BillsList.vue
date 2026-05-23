@@ -37,6 +37,28 @@
           <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Search Party</label>
           <input type="text" v-model="partySearch" placeholder="Search by name..." class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
        </div>
+       <div class="flex space-x-2">
+         <button
+           @click="exportExcel"
+           class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg shadow-sm hover:bg-gray-50 flex items-center font-semibold text-sm h-10 transition-colors"
+           title="Export Filtered Bills to Excel"
+         >
+           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 2.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+           </svg>
+           Export Excel
+         </button>
+         <button
+           @click="exportPDF"
+           class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg shadow-sm hover:bg-gray-50 flex items-center font-semibold text-sm h-10 transition-colors"
+           title="Export Filtered Bills to PDF Report"
+         >
+           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 2.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+           </svg>
+           Export PDF
+         </button>
+       </div>
     </div>
 
     <!-- Bills Table -->
@@ -155,16 +177,56 @@ async function handleCancel(id: string) {
 
 async function downloadPDF(bill: any) {
   try {
-    const response = await api.get(`/accounting/bills/${bill._id}/pdf`, { responseType: 'blob' });
-    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const blob = await api.get(`/accounting/bills/${bill._id}/pdf`, { responseType: 'blob' });
+    const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.setAttribute('download', `Invoice_${bill.bno}.pdf`);
     document.body.appendChild(link);
     link.click();
     link.remove();
+    window.URL.revokeObjectURL(url);
   } catch (err) {
-    alert('PDF download failed. Ensure the server endpoint is implemented.');
+    alert('PDF download failed.');
+  }
+}
+
+async function exportPDF() {
+  try {
+    const params: any = {};
+    if (filters.btype) params.btype = filters.btype;
+    if (partySearch.value) params.searchTerm = partySearch.value;
+
+    const blob = await api.get('/accounting/bills/export/pdf', { params, responseType: 'blob' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Bills_Report.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    alert('PDF export failed.');
+  }
+}
+
+async function exportExcel() {
+  try {
+    const params: any = {};
+    if (filters.btype) params.btype = filters.btype;
+
+    const blob = await api.get('/accounting/bills/export', { params, responseType: 'blob' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Bills_Export.xlsx`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    alert('Excel export failed.');
   }
 }
 </script>

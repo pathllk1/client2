@@ -92,7 +92,7 @@ onMounted(() => {
           <!-- Amount -->
           <div class="flex flex-col gap-1.5">
             <label class="text-[10px] font-black uppercase tracking-wider text-gray-500">Amount (₹)</label>
-            <input type="number" v-model.number="form.amount" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none" placeholder="0.00" />
+            <input type="number" step="any" v-model.number="form.amount" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none" placeholder="0.00" />
           </div>
         </div>
 

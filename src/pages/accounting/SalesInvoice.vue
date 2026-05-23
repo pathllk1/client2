@@ -221,7 +221,9 @@ function onFirmGstinChange(event: Event) {
 }
 
 function onStockSelect(stock: any) {
-  const existing = state.cart.find(item => item.stockId === stock._id && !item.batch);
+  const selectedBatch = stock.selectedBatch;
+  const batchNo = selectedBatch?.batch || '';
+  const existing = state.cart.find(item => item.stockId === stock._id && (item.batch || '') === batchNo);
   if (existing) {
     existing.qty++;
   } else {
@@ -230,13 +232,13 @@ function onStockSelect(stock: any) {
       item: stock.item,
       hsn: stock.hsn,
       qty: 1,
-      uom: stock.uom,
-      rate: stock.rate,
-      grate: stock.grate,
+      uom: selectedBatch?.uom || stock.uom,
+      rate: selectedBatch?.rate || stock.rate,
+      grate: selectedBatch?.grate || stock.grate,
       disc: 0,
       itemType: 'GOODS',
-      batch: stock.batches?.[0]?.batch,
-      mrp: stock.batches?.[0]?.mrp || stock.mrp
+      batch: batchNo,
+      mrp: selectedBatch?.mrp || stock.mrp
     });
   }
   showStockModal.value = false;

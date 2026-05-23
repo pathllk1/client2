@@ -68,7 +68,7 @@
                               <input type="text" v-model="batch.batch" class="w-full px-2 py-2 border-b border-transparent focus:border-indigo-500 outline-none transition-all font-bold" placeholder="Optional" />
                            </td>
                            <td class="px-2 py-2 w-20">
-                              <input type="number" v-model="batch.qty" required class="w-full px-2 py-2 border-b border-transparent focus:border-indigo-500 outline-none transition-all font-bold" />
+                              <input type="number" step="any" v-model="batch.qty" required class="w-full px-2 py-2 border-b border-transparent focus:border-indigo-500 outline-none transition-all font-bold" />
                            </td>
                            <td class="px-2 py-2 w-28">
                               <select v-model="batch.uom" required class="w-full px-2 py-2 border-b border-transparent focus:border-indigo-500 outline-none transition-all font-bold bg-transparent">
@@ -81,13 +81,13 @@
                               </select>
                            </td>
                            <td class="px-2 py-2 w-24">
-                              <input type="number" v-model="batch.rate" required class="w-full px-2 py-2 border-b border-transparent focus:border-indigo-500 outline-none transition-all font-bold" />
+                              <input type="number" step="any" v-model="batch.rate" required class="w-full px-2 py-2 border-b border-transparent focus:border-indigo-500 outline-none transition-all font-bold" />
                            </td>
                            <td class="px-2 py-2 w-20">
-                              <input type="number" v-model="batch.grate" required class="w-full px-2 py-2 border-b border-transparent focus:border-indigo-500 outline-none transition-all font-bold" />
+                              <input type="number" step="any" v-model="batch.grate" required class="w-full px-2 py-2 border-b border-transparent focus:border-indigo-500 outline-none transition-all font-bold" />
                            </td>
                            <td class="px-2 py-2 w-24">
-                              <input type="number" v-model="batch.mrp" class="w-full px-2 py-2 border-b border-transparent focus:border-indigo-500 outline-none transition-all font-bold" />
+                              <input type="number" step="any" v-model="batch.mrp" class="w-full px-2 py-2 border-b border-transparent focus:border-indigo-500 outline-none transition-all font-bold" />
                            </td>
                            <td class="px-2 py-2 w-32">
                               <input type="date" v-model="batch.expiry" class="w-full px-2 py-2 border-b border-transparent focus:border-indigo-500 outline-none transition-all font-bold" />

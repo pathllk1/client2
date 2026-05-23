@@ -204,7 +204,9 @@ const canSave = computed(() => {
 });
 
 function onStockSelect(stock: any) {
-  const existing = state.cart.find(item => item.stockId === stock._id && !item.batch);
+  const selectedBatch = stock.selectedBatch;
+  const batchNo = selectedBatch?.batch || '';
+  const existing = state.cart.find(item => item.stockId === stock._id && (item.batch || '') === batchNo);
   if (existing) {
     existing.qty++;
   } else {
@@ -212,14 +214,14 @@ function onStockSelect(stock: any) {
       stockId: stock._id,
       item: stock.item,
       hsn: stock.hsn,
-      batch: stock.batches?.[0]?.batch || '',
+      batch: batchNo,
       qty: 1,
-      uom: stock.uom || 'PCS',
-      rate: stock.rate || 0,
-      grate: stock.grate || 18,
+      uom: selectedBatch?.uom || stock.uom || 'PCS',
+      rate: selectedBatch?.rate || stock.rate || 0,
+      grate: selectedBatch?.grate || stock.grate || 18,
       disc: 0,
       itemType: 'GOODS',
-      mrp: stock.batches?.[0]?.mrp || stock.mrp,
+      mrp: selectedBatch?.mrp || stock.mrp || 0,
       pno: stock.pno,
       oem: stock.oem
     });

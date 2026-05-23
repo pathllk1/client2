@@ -22,11 +22,11 @@
                 </div>
                 <div>
                    <label class="block text-[9px] font-black text-slate-400 uppercase mb-1 ml-1">Amount (₹)</label>
-                   <input type="number" v-model="charge.amount" class="w-full px-3 py-2 bg-white border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-bold text-right" />
+                   <input type="number" step="any" v-model="charge.amount" class="w-full px-3 py-2 bg-white border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-bold text-right" />
                 </div>
                 <div>
                    <label class="block text-[9px] font-black text-slate-400 uppercase mb-1 ml-1">GST %</label>
-                   <input type="number" v-model="charge.grate" class="w-full px-3 py-2 bg-white border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-bold text-right" />
+                   <input type="number" step="any" v-model="charge.grate" class="w-full px-3 py-2 bg-white border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-bold text-right" />
                 </div>
              </div>
              <button @click="removeCharge(index)" class="mt-6 text-slate-300 hover:text-red-500 transition-colors">

@@ -15,6 +15,8 @@ interface COAEntry {
   is_active: boolean
   opening_balance?: number
   balance_type?: 'DR' | 'CR'
+  current_balance?: number
+  current_balance_type?: 'DR' | 'CR'
 }
 
 const coaData = ref<COAEntry[]>([])
@@ -174,6 +176,7 @@ onMounted(fetchCOA)
               <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Account Master</th>
               <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Type</th>
               <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Opening Balance</th>
+              <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Current Balance</th>
               <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Actions</th>
             </tr>
           </thead>
@@ -195,6 +198,12 @@ onMounted(fetchCOA)
                 <div class="flex flex-col items-end">
                   <span class="text-xs font-bold text-slate-700 font-mono">₹ {{ acc.opening_balance?.toLocaleString() || '0' }}</span>
                   <span class="text-[8px] font-black" :class="[acc.balance_type === 'DR' ? 'text-blue-600' : 'text-red-600']">{{ acc.balance_type }}</span>
+                </div>
+              </td>
+              <td class="px-6 py-4 text-right">
+                <div class="flex flex-col items-end">
+                  <span class="text-xs font-black text-emerald-600 font-mono">₹ {{ acc.current_balance?.toLocaleString() || '0' }}</span>
+                  <span class="text-[8px] font-black" :class="[acc.current_balance_type === 'DR' ? 'text-blue-600' : 'text-red-600']">{{ acc.current_balance_type }}</span>
                 </div>
               </td>
               <td class="px-6 py-4">
