@@ -415,7 +415,7 @@ const headerActions = [
             <template #select-header>
               <UCheckbox 
                 :model-value="isAllSelected" 
-                @update:model-value="(val) => toggleSelectAll(!!val)" 
+                @update:model-value="(val: any) => toggleSelectAll(!!val)" 
                 class="flex items-center justify-center"
               />
             </template>
@@ -424,7 +424,7 @@ const headerActions = [
             <template #select-cell="{ row }">
               <UCheckbox 
                 :model-value="selectedRows.some(r => r._id === row.original._id)" 
-                @update:model-value="(val) => toggleRowSelection(row.original, !!val)" 
+                @update:model-value="(val: any) => toggleRowSelection(row.original, !!val)" 
                 class="flex items-center justify-center"
               />
             </template>
@@ -486,7 +486,7 @@ const headerActions = [
               <div class="flex items-center gap-3">
                 <UCheckbox 
                   :model-value="selectedRows.some(r => r._id === emp._id)" 
-                  @update:model-value="(val) => toggleRowSelection(emp, !!val)" 
+                  @update:model-value="(val: any) => toggleRowSelection(emp, !!val)" 
                 />
                 <UAvatar :alt="emp.employee_name" size="md" />
                 <div>
