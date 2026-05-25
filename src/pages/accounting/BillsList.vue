@@ -1,5 +1,5 @@
 <template>
-  <div class="p-6 max-w-7xl mx-auto">
+  <div class="p-6 w-full mx-auto">
     <div class="flex justify-between items-center mb-8">
       <div>
         <h1 class="text-3xl font-bold text-gray-900">Invoices & Notes</h1>

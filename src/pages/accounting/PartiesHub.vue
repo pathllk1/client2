@@ -24,7 +24,7 @@
     </div>
 
     <!-- Main Content -->
-    <div class="max-w-7xl mx-auto px-6 py-8">
+    <div class="w-full mx-auto px-6 py-8">
       <!-- Search & Filters -->
       <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-8 flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
         <div class="relative flex-1">

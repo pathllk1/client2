@@ -105,8 +105,9 @@
       </section>
     </main>
 
-    <StockModal v-model="showStockModal" :stocks="state.stocks" @select="onStockSelect" @create-stock="showCreateStockModal = true" />
+    <StockModal v-model="showStockModal" :stocks="state.stocks" @select="onStockSelect" @create-stock="showCreateStockModal = true" @edit-stock="onEditStock" />
     <CreateStockModal v-model="showCreateStockModal" @saved="fetchData" />
+    <EditStockModal v-model="showEditStockModal" :stock="selectedStockToEdit" @saved="fetchData" />
     <PartyModal v-model="showCreatePartyModal" @saved="(p: any) => { fetchData(); onPartySelect(p); }" />
     <OtherChargesModal v-model="showOtherChargesModal" :other-charges="state.otherCharges" />
 
@@ -139,6 +140,7 @@ import CartManager from '@/components/inventory/CartManager.vue';
 import InvoiceSummary from '@/components/inventory/InvoiceSummary.vue';
 import StockModal from '@/components/inventory/StockModal.vue';
 import CreateStockModal from '@/components/inventory/CreateStockModal.vue';
+import EditStockModal from '@/components/inventory/EditStockModal.vue';
 import PartyModal from '@/components/inventory/PartyModal.vue';
 import OtherChargesModal from '@/components/inventory/OtherChargesModal.vue';
 import { api } from '@/utils/api';
@@ -153,8 +155,15 @@ const showStockModal = ref(false);
 const showPartyModal = ref(false);
 const showCreatePartyModal = ref(false);
 const showCreateStockModal = ref(false);
+const showEditStockModal = ref(false);
 const showOtherChargesModal = ref(false);
+const selectedStockToEdit = ref<any>(null);
 const loading = ref(false);
+
+function onEditStock(stock: any) {
+  selectedStockToEdit.value = stock;
+  showEditStockModal.value = true;
+}
 
 const handleKeydown = (e: KeyboardEvent) => {
   if (e.key === 'F2') { e.preventDefault(); showStockModal.value = true; }
@@ -200,10 +209,13 @@ async function loadExistingBill(id: string) {
 }
 
 const canSave = computed(() => {
-  return state.selectedParty &&
-    state.meta.supplierBillNo &&
-    state.cart.length > 0 &&
-    state.cart.every(item => item.item && (parseFloat(item.qty) || 0) > 0 && (parseFloat(item.rate) || 0) > 0);
+  const partyOk = state.selectedParty;
+  const supplierBillNoOk = state.isReturnMode || state.meta.supplierBillNo;
+  const cartOk = state.cart.length > 0 && state.cart.every(item => {
+    const qty = state.isReturnMode ? item.returnQty : item.qty;
+    return item.item && (parseFloat(qty) || 0) > 0 && (parseFloat(item.rate) || 0) > 0;
+  });
+  return partyOk && supplierBillNoOk && cartOk;
 });
 
 function onStockSelect(stock: any) {
@@ -267,18 +279,27 @@ async function saveInvoice() {
   if (!canSave.value || loading.value) return;
   loading.value = true;
   try {
-    const payload = {
-      meta: {
-        ...state.meta,
-        btype: state.isReturnMode ? 'DEBIT_NOTE' : 'PURCHASE',
-        firmGstin: state.activeFirmLocation?.gst_number || null,
-        partyGstin: state.selectedPartyGstin || null
-      },
-      party: state.selectedParty,
-      cart: state.cart,
-      otherCharges: state.otherCharges,
-      consignee: state.selectedConsignee
-    };
+    const payload = state.isReturnMode
+      ? {
+          originalBillId: state.returnFromBillId,
+          returnCart: state.cart.map(item => ({
+            ...item,
+            qty: parseFloat(item.returnQty) || 0
+          })).filter(item => item.qty > 0),
+          narration: state.meta.narration
+        }
+      : {
+          meta: {
+            ...state.meta,
+            btype: 'PURCHASE',
+            firmGstin: state.activeFirmLocation?.gst_number || null,
+            partyGstin: state.selectedPartyGstin || null
+          },
+          party: state.selectedParty,
+          cart: state.cart,
+          otherCharges: state.otherCharges,
+          consignee: state.selectedConsignee
+        };
     
     const endpoint = state.isReturnMode ? '/accounting/debit-notes' : '/accounting/purchases';
     const res = await api.post(endpoint, payload);

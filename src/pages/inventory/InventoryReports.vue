@@ -1,5 +1,5 @@
 <template>
-  <div class="p-6 max-w-7xl mx-auto">
+  <div class="p-6 w-full mx-auto">
     <div class="mb-8">
       <h1 class="text-3xl font-bold text-gray-900">Inventory Reports</h1>
       <p class="text-gray-600 mt-1">Detailed analysis of stock and consumption</p>

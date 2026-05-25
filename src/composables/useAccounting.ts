@@ -71,11 +71,11 @@ export const useAccounting = () => {
     }
   };
 
-  const fetchTrialBalance = async (toDate?: string) => {
+  const fetchTrialBalance = async (params?: { fromDate?: string; toDate?: string }) => {
     loading.value = true;
     error.value = null;
     try {
-      const response = await api.get('/accounting/ledger/trial-balance', { params: { toDate } });
+      const response = await api.get('/accounting/ledger/trial-balance', { params });
       if (response.success) {
         trialBalance.value = response.data;
       }

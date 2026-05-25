@@ -12,10 +12,10 @@ import DataQualityAuditModal from '@/components/master-roll/DataQualityAuditModa
 
 const { 
   loading, employees, stats, total, 
-  fetchEmployees, fetchStats, deleteEmployee,
+  fetchEmployees, fetchStats,
   exportExcel, exportICards, downloadTemplate,
   exportQualityReport, downloadAppointmentLetter,
-  bulkDeleteEmployees, fetchUniqueFields
+  fetchUniqueFields
 } = useMasterRoll()
 
 const { selectedFirmId } = useAuth()
@@ -168,27 +168,45 @@ const onDownloadLetter = async (emp: any) => {
   }
 }
 
-const onDelete = async (id: string) => {
-  if (confirm('Are you sure you want to delete this employee?')) {
-    await deleteEmployee(id)
-    fetchData()
+const onExportSelected = async () => {
+  const ids = selectedRows.value.map(row => row._id)
+  try {
+    await exportExcel(ids)
+    toast.add({ title: 'Success', description: `Exported ${ids.length} employees`, color: 'success' })
+  } catch (err: any) {
+    toast.add({ title: 'Error', description: err.message, color: 'error' })
   }
 }
 
-const onBulkDelete = async () => {
-  const ids = selectedRows.value.map(row => row._id)
-  if (confirm(`Are you sure you want to delete ${ids.length} employees?`)) {
-    try {
-      const res = await bulkDeleteEmployees(ids)
-      if (res.success) {
-        toast.add({ title: 'Success', description: res.message, color: 'success' })
-        fetchData()
+const isAllSelected = computed(() => {
+  if (employees.value.length === 0) return false
+  return employees.value.every(emp => selectedRows.value.some(r => r._id === emp._id))
+})
+
+const toggleSelectAll = (checked: boolean) => {
+  if (checked) {
+    employees.value.forEach(emp => {
+      if (!selectedRows.value.some(r => r._id === emp._id)) {
+        selectedRows.value.push(emp)
       }
-    } catch (err: any) {
-      toast.add({ title: 'Error', description: err.message, color: 'error' })
-    }
+    })
+  } else {
+    const pageIds = employees.value.map(emp => emp._id)
+    selectedRows.value = selectedRows.value.filter(r => !pageIds.includes(r._id))
   }
 }
+
+const toggleRowSelection = (emp: any, checked: boolean) => {
+  if (checked) {
+    if (!selectedRows.value.some(r => r._id === emp._id)) {
+      selectedRows.value.push(emp)
+    }
+  } else {
+    selectedRows.value = selectedRows.value.filter(r => r._id !== emp._id)
+  }
+}
+
+
 
 const headerActions = [
   [
@@ -258,14 +276,14 @@ const headerActions = [
           <UInput v-model="filters.q" size="sm" icon="i-heroicons-magnifying-glass" placeholder="Search..." class="flex-1 lg:flex-none lg:w-64" variant="outline" />
           <USelect v-model="filters.status" size="sm" :items="['Active', 'Inactive', 'Left']" placeholder="All Status" class="w-full sm:w-32" />
           <div v-if="selectedRows.length > 0" class="hidden sm:block h-6 w-px bg-gray-200 dark:bg-gray-800 mx-1" />
-          <UButton v-if="selectedRows.length > 0" color="error" variant="soft" size="sm" icon="i-heroicons-trash" :label="`Delete ${selectedRows.length}`" @click="onBulkDelete" />
+          <UButton v-if="selectedRows.length > 0" color="primary" variant="soft" size="sm" icon="i-heroicons-arrow-up-tray" :label="`Export Selected (${selectedRows.length})`" @click="onExportSelected" />
         </div>
         <div class="flex items-center justify-between lg:justify-end gap-1.5 overflow-x-auto no-scrollbar py-1 lg:py-0">
           <UTooltip text="Quality Audit">
             <UButton color="neutral" variant="ghost" size="sm" icon="i-heroicons-shield-check" @click="isQualityModalOpen = true" />
           </UTooltip>
           <UTooltip text="Export Excel">
-            <UButton color="neutral" variant="ghost" size="sm" icon="i-heroicons-table-cells" @click="exportExcel" />
+            <UButton color="neutral" variant="ghost" size="sm" icon="i-heroicons-table-cells" @click="() => exportExcel()" />
           </UTooltip>
           <UTooltip text="I-Cards">
             <UButton color="neutral" variant="ghost" size="sm" icon="i-heroicons-identification" @click="isICardModalOpen = true" />
@@ -383,7 +401,6 @@ const headerActions = [
         <!-- Desktop Table View -->
         <div class="hidden lg:block">
           <UTable 
-            v-model:selection="selectedRows"
             :data="employees" 
             :columns="columns" 
             :loading="loading" 
@@ -394,6 +411,24 @@ const headerActions = [
               tr: 'hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors'
             }"
           >
+            <!-- Select Header Slot -->
+            <template #select-header>
+              <UCheckbox 
+                :model-value="isAllSelected" 
+                @update:model-value="(val) => toggleSelectAll(!!val)" 
+                class="flex items-center justify-center"
+              />
+            </template>
+
+            <!-- Select Cell Slot -->
+            <template #select-cell="{ row }">
+              <UCheckbox 
+                :model-value="selectedRows.some(r => r._id === row.original._id)" 
+                @update:model-value="(val) => toggleRowSelection(row.original, !!val)" 
+                class="flex items-center justify-center"
+              />
+            </template>
+
             <!-- Same cell templates as before -->
             <template #employee_name-cell="{ row }">
               <div class="flex items-center gap-3 py-1">
@@ -431,8 +466,6 @@ const headerActions = [
                   :items="[[
                     { label: 'View Activity Log', icon: 'i-heroicons-clock', onSelect: () => openActivity(row.original) },
                     { label: 'Download Letter', icon: 'i-heroicons-document-text', onSelect: () => onDownloadLetter(row.original) }
-                  ], [
-                    { label: 'Delete Record', icon: 'i-heroicons-trash', color: 'error', onSelect: () => onDelete(row.original._id) }
                   ]]"
                 >
                   <UButton size="xs" variant="ghost" color="neutral" icon="i-heroicons-ellipsis-vertical" />
@@ -451,6 +484,10 @@ const headerActions = [
           <div v-for="emp in employees" :key="emp._id" class="p-4 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
             <div class="flex items-start justify-between gap-3">
               <div class="flex items-center gap-3">
+                <UCheckbox 
+                  :model-value="selectedRows.some(r => r._id === emp._id)" 
+                  @update:model-value="(val) => toggleRowSelection(emp, !!val)" 
+                />
                 <UAvatar :alt="emp.employee_name" size="md" />
                 <div>
                   <h4 class="font-black text-gray-900 dark:text-white leading-tight">{{ emp.employee_name }}</h4>
@@ -492,8 +529,6 @@ const headerActions = [
                 :items="[[
                   { label: 'View Activity Log', icon: 'i-heroicons-clock', onSelect: () => openActivity(emp) },
                   { label: 'Download Letter', icon: 'i-heroicons-document-text', onSelect: () => onDownloadLetter(emp) }
-                ], [
-                  { label: 'Delete Record', icon: 'i-heroicons-trash', color: 'error', onSelect: () => onDelete(emp._id) }
                 ]]"
               >
                 <UButton size="xs" variant="ghost" color="neutral" icon="i-heroicons-ellipsis-horizontal" />

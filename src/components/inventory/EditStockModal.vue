@@ -171,10 +171,19 @@ watch(() => props.stock, (newVal) => {
     form.mrp = newVal.mrp || 0;
     form.batches = newVal.batches ? JSON.parse(JSON.stringify(newVal.batches)) : [];
     
-    // Convert expiry to YYYY-MM-DD for date input
+    // Convert expiry to YYYY-MM-DD for date input safely
     form.batches.forEach(b => {
       if (b.expiry) {
-        b.expiry = new Date(b.expiry).toISOString().split('T')[0];
+        try {
+          const dateObj = new Date(b.expiry);
+          if (!isNaN(dateObj.getTime())) {
+            b.expiry = dateObj.toISOString().split('T')[0];
+          } else {
+            b.expiry = '';
+          }
+        } catch (e) {
+          b.expiry = '';
+        }
       }
     });
   }
@@ -189,6 +198,10 @@ function removeBatch(index: number) {
 }
 
 async function saveChanges() {
+  if (form.batches.length === 0) {
+    alert('At least one batch is required');
+    return;
+  }
   loading.value = true;
   try {
     const res = await updateStock(props.stock.id || props.stock._id, form);

@@ -115,14 +115,23 @@
                            <span v-else>-</span>
                         </td>
                         <td class="px-5 py-3.5 text-center">
-                           <button 
-                             class="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-colors"
-                             :class="stock.batches && stock.batches.length > 1 
-                               ? (expandedStockId === stock._id ? 'bg-indigo-600 text-white' : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white') 
-                               : 'bg-slate-100 text-slate-700 hover:bg-blue-600 hover:text-white'"
-                           >
-                              {{ stock.batches && stock.batches.length > 1 ? (expandedStockId === stock._id ? 'Close' : 'Expand') : 'Select' }}
-                           </button>
+                           <div class="flex items-center justify-center gap-2">
+                              <button 
+                                class="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-colors"
+                                :class="stock.batches && stock.batches.length > 1 
+                                  ? (expandedStockId === stock._id ? 'bg-indigo-600 text-white' : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white') 
+                                  : 'bg-slate-100 text-slate-700 hover:bg-blue-600 hover:text-white'"
+                              >
+                                 {{ stock.batches && stock.batches.length > 1 ? (expandedStockId === stock._id ? 'Close' : 'Expand') : 'Select' }}
+                              </button>
+                              <button 
+                                type="button"
+                                @click.stop="$emit('edit-stock', stock)"
+                                class="px-3 py-1 bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-600 hover:text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-colors"
+                              >
+                                 Edit
+                              </button>
+                           </div>
                         </td>
                      </tr>
 
@@ -221,7 +230,7 @@ const props = defineProps<{
   stocks: any[];
 }>();
 
-const emit = defineEmits(['update:modelValue', 'select', 'create-stock']);
+const emit = defineEmits(['update:modelValue', 'select', 'create-stock', 'edit-stock']);
 
 const search = ref('');
 const searchInput = ref<HTMLInputElement | null>(null);

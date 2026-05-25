@@ -1,5 +1,5 @@
 <template>
-  <div class="p-6 max-w-[1600px] mx-auto space-y-8">
+  <div class="p-6 w-full mx-auto space-y-8">
     <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
       <div class="space-y-1">
         <div class="flex items-center gap-2">

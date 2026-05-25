@@ -2,6 +2,7 @@
 import { onMounted } from 'vue'
 import { useAuth } from './composables/useAuth'
 import DefaultLayout from './layouts/Default.vue'
+import GlobalToolsHost from './components/tools/GlobalToolsHost.vue'
 
 const { fetchMe, state, selectFirm } = useAuth()
 
@@ -18,6 +19,7 @@ onMounted(async () => {
     <DefaultLayout>
       <RouterView />
     </DefaultLayout>
+    <GlobalToolsHost />
     <UToaster />
   </UApp>
 </template>

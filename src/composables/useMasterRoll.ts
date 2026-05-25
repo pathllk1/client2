@@ -113,8 +113,12 @@ export const useMasterRoll = () => {
     await api.download('/master-rolls/export/template', 'MasterRoll_Template.xlsx')
   }
 
-  const exportExcel = async () => {
-    await api.download('/master-rolls/export?format=xlsx', 'MasterRoll_Export.xlsx')
+  const exportExcel = async (selectedIds?: string[]) => {
+    let url = '/master-rolls/export?format=xlsx'
+    if (selectedIds && selectedIds.length > 0) {
+      url += `&selectedIds=${selectedIds.join(',')}`
+    }
+    await api.download(url, 'MasterRoll_Export.xlsx')
   }
 
   const exportICards = async (params: any = {}, format: 'pdf' | 'xlsx' = 'pdf') => {

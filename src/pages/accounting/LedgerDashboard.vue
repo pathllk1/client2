@@ -1,5 +1,5 @@
 <template>
-  <div class="p-6 max-w-[1600px] mx-auto space-y-8">
+  <div class="p-6 w-full mx-auto space-y-8">
     <!-- Header Section -->
     <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
       <div class="space-y-1">
@@ -146,6 +146,24 @@
                 <div class="text-left">
                    <h4 class="text-sm font-black text-slate-900 tracking-tight">Banking Hub</h4>
                    <p class="text-[10px] text-slate-400 font-bold uppercase">Manage Treasury & Bank A/Cs</p>
+                </div>
+             </button>
+             <button @click="$router.push('/accounting/trial-balance')" class="w-full p-4 flex items-center gap-4 rounded-3xl bg-slate-50 hover:bg-slate-100 transition-all border border-slate-100 group">
+                <div class="w-10 h-10 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 18h12l3-18H3zm3 0h12v-2a2 2 0 00-2-2H8a2 2 0 00-2 2v2z"/></svg>
+                </div>
+                <div class="text-left">
+                   <h4 class="text-sm font-black text-slate-900 tracking-tight">Trial Balance</h4>
+                   <p class="text-[10px] text-slate-400 font-bold uppercase">Verify debits & credits balance</p>
+                </div>
+             </button>
+             <button @click="$router.push('/accounting/statements')" class="w-full p-4 flex items-center gap-4 rounded-3xl bg-slate-50 hover:bg-slate-100 transition-all border border-slate-100 group">
+                <div class="w-10 h-10 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 2.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                </div>
+                <div class="text-left">
+                   <h4 class="text-sm font-black text-slate-900 tracking-tight">Financial Statements</h4>
+                   <p class="text-[10px] text-slate-400 font-bold uppercase">Profit & Loss and Balance Sheet</p>
                 </div>
              </button>
           </div>
@@ -323,7 +341,7 @@ let exposureChart: Chart | null = null;
 
 const refreshData = async () => {
   await Promise.all([
-    fetchTrialBalance(toDate.value),
+    fetchTrialBalance({ toDate: toDate.value }),
     fetchVouchersSummary(),
     fetchJournalSummary(),
     fetchAccountTypeSummaries(toDate.value)

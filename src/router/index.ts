@@ -112,6 +112,18 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/accounting/trial-balance',
+      name: 'trial-balance',
+      component: () => import('../pages/accounting/TrialBalance.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/accounting/statements',
+      name: 'financial-statements',
+      component: () => import('../pages/accounting/ProfitLoss.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/auth/login',
       name: 'login',
       component: () => import('../pages/auth/Login.vue'),
