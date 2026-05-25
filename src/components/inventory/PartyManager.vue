@@ -27,7 +27,7 @@
       </div>
 
       <!-- GST Location Selector -->
-      <div v-if="state.selectedParty?.gstLocations?.length > 1" class="gst-selector-container">
+      <div v-if="state.gstEnabled && state.selectedParty?.gstLocations?.length > 1" class="gst-selector-container">
         <label class="gst-select-label">
           <span>Billing to GSTIN</span>
           <select 
@@ -74,11 +74,11 @@
           <textarea v-model="state.selectedConsignee.address" rows="3" placeholder="Enter delivery address"></textarea>
         </label>
         <div class="ship-grid">
-          <label>
+          <label v-if="state.gstEnabled">
             <span>GSTIN</span>
             <input v-model="state.selectedConsignee.gstin" type="text" maxlength="15" placeholder="27ABCDE1234F1Z5" />
           </label>
-          <label>
+          <label :style="!state.gstEnabled ? 'grid-column: span 2;' : ''">
             <span>State *</span>
             <input v-model="state.selectedConsignee.state" type="text" placeholder="Enter state" />
           </label>

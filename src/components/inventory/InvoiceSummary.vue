@@ -14,21 +14,23 @@
       <strong>INR {{ money(totals.grossTotal) }}</strong>
     </div>
 
-    <template v-if="state.meta.billType === 'intra-state'">
-      <div class="summary-item">
-        <span>CGST</span>
-        <strong>INR {{ money(totals.cgst) }}</strong>
-      </div>
-      <div class="summary-item">
-        <span>SGST</span>
-        <strong>INR {{ money(totals.sgst) }}</strong>
-      </div>
-    </template>
-    <template v-else>
-      <div class="summary-item">
-        <span>IGST</span>
-        <strong>INR {{ money(totals.igst) }}</strong>
-      </div>
+    <template v-if="state.gstEnabled">
+      <template v-if="state.meta.billType === 'intra-state'">
+        <div class="summary-item">
+          <span>CGST</span>
+          <strong>INR {{ money(totals.cgst) }}</strong>
+        </div>
+        <div class="summary-item">
+          <span>SGST</span>
+          <strong>INR {{ money(totals.sgst) }}</strong>
+        </div>
+      </template>
+      <template v-else>
+        <div class="summary-item">
+          <span>IGST</span>
+          <strong>INR {{ money(totals.igst) }}</strong>
+        </div>
+      </template>
     </template>
 
     <template v-if="otherChargesTotal > 0">

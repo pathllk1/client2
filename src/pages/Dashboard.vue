@@ -8,6 +8,39 @@ const { user, selectedFirmId } = useAuth()
 const api = useApi()
 const toast = useToast()
 
+const gstEnabled = ref(true)
+const updatingGst = ref(false)
+
+const fetchGstStatus = async () => {
+  if (!selectedFirmId.value) return
+  try {
+    const res = await api.get('/firms/settings/gst')
+    if (res.success && res.data) {
+      gstEnabled.value = res.data.gst_enabled
+    }
+  } catch (err: any) {
+    console.error('Error fetching GST status:', err)
+  }
+}
+
+const toggleGst = async (val: any) => {
+  const enabled = !!val
+  if (!selectedFirmId.value || !isOwnerOrAdmin.value) return
+  updatingGst.value = true
+  try {
+    const res = await api.post('/firms/settings/gst', { enabled })
+    if (res.success) {
+      toast.add({ title: 'Success', description: res.message || 'GST configuration saved', color: 'success' })
+      gstEnabled.value = enabled
+    }
+  } catch (err: any) {
+    toast.add({ title: 'Error toggling GST settings', description: err.message, color: 'error' })
+    gstEnabled.value = !enabled
+  } finally {
+    updatingGst.value = false
+  }
+}
+
 const stats = ref([
   { label: 'Inventory Value', value: '₹0', icon: 'i-heroicons-cube', color: 'primary' },
   { label: 'Active Bills', value: '0', icon: 'i-heroicons-document-text', color: 'success' },
@@ -107,7 +140,10 @@ const fetchData = async () => {
     activity.value = logsRes.logs || []
 
     if (isOwnerOrAdmin.value) {
-      await fetchMembers()
+      await Promise.all([
+        fetchMembers(),
+        fetchGstStatus()
+      ])
     }
   } catch (err: any) {
     toast.add({ title: 'Error fetching dashboard data', description: err.message, color: 'error' })
@@ -281,6 +317,33 @@ const deleteMember = async (userId: string) => {
         </div>
       </UCard>
     </div>
+
+    <!-- Firm Settings (Owners/Admins only) -->
+    <UCard v-if="isOwnerOrAdmin" class="mt-8">
+      <template #header>
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="font-semibold text-lg">Firm Settings</h3>
+            <p class="text-xs text-gray-500">Manage configuration and preferences for your firm</p>
+          </div>
+        </div>
+      </template>
+
+      <div class="space-y-4 max-w-md">
+        <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
+          <div>
+            <h4 class="font-bold text-sm text-slate-800 dark:text-slate-200">GST Billing & Tax Calculation</h4>
+            <p class="text-xs text-slate-500 mt-0.5">Enable or disable GST tax rates, HSN fields, and calculations.</p>
+          </div>
+          <UCheckbox
+            :model-value="gstEnabled"
+            @update:model-value="toggleGst"
+            :disabled="updatingGst"
+            size="md"
+          />
+        </div>
+      </div>
+    </UCard>
 
     <!-- Firm Member Management CRUD (Owners/Admins only) -->
     <UCard v-if="isOwnerOrAdmin" class="mt-8">

@@ -158,6 +158,7 @@ export const useBillingState = () => {
         state.currentFirmName = firm.name;
         state.firmLocations = firm.locations || [];
         state.activeFirmLocation = state.firmLocations.find(l => l.is_default) || state.firmLocations[0] || null;
+        state.gstEnabled = firm.gst_enabled !== false;
       }
     } catch (err) {
       console.error('Failed to fetch billing data', err);

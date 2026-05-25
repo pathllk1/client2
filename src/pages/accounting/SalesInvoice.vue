@@ -28,14 +28,14 @@
             </option>
           </select>
         </label>
-        <label>
+        <label v-if="state.gstEnabled">
           <span>Transaction type</span>
           <select v-model="state.meta.billType">
             <option value="intra-state">Intra-State (CGST + SGST)</option>
             <option value="inter-state">Inter-State (IGST)</option>
           </select>
         </label>
-        <label class="inline-toggle">
+        <label v-if="state.gstEnabled" class="inline-toggle">
           <input v-model="state.meta.reverseCharge" type="checkbox" />
           <span>Reverse Charge</span>
         </label>

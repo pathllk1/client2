@@ -6,13 +6,13 @@
           <tr>
             <th class="index-col">#</th>
             <th>{{ mode === 'purchase' ? 'Item / Batch' : 'Description' }}</th>
-            <th>HSN/SAC</th>
+            <th v-if="state.gstEnabled">HSN/SAC</th>
             <th v-if="state.isReturnMode" class="num">Orig</th>
             <th class="num">{{ state.isReturnMode ? 'Return' : 'Qty' }}</th>
             <th>Unit</th>
             <th class="num">{{ mode === 'purchase' ? 'Cost' : 'Rate' }}</th>
             <th class="num">Disc %</th>
-            <th class="num">GST %</th>
+            <th v-if="state.gstEnabled" class="num">GST %</th>
             <th class="num total-col">Amount</th>
             <th class="action-col"></th>
           </tr>
@@ -38,7 +38,7 @@
                   <span v-if="item.mrp" class="data-pill">MRP {{ item.mrp }}</span>
                 </div>
               </td>
-              <td>
+              <td v-if="state.gstEnabled">
                 <input
                   v-if="isEditableDescription(item)"
                   v-model="item.hsn"
@@ -81,7 +81,7 @@
               <td class="num">
                 <input v-model="item.disc" class="line-input num-input" type="number" min="0" max="100" step="0.01" :readonly="state.isReturnMode" />
               </td>
-              <td class="num">
+              <td v-if="state.gstEnabled" class="num">
                 <input
                   v-if="isEditableDescription(item)"
                   v-model="item.grate"
@@ -103,7 +103,7 @@
             </tr>
             <tr class="note-row">
               <td></td>
-              <td colspan="10">
+              <td :colspan="noteRowColspan">
                 <input v-model="item.narration" class="note-input" type="text" placeholder="Line note" />
               </td>
             </tr>
@@ -111,7 +111,7 @@
         </tbody>
         <tbody v-else>
           <tr>
-            <td colspan="11">
+            <td :colspan="totalColspan">
               <div class="empty-state">
                 <p>No line items yet.</p>
                 <button type="button" @click="$emit('add-item')">{{ mode === 'purchase' ? 'Add first row' : 'Add stock item' }}</button>
@@ -151,6 +151,17 @@ const totalQuantity = computed(() => {
     const qty = parseFloat(props.state.isReturnMode ? item.returnQty : item.qty) || 0;
     return sum + qty;
   }, 0);
+});
+
+const noteRowColspan = computed(() => {
+  let base = 7;
+  if (props.state.gstEnabled) base += 2;
+  if (props.state.isReturnMode) base += 1;
+  return base;
+});
+
+const totalColspan = computed(() => {
+  return 1 + noteRowColspan.value;
 });
 
 function isEditableDescription(item: any) {
