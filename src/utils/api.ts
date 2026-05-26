@@ -36,6 +36,59 @@ const refreshTokenLogic = async () => {
   }
 }
 
+// ─── Transient Error Retry Logic ───────────────────────────────────────────
+// These HTTP statuses indicate the server is temporarily overloaded or
+// restarting (Vercel cold starts, DB reconnecting). Retrying after a
+// short delay will usually succeed.
+const TRANSIENT_STATUS_CODES = new Set([502, 503, 504])
+const MAX_RETRIES = 3
+const BASE_RETRY_DELAY_MS = 1000
+
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
+/**
+ * fetch() wrapper with automatic retry + exponential backoff for
+ * transient server errors (502/503/504) and network failures.
+ */
+const fetchWithRetry = async (
+  input: string,
+  init: RequestInit,
+  retries = MAX_RETRIES
+): Promise<Response> => {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const response = await fetch(input, init)
+
+      // If the status is transient and we have retries left, wait & retry
+      if (TRANSIENT_STATUS_CODES.has(response.status) && attempt < retries) {
+        const waitMs = BASE_RETRY_DELAY_MS * Math.pow(2, attempt) // 1s, 2s, 4s
+        console.warn(
+          `[API] ${init.method || 'GET'} ${input} → ${response.status}, retrying in ${waitMs}ms (attempt ${attempt + 1}/${retries})`
+        )
+        await delay(waitMs)
+        continue
+      }
+
+      return response
+    } catch (err) {
+      // Network error (offline, DNS failure, CORS preflight failure, etc.)
+      if (attempt < retries && err instanceof TypeError) {
+        const waitMs = BASE_RETRY_DELAY_MS * Math.pow(2, attempt)
+        console.warn(
+          `[API] Network error for ${input}, retrying in ${waitMs}ms (attempt ${attempt + 1}/${retries}):`,
+          (err as Error).message
+        )
+        await delay(waitMs)
+        continue
+      }
+      throw err
+    }
+  }
+
+  // Unreachable, but TypeScript needs it
+  throw new Error('fetchWithRetry: exhausted all retries')
+}
+
 const rawRequest = async (endpoint: string, options: any = {}): Promise<any> => {
   const baseUrl = getBaseUrl()
   const url = endpoint.startsWith('http') ? endpoint : `${baseUrl}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`
@@ -60,7 +113,8 @@ const rawRequest = async (endpoint: string, options: any = {}): Promise<any> => 
   if (authState.selectedFirmId) headers['X-Firm-ID'] = authState.selectedFirmId
 
   const performRequest = async (retry = true): Promise<any> => {
-    const response = await fetch(finalUrl, { ...options, headers })
+    // Use fetchWithRetry instead of bare fetch — handles 502/503/504 and network errors
+    const response = await fetchWithRetry(finalUrl, { ...options, headers })
 
     const newToken = response.headers.get('X-New-Access-Token')
     if (newToken) setAccessToken(newToken)

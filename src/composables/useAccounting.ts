@@ -206,6 +206,51 @@ export const useAccounting = () => {
     await api.download(url, `Ledger_${safeHead}_${params.toDate || new Date().toISOString().split('T')[0]}.pdf`);
   };
 
+  const exportTrialBalanceExcel = async (params?: { fromDate?: string; toDate?: string }) => {
+    let url = '/accounting/ledger/trial-balance/excel';
+    const query = new URLSearchParams();
+    if (params?.fromDate) query.append('fromDate', params.fromDate);
+    if (params?.toDate) query.append('toDate', params.toDate);
+    const queryString = query.toString();
+    if (queryString) url += '?' + queryString;
+
+    await api.download(url, `Trial_Balance_${params?.toDate || new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
+  const exportProfitLossExcel = async (params?: { fromDate?: string; toDate?: string }) => {
+    let url = '/accounting/ledger/profit-loss/excel';
+    const query = new URLSearchParams();
+    if (params?.fromDate) query.append('fromDate', params.fromDate);
+    if (params?.toDate) query.append('toDate', params.toDate);
+    const queryString = query.toString();
+    if (queryString) url += '?' + queryString;
+
+    await api.download(url, `Profit_Loss_Statement_${params?.toDate || new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
+  const exportBalanceSheetExcel = async (params?: { fromDate?: string; toDate?: string }) => {
+    let url = '/accounting/ledger/balance-sheet/excel';
+    const query = new URLSearchParams();
+    if (params?.fromDate) query.append('fromDate', params.fromDate);
+    if (params?.toDate) query.append('toDate', params.toDate);
+    const queryString = query.toString();
+    if (queryString) url += '?' + queryString;
+
+    await api.download(url, `Balance_Sheet_${params?.toDate || new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
+  const exportLedgerExcel = async (params: { accountHead: string; fromDate?: string; toDate?: string }) => {
+    let url = '/accounting/ledger/excel';
+    const query = new URLSearchParams();
+    query.append('accountHead', params.accountHead);
+    if (params.fromDate) query.append('fromDate', params.fromDate);
+    if (params.toDate) query.append('toDate', params.toDate);
+    url += '?' + query.toString();
+
+    const safeHead = params.accountHead.replace(/[^a-zA-Z0-9]/g, '_');
+    await api.download(url, `Ledger_${safeHead}_${params.toDate || new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
   return {
     loading,
     error,
@@ -229,5 +274,9 @@ export const useAccounting = () => {
     exportProfitLossPdf,
     exportBalanceSheetPdf,
     exportLedgerPdf,
+    exportTrialBalanceExcel,
+    exportProfitLossExcel,
+    exportBalanceSheetExcel,
+    exportLedgerExcel,
   };
 };

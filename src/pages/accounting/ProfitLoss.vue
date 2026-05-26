@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router';
 import { useAccounting } from '@/composables/useAccounting';
 
 const router = useRouter();
-const { trialBalance, fetchTrialBalance, exportProfitLossPdf, exportBalanceSheetPdf, loading, error } = useAccounting();
+const { trialBalance, fetchTrialBalance, exportProfitLossPdf, exportBalanceSheetPdf, exportProfitLossExcel, exportBalanceSheetExcel, loading, error } = useAccounting();
 
 const exportLoading = ref(false);
 const onExportPDF = async () => {
@@ -21,6 +21,25 @@ const onExportPDF = async () => {
     }
   } catch (err: any) {
     console.error('Failed to export PDF:', err);
+  } finally {
+    exportLoading.value = false;
+  }
+};
+
+const onExportExcel = async () => {
+  exportLoading.value = true;
+  try {
+    const params: { fromDate?: string; toDate?: string } = {};
+    if (fromDate.value) params.fromDate = fromDate.value;
+    if (toDate.value) params.toDate = toDate.value;
+    
+    if (activeTab.value === 'pl') {
+      await exportProfitLossExcel(params);
+    } else {
+      await exportBalanceSheetExcel(params);
+    }
+  } catch (err: any) {
+    console.error('Failed to export Excel:', err);
   } finally {
     exportLoading.value = false;
   }
@@ -252,6 +271,16 @@ onMounted(loadData);
             <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
           </svg>
           {{ exportLoading ? 'Exporting...' : 'Export PDF' }}
+        </button>
+        <button 
+          @click="onExportExcel"
+          :disabled="exportLoading"
+          class="px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:shadow-lg transition-all flex items-center gap-1.5 disabled:opacity-50"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+          </svg>
+          {{ exportLoading ? 'Exporting...' : 'Export Excel' }}
         </button>
         <button @click="triggerPrint" class="px-5 py-2.5 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all flex items-center gap-1.5">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
