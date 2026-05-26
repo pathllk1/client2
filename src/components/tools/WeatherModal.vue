@@ -138,20 +138,20 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="fixed inset-0 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md" style="z-index: 100000;">
+  <div class="fixed inset-0 flex items-center justify-center p-2 sm:p-4 bg-slate-955/40 dark:bg-slate-950/80 backdrop-blur-md" style="z-index: 100000;">
     <div
-      class="bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200"
+      class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-2xl h-[95vh] sm:h-auto sm:max-h-[85vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200"
     >
       <!-- Header with Search -->
-      <div class="border-b border-slate-800 p-6 bg-slate-950/40 shrink-0">
+      <div class="border-b border-slate-200 dark:border-slate-800 p-4 sm:p-6 bg-slate-50/50 dark:bg-slate-950/40 shrink-0">
         <div class="flex justify-between items-center mb-4">
           <div>
             <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Weather Dashboard</p>
-            <h2 class="text-2xl font-black text-white mt-0.5 tracking-tight">{{ cityName }}</h2>
+            <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5 tracking-tight">{{ cityName }}</h2>
           </div>
           <button
             type="button"
-            class="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer"
+            class="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-550 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white transition cursor-pointer shrink-0"
             @click="emit('close')"
           >
             ✕
@@ -165,7 +165,7 @@ onMounted(async () => {
               v-model="searchQuery"
               type="text"
               placeholder="Search location (e.g. London, Tokyo)..."
-              class="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-bold text-white focus:outline-none focus:border-indigo-500 transition"
+              class="flex-1 px-4 py-2.5 bg-white dark:bg-slate-955 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 transition"
               autocomplete="off"
               @input="triggerSearch"
               @focus="showResults = searchResults.length > 0"
@@ -182,36 +182,36 @@ onMounted(async () => {
           <!-- Autocomplete results dropdown -->
           <div
             v-if="showResults && searchResults.length > 0"
-            class="absolute top-full left-0 right-0 mt-1 bg-slate-950 border border-slate-800 rounded-xl shadow-2xl z-50 max-h-56 overflow-y-auto"
+            class="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl z-50 max-h-56 overflow-y-auto"
           >
             <button
               v-for="loc in searchResults"
               :key="loc.id"
               type="button"
-              class="w-full text-left px-4 py-2.5 hover:bg-slate-800 border-b border-slate-900 last:border-b-0 transition flex flex-col gap-0.5 cursor-pointer"
+              class="w-full text-left px-4 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 border-b border-slate-100 dark:border-slate-900 last:border-b-0 transition flex flex-col gap-0.5 cursor-pointer"
               @mousedown="handleSelectLocation(loc)"
             >
-              <span class="font-bold text-xs text-white">{{ loc.name }}</span>
-              <span class="text-[10px] text-slate-500">{{ loc.admin1 || '' }}, {{ loc.country }}</span>
+              <span class="font-bold text-xs text-slate-900 dark:text-white">{{ loc.name }}</span>
+              <span class="text-[10px] text-slate-500 dark:text-slate-400">{{ loc.admin1 || '' }}, {{ loc.country }}</span>
             </button>
           </div>
         </div>
       </div>
 
       <!-- Main Content Scroll Area -->
-      <div class="flex-1 overflow-y-auto p-6 bg-slate-900 min-h-0">
+      <div class="flex-1 overflow-y-auto p-4 sm:p-6 bg-white dark:bg-slate-900 min-h-0">
         <div v-if="loading" class="flex flex-col items-center justify-center py-16 gap-3">
           <div class="inline-block w-8 h-8 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
           <p class="text-xs font-bold text-slate-400">Fetching live conditions...</p>
         </div>
 
-        <div v-else-if="error" class="bg-rose-950/20 border border-rose-950/40 rounded-xl p-6 text-center text-rose-500 text-xs font-bold">
+        <div v-else-if="error" class="bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-950/40 rounded-xl p-6 text-center text-rose-500 text-xs font-bold">
           ⚠️ {{ error }}
         </div>
 
         <div v-else-if="weatherData" class="space-y-6">
           <!-- Current Weather Card -->
-          <div class="bg-gradient-to-br from-indigo-700 to-indigo-900 rounded-3xl p-6 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div class="bg-gradient-to-br from-indigo-750 to-indigo-900 rounded-3xl p-6 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
               <p class="text-[10px] font-black opacity-80 uppercase tracking-widest">Current Conditions</p>
               <h3 class="text-5xl font-black mt-2 font-mono tracking-tighter">{{ Math.round(weatherData.current.temperature_2m) }}°C</h3>
@@ -247,7 +247,7 @@ onMounted(async () => {
           </div>
 
           <!-- Air Quality Index -->
-          <div v-if="weatherData.air_quality && weatherData.air_quality.current" class="bg-slate-950/40 border border-slate-800 p-5 rounded-2xl flex items-center gap-5">
+          <div v-if="weatherData.air_quality && weatherData.air_quality.current" class="bg-slate-50/50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 p-4 sm:p-5 rounded-2xl flex items-center gap-4 sm:gap-5">
             <div
               class="w-14 h-14 rounded-full flex items-center justify-center font-black font-mono text-lg shrink-0 text-white"
               :class="[getAQIInfo(weatherData.air_quality.current.us_aqi).color]"
@@ -255,11 +255,11 @@ onMounted(async () => {
               {{ Math.round(weatherData.air_quality.current.us_aqi) }}
             </div>
             <div>
-              <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Air Quality Index (US)</p>
-              <h4 class="text-sm font-black text-white mt-0.5">
+              <p class="text-[9px] font-black text-slate-550 dark:text-slate-400 uppercase tracking-widest">Open AQI (US)</p>
+              <h4 class="text-sm font-black text-slate-900 dark:text-white mt-0.5">
                 {{ getAQIInfo(weatherData.air_quality.current.us_aqi).label }}
               </h4>
-              <div class="flex gap-4 text-[10px] text-slate-400 mt-1 font-mono">
+              <div class="flex gap-4 text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-mono">
                 <span>PM2.5: {{ weatherData.air_quality.current.pm2_5.toFixed(1) }} µg/m³</span>
                 <span>PM10: {{ weatherData.air_quality.current.pm10.toFixed(1) }} µg/m³</span>
               </div>
@@ -268,18 +268,18 @@ onMounted(async () => {
 
           <!-- 7-Day Forecast Grid -->
           <div class="space-y-3">
-            <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">7-Day Forecast</h4>
+            <h4 class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">7-Day Forecast</h4>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div
                 v-for="(time, idx) in weatherData.daily.time"
                 :key="idx"
-                class="bg-slate-950/20 border border-slate-800/80 rounded-2xl p-4 flex items-center justify-between hover:border-slate-700 transition"
+                class="bg-slate-50/50 dark:bg-slate-950/20 border border-slate-200 dark:border-slate-800/80 rounded-2xl p-4 flex items-center justify-between hover:border-slate-300 dark:hover:border-slate-700 transition"
               >
                 <div>
-                  <p class="text-xs font-black text-white">
+                  <p class="text-xs font-black text-slate-900 dark:text-white">
                     {{ new Date(time).toLocaleDateString('en-US', { weekday: 'short' }) }}
                   </p>
-                  <p class="text-[10px] text-slate-500 font-mono mt-0.5">
+                  <p class="text-[10px] text-slate-450 dark:text-slate-500 font-mono mt-0.5">
                     {{ new Date(time).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) }}
                   </p>
                 </div>
@@ -288,15 +288,22 @@ onMounted(async () => {
                 </div>
                 <div class="text-right">
                   <div class="flex gap-2.5 justify-end font-mono text-xs">
-                    <span class="text-white font-bold">{{ Math.round(weatherData.daily.temperature_2m_max[idx]) }}°</span>
-                    <span class="text-slate-500">{{ Math.round(weatherData.daily.temperature_2m_min[idx]) }}°</span>
+                    <span class="text-slate-900 dark:text-white font-bold">{{ Math.round(weatherData.daily.temperature_2m_max[idx]) }}°</span>
+                    <span class="text-slate-400 dark:text-slate-550">{{ Math.round(weatherData.daily.temperature_2m_min[idx]) }}°</span>
                   </div>
-                  <p class="text-[9px] text-slate-500 mt-1 font-mono">Rain: {{ weatherData.daily.precipitation_sum[idx].toFixed(1) }}mm</p>
+                  <p class="text-[9px] text-slate-400 dark:text-slate-550 mt-1 font-mono">Rain: {{ weatherData.daily.precipitation_sum[idx].toFixed(1) }}mm</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 text-center shrink-0">
+        <p class="text-[9px] font-black text-slate-550 dark:text-slate-400 uppercase tracking-widest flex items-center justify-center gap-1">
+          Powered by Open-Meteo 🌍
+        </p>
       </div>
     </div>
   </div>

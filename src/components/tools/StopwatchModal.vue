@@ -104,19 +104,19 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="fixed inset-0 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md" style="z-index: 100000;">
+  <div class="fixed inset-0 flex items-center justify-center p-2 sm:p-4 bg-slate-950/40 dark:bg-slate-950/80 backdrop-blur-md" style="z-index: 100000;">
     <div
-      class="bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col"
+      class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col"
     >
       <!-- Header -->
-      <div class="border-b border-slate-800 p-6 flex justify-between items-center bg-slate-950/40 shrink-0">
+      <div class="border-b border-slate-200 dark:border-slate-800 p-4 sm:p-6 flex justify-between items-center bg-slate-50/50 dark:bg-slate-950/40 shrink-0">
         <div>
           <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Time Utility</p>
-          <h2 class="text-2xl font-black text-white mt-0.5 tracking-tight italic">Precision Timer</h2>
+          <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5 tracking-tight italic">Precision Timer</h2>
         </div>
         <button
           type="button"
-          class="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer"
+          class="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-550 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white transition cursor-pointer"
           @click="emit('close')"
         >
           ✕
@@ -124,17 +124,17 @@ onUnmounted(() => {
       </div>
 
       <!-- Main Workspace -->
-      <div class="p-8 space-y-6 bg-slate-900 overflow-y-auto">
+      <div class="p-4 sm:p-8 space-y-6 bg-white dark:bg-slate-900 overflow-y-auto">
         <!-- Mode Switcher -->
-        <div class="flex justify-between items-center bg-slate-950/50 p-2 rounded-2xl border border-slate-800/80 shadow-inner">
-          <div class="text-[10px] font-black text-white uppercase tracking-widest ml-4">
+        <div class="flex justify-between items-center bg-slate-50 dark:bg-slate-950/50 p-2 rounded-2xl border border-slate-200 dark:border-slate-800/80 shadow-inner">
+          <div class="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest ml-4">
             {{ mode === 'stopwatch' ? 'Stopwatch' : 'Countdown timer' }}
           </div>
           <div class="flex gap-2">
             <button
               type="button"
               class="px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition cursor-pointer"
-              :class="[mode === 'stopwatch' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 bg-slate-800 hover:bg-slate-700']"
+              :class="[mode === 'stopwatch' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 dark:text-slate-400 bg-slate-100 hover:bg-slate-200 dark:bg-slate-850 dark:hover:bg-slate-700']"
               @click="changeMode('stopwatch')"
             >
               Stopwatch
@@ -142,7 +142,7 @@ onUnmounted(() => {
             <button
               type="button"
               class="px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition cursor-pointer"
-              :class="[mode === 'timer' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 bg-slate-800 hover:bg-slate-700']"
+              :class="[mode === 'timer' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 dark:text-slate-400 bg-slate-100 hover:bg-slate-200 dark:bg-slate-850 dark:hover:bg-slate-700']"
               @click="changeMode('timer')"
             >
               Timer
@@ -151,7 +151,7 @@ onUnmounted(() => {
         </div>
 
         <!-- Large Digital Clock Display -->
-        <div class="text-5xl font-black text-white text-center py-10 font-mono tracking-tighter tabular-nums bg-slate-950 rounded-[2rem] border border-slate-800 shadow-inner">
+        <div class="text-4xl sm:text-5xl font-black text-slate-900 dark:text-white text-center py-8 sm:py-10 font-mono tracking-tighter tabular-nums bg-slate-50 dark:bg-slate-955 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-inner">
           {{ formatDuration(displayTime) }}
         </div>
 
@@ -176,7 +176,7 @@ onUnmounted(() => {
           
           <button
             type="button"
-            class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition cursor-pointer"
+            class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-850 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-705 dark:text-slate-300 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition cursor-pointer"
             @click="resetTicker"
           >
             Reset
@@ -185,7 +185,7 @@ onUnmounted(() => {
           <button
             v-if="mode === 'stopwatch'"
             type="button"
-            class="col-span-2 bg-slate-950 hover:bg-slate-800 border border-slate-800/80 text-indigo-400 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition cursor-pointer"
+            class="col-span-2 bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800/80 text-indigo-600 dark:text-indigo-400 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition cursor-pointer"
             :disabled="!running"
             :class="[!running ? 'opacity-40 cursor-not-allowed' : '']"
             @click="recordLap"
@@ -195,14 +195,14 @@ onUnmounted(() => {
         </div>
 
         <!-- Timer Minutes Input -->
-        <div v-if="mode === 'timer'" class="flex items-center gap-4 bg-slate-950/40 p-4 rounded-2xl border border-slate-800/80">
-          <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest shrink-0">Target Duration (Minutes)</label>
+        <div v-if="mode === 'timer'" class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 bg-slate-50/50 dark:bg-slate-950/40 p-4 rounded-2xl border border-slate-200 dark:border-slate-800/80">
+          <label class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest shrink-0">Target Duration (Minutes)</label>
           <input
             type="number"
             min="1"
             step="1"
             v-model.number="timerDurationMin"
-            class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-sm text-white font-black text-center focus:outline-none focus:border-indigo-500 font-mono"
+            class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-sm text-slate-900 dark:text-white font-black text-center focus:outline-none focus:border-indigo-500 font-mono"
             @input="handleTimerDurationChange"
           />
         </div>
@@ -212,14 +212,14 @@ onUnmounted(() => {
           <div
             v-for="(lap, index) in laps"
             :key="index"
-            class="flex justify-between items-center p-3.5 bg-slate-950/30 rounded-xl border border-slate-800/80"
+            class="flex justify-between items-center p-3.5 bg-slate-50 dark:bg-slate-950/30 rounded-xl border border-slate-200 dark:border-slate-800/80"
           >
-            <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Lap {{ laps.length - index }}</span>
-            <span class="font-mono font-black text-white text-sm tracking-tighter">{{ formatDuration(lap) }}</span>
+            <span class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Lap {{ laps.length - index }}</span>
+            <span class="font-mono font-black text-slate-900 dark:text-white text-sm tracking-tighter">{{ formatDuration(lap) }}</span>
           </div>
           <div
             v-if="laps.length === 0"
-            class="text-[9px] font-black text-slate-600 text-center py-4 uppercase tracking-widest"
+            class="text-[9px] font-black text-slate-400 dark:text-slate-600 text-center py-4 uppercase tracking-widest"
           >
             No laps recorded
           </div>

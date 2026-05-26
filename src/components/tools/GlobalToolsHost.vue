@@ -202,27 +202,27 @@ onUnmounted(() => {
     <!-- Launcher Spotlight Modal -->
     <div
       v-if="isLauncherOpen"
-      class="fixed inset-0 flex items-start justify-center pt-[12vh] p-4 bg-slate-950/70 backdrop-blur-md"
+      class="fixed inset-0 flex items-start justify-center pt-2 sm:pt-[12vh] p-2 sm:p-4 bg-slate-950/40 dark:bg-slate-950/70 backdrop-blur-md"
       style="z-index: 99999;"
       @click.self="closeLauncher"
     >
       <div
-        class="bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl shadow-black/50 w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+        class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl sm:rounded-3xl shadow-2xl shadow-black/50 w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200"
       >
         <!-- Header & Input -->
-        <div class="p-6 border-b border-slate-800 bg-slate-950/40">
+        <div class="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40">
           <div class="flex justify-between items-center mb-3">
             <div>
               <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Global Tools</p>
-              <h2 class="text-2xl font-black text-white tracking-tight">Utility Launcher</h2>
+              <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">Utility Launcher</h2>
             </div>
-            <div class="flex items-center gap-1.5 px-2.5 py-1 bg-slate-800 rounded-lg text-slate-400 border border-slate-700 text-[10px] font-bold">
+            <div class="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-500 dark:text-slate-400 border border-slate-205 dark:border-slate-700 text-[10px] font-bold">
               <span>Ctrl</span>
               <span>+</span>
               <span>.</span>
             </div>
           </div>
-          <p class="text-xs text-slate-400 font-medium">Quickly launch system utilities and helper tools.</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Quickly launch system utilities and helper tools.</p>
           <div class="relative mt-5">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -230,14 +230,14 @@ onUnmounted(() => {
               viewBox="0 0 24 24"
               stroke-width="2"
               stroke="currentColor"
-              class="w-5 h-5 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2"
+              class="w-5 h-5 text-slate-400 dark:text-slate-500 absolute left-4 top-1/2 -translate-y-1/2"
             >
               <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.602 10.602Z" />
             </svg>
             <input
               ref="searchInput"
               v-model="searchQuery"
-              class="w-full pl-12 pr-4 py-3.5 bg-slate-950 border border-slate-800 rounded-2xl text-white text-sm font-bold placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 transition-all"
+              class="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl sm:rounded-2xl text-slate-900 dark:text-white text-sm font-bold placeholder:text-slate-450 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 transition-all"
               type="text"
               autocomplete="off"
               placeholder="Search tools... (e.g. calculator, weather, notepad)"
@@ -248,12 +248,12 @@ onUnmounted(() => {
         <!-- Results List -->
         <div
           ref="listContainer"
-          class="overflow-y-auto p-4 space-y-2 bg-slate-900/60"
+          class="overflow-y-auto p-2 sm:p-4 space-y-2 bg-slate-50/10 dark:bg-slate-900/60"
           style="max-height: 380px;"
         >
           <div
             v-if="filteredTools.length === 0"
-            class="text-center text-slate-500 py-12 text-xs font-bold uppercase tracking-widest"
+            class="text-center text-slate-450 dark:text-slate-500 py-12 text-xs font-bold uppercase tracking-widest"
           >
             No matching tools found
           </div>
@@ -265,7 +265,7 @@ onUnmounted(() => {
             :class="[
               index === activeIndex
                 ? 'bg-indigo-600 border-indigo-600 shadow-lg shadow-indigo-600/10 text-white'
-                : 'bg-slate-950/40 border-slate-800/80 hover:bg-slate-800/40 hover:border-slate-700 text-slate-300'
+                : 'bg-slate-50/50 dark:bg-slate-950/40 border-slate-200 dark:border-slate-800/80 hover:bg-slate-100/50 dark:hover:bg-slate-800/40 hover:border-slate-350 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300'
             ]"
             :data-active="index === activeIndex"
             @mouseenter="activeIndex = index"
@@ -277,7 +277,7 @@ onUnmounted(() => {
               :class="[
                 index === activeIndex
                   ? 'bg-white/20 text-white'
-                  : 'bg-slate-800 text-indigo-400 group-hover:bg-indigo-950/40 group-hover:text-indigo-300'
+                  : 'bg-slate-100 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-950/40 group-hover:text-indigo-700 dark:group-hover:text-indigo-300'
               ]"
             >
               {{ tool.badge }}
@@ -287,20 +287,20 @@ onUnmounted(() => {
               <div class="flex items-baseline justify-between gap-2">
                 <h4
                   class="text-sm font-black truncate"
-                  :class="[index === activeIndex ? 'text-white' : 'text-white group-hover:text-indigo-400']"
+                  :class="[index === activeIndex ? 'text-white' : 'text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400']"
                 >
                   {{ tool.title }}
                 </h4>
                 <span
                   class="text-[9px] font-black uppercase tracking-widest"
-                  :class="[index === activeIndex ? 'text-indigo-200' : 'text-slate-500']"
+                  :class="[index === activeIndex ? 'text-indigo-200' : 'text-slate-400 dark:text-slate-500']"
                 >
                   {{ tool.subtitle }}
                 </span>
               </div>
               <p
                 class="text-xs mt-1 font-medium leading-relaxed line-clamp-2"
-                :class="[index === activeIndex ? 'text-indigo-100' : 'text-slate-400']"
+                :class="[index === activeIndex ? 'text-indigo-100' : 'text-slate-500 dark:text-slate-400']"
               >
                 {{ tool.description }}
               </p>
@@ -309,7 +309,7 @@ onUnmounted(() => {
         </div>
 
         <!-- Footer Instructions -->
-        <div class="px-6 py-3.5 bg-slate-950 border-t border-slate-800 flex gap-5 text-[9px] font-black text-slate-500 uppercase tracking-widest">
+        <div class="px-4 sm:px-6 py-3.5 bg-slate-50 dark:bg-slate-950 border-t border-slate-205 dark:border-slate-800 flex gap-5 text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">
           <span>↵ Enter to open</span>
           <span>↑↓ Navigate</span>
           <span>Esc to close</span>

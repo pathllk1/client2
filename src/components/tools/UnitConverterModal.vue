@@ -192,21 +192,20 @@ onMounted(() => {
   syncUnits()
 })
 </script>
-
 <template>
-  <div class="fixed inset-0 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md" style="z-index: 100000;">
+  <div class="fixed inset-0 flex items-center justify-center p-2 sm:p-4 bg-slate-950/40 dark:bg-slate-950/80 backdrop-blur-md" style="z-index: 100000;">
     <div
-      class="bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200"
+      class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200"
     >
       <!-- Header -->
-      <div class="border-b border-slate-800 p-6 flex justify-between items-center bg-slate-950/40">
+      <div class="border-b border-slate-200 dark:border-slate-800 p-4 sm:p-6 flex justify-between items-center bg-slate-50/50 dark:bg-slate-950/40 shrink-0">
         <div>
           <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Conversion Tool</p>
-          <h2 class="text-2xl font-black text-white mt-0.5 tracking-tight italic">Unit Converter</h2>
+          <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5 tracking-tight italic">Unit Converter</h2>
         </div>
         <button
           type="button"
-          class="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer"
+          class="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-555 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white transition cursor-pointer"
           @click="emit('close')"
         >
           ✕
@@ -214,11 +213,11 @@ onMounted(() => {
       </div>
 
       <!-- Main Workspace -->
-      <div class="p-6 space-y-6 bg-slate-900">
+      <div class="p-4 sm:p-6 space-y-6 bg-white dark:bg-slate-900">
         <!-- Category Selector tabs -->
         <div class="space-y-1.5">
-          <label class="block text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Measure Category</label>
-          <div class="grid grid-cols-4 gap-1 bg-slate-950 border border-slate-800 p-1 rounded-2xl">
+          <label class="block text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Measure Category</label>
+          <div class="grid grid-cols-4 gap-1 bg-slate-50 dark:bg-slate-955 border border-slate-200 dark:border-slate-800 p-1 rounded-2xl">
             <button
               v-for="cat in (['length', 'weight', 'temperature', 'currency'] as const)"
               :key="cat"
@@ -227,7 +226,7 @@ onMounted(() => {
               :class="[
                 activeCategory === cat
                   ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-white'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               ]"
               @click="activeCategory = cat"
             >
@@ -238,41 +237,41 @@ onMounted(() => {
 
         <!-- Input Quantity -->
         <div class="space-y-1.5">
-          <label class="block text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Input Quantity</label>
+          <label class="block text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Input Quantity</label>
           <input
             v-model.number="inputValue"
             type="number"
             step="any"
-            class="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-4 text-white text-2xl font-black focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 text-center font-mono"
+            class="w-full bg-slate-50 dark:bg-slate-955 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-4 text-slate-900 dark:text-white text-2xl font-black focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 text-center font-mono"
             placeholder="Enter quantity"
           />
         </div>
 
         <!-- From/To selection -->
-        <div class="grid grid-cols-11 gap-2 items-center bg-slate-950/40 p-4 border border-slate-800/80 rounded-2xl">
-          <div class="col-span-5 space-y-1">
-            <label class="block text-[9px] font-black text-slate-500 uppercase tracking-widest text-center">From</label>
+        <div class="flex flex-col sm:flex-row gap-4 items-center justify-between bg-slate-50/50 dark:bg-slate-950/40 p-4 border border-slate-200 dark:border-slate-800/80 rounded-2xl">
+          <div class="w-full sm:flex-1 space-y-1">
+            <label class="block text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center">From</label>
             <select
               v-model="fromUnit"
-              class="w-full bg-slate-900 border border-slate-800 rounded-xl px-2 py-2 text-white text-xs font-bold focus:outline-none text-center cursor-pointer"
+              class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-2 py-2 text-slate-900 dark:text-white text-xs font-bold focus:outline-none text-center cursor-pointer"
             >
               <option v-for="opt in unitOptions" :key="opt" :value="opt">{{ getUnitName(opt) }}</option>
             </select>
           </div>
-          <div class="col-span-1 flex justify-center pt-3">
+          <div class="flex justify-center pt-2 sm:pt-4">
             <button
               type="button"
-              class="text-slate-400 hover:text-indigo-400 transition font-black text-sm cursor-pointer"
+              class="text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition font-black text-sm cursor-pointer rotate-90 sm:rotate-0"
               @click="swapUnits"
             >
               ⇄
             </button>
           </div>
-          <div class="col-span-5 space-y-1">
-            <label class="block text-[9px] font-black text-slate-500 uppercase tracking-widest text-center">To</label>
+          <div class="w-full sm:flex-1 space-y-1">
+            <label class="block text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center">To</label>
             <select
               v-model="toUnit"
-              class="w-full bg-slate-900 border border-slate-800 rounded-xl px-2 py-2 text-white text-xs font-bold focus:outline-none text-center cursor-pointer"
+              class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-2 py-2 text-slate-900 dark:text-white text-xs font-bold focus:outline-none text-center cursor-pointer"
             >
               <option v-for="opt in unitOptions" :key="opt" :value="opt">{{ getUnitName(opt) }}</option>
             </select>
@@ -281,9 +280,9 @@ onMounted(() => {
 
         <!-- Resulting Value -->
         <div class="space-y-1.5">
-          <label class="block text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Resulting Value</label>
+          <label class="block text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Resulting Value</label>
           <div
-            class="w-full bg-emerald-950/20 border border-emerald-900/30 rounded-2xl px-4 py-4 text-emerald-400 text-2xl font-black text-center font-mono shadow-inner truncate"
+            class="w-full bg-emerald-50 dark:bg-emerald-955/20 border border-emerald-205 dark:border-emerald-900/30 rounded-2xl px-4 py-4 text-emerald-600 dark:text-emerald-400 text-2xl font-black text-center font-mono shadow-inner truncate"
           >
             {{ convertedValue }}
           </div>
