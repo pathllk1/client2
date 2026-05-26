@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import { api } from '../utils/api';
+import { useApi } from '../utils/api';
 
 export interface LedgerEntry {
   id?: string;
@@ -32,6 +32,7 @@ export interface VoucherEntry {
 }
 
 export const useAccounting = () => {
+  const api = useApi();
   const loading = ref(false);
   const error = ref<string | null>(null);
   const ledgerEntries = ref<LedgerEntry[]>([]);
@@ -160,6 +161,51 @@ export const useAccounting = () => {
     }
   };
 
+  const exportTrialBalancePdf = async (params?: { fromDate?: string; toDate?: string }) => {
+    let url = '/accounting/ledger/trial-balance/pdf';
+    const query = new URLSearchParams();
+    if (params?.fromDate) query.append('fromDate', params.fromDate);
+    if (params?.toDate) query.append('toDate', params.toDate);
+    const queryString = query.toString();
+    if (queryString) url += '?' + queryString;
+
+    await api.download(url, `Trial_Balance_${params?.toDate || new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
+  const exportProfitLossPdf = async (params?: { fromDate?: string; toDate?: string }) => {
+    let url = '/accounting/ledger/profit-loss/pdf';
+    const query = new URLSearchParams();
+    if (params?.fromDate) query.append('fromDate', params.fromDate);
+    if (params?.toDate) query.append('toDate', params.toDate);
+    const queryString = query.toString();
+    if (queryString) url += '?' + queryString;
+
+    await api.download(url, `Profit_Loss_Statement_${params?.toDate || new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
+  const exportBalanceSheetPdf = async (params?: { fromDate?: string; toDate?: string }) => {
+    let url = '/accounting/ledger/balance-sheet/pdf';
+    const query = new URLSearchParams();
+    if (params?.fromDate) query.append('fromDate', params.fromDate);
+    if (params?.toDate) query.append('toDate', params.toDate);
+    const queryString = query.toString();
+    if (queryString) url += '?' + queryString;
+
+    await api.download(url, `Balance_Sheet_${params?.toDate || new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
+  const exportLedgerPdf = async (params: { accountHead: string; fromDate?: string; toDate?: string }) => {
+    let url = '/accounting/ledger/pdf';
+    const query = new URLSearchParams();
+    query.append('accountHead', params.accountHead);
+    if (params.fromDate) query.append('fromDate', params.fromDate);
+    if (params.toDate) query.append('toDate', params.toDate);
+    url += '?' + query.toString();
+
+    const safeHead = params.accountHead.replace(/[^a-zA-Z0-9]/g, '_');
+    await api.download(url, `Ledger_${safeHead}_${params.toDate || new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
   return {
     loading,
     error,
@@ -179,5 +225,9 @@ export const useAccounting = () => {
     fetchCOA,
     createVoucher,
     createOpeningBalance,
+    exportTrialBalancePdf,
+    exportProfitLossPdf,
+    exportBalanceSheetPdf,
+    exportLedgerPdf,
   };
 };

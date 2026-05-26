@@ -27,6 +27,16 @@
             <label class="text-[10px] font-bold text-gray-400 uppercase ml-1 mb-1">To</label>
             <input type="date" v-model="filters.toDate" @change="loadLedger" class="px-3 py-2 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
          </div>
+         <button 
+           @click="onExportPDF"
+           :disabled="exportLoading || !accountHead"
+           class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm h-[38px] flex items-center gap-1.5 transition-all disabled:opacity-50"
+         >
+           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+             <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+           </svg>
+           {{ exportLoading ? 'Exporting...' : 'Export PDF' }}
+         </button>
       </div>
     </div>
 
@@ -80,7 +90,24 @@ import { useRoute } from 'vue-router';
 import { useAccounting } from '../../composables/useAccounting';
 
 const route = useRoute();
-const { ledgerEntries, accountBalance, fetchLedger, fetchAccountBalance, fetchCOA, chartOfAccounts } = useAccounting();
+const { ledgerEntries, accountBalance, fetchLedger, fetchAccountBalance, fetchCOA, chartOfAccounts, exportLedgerPdf } = useAccounting();
+
+const exportLoading = ref(false);
+const onExportPDF = async () => {
+  if (!accountHead.value) return;
+  exportLoading.value = true;
+  try {
+    await exportLedgerPdf({
+      accountHead: accountHead.value,
+      fromDate: filters.fromDate,
+      toDate: filters.toDate
+    });
+  } catch (err: any) {
+    console.error('Failed to export PDF:', err);
+  } finally {
+    exportLoading.value = false;
+  }
+};
 
 const accountHead = ref<string>('');
 const filters = reactive({
