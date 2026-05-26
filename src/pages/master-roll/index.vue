@@ -9,6 +9,7 @@ import BulkEditModal from '@/components/master-roll/BulkEditModal.vue'
 import ActivityLog from '@/components/master-roll/ActivityLog.vue'
 import ICardFilterModal from '@/components/master-roll/ICardFilterModal.vue'
 import DataQualityAuditModal from '@/components/master-roll/DataQualityAuditModal.vue'
+import WagesSummaryModal from '@/components/master-roll/WagesSummaryModal.vue'
 
 const { 
   loading, employees, stats, total, 
@@ -148,10 +149,17 @@ const isICardModalOpen = ref(false)
 const isQualityModalOpen = ref(false)
 const isBulkEditOpen = ref(false)
 const selectedEmployee = ref<any>(null)
+const isWagesSummaryOpen = ref(false)
+const selectedEmployeeForWages = ref<any>(null)
 
 const openModal = (emp: any = null) => {
   selectedEmployee.value = emp
   isOpen.value = true
+}
+
+const openWagesSummary = (emp: any) => {
+  selectedEmployeeForWages.value = emp
+  isWagesSummaryOpen.value = true
 }
 
 const openActivity = (emp: any) => {
@@ -465,7 +473,8 @@ const headerActions = [
                 <UDropdownMenu 
                   :items="[[
                     { label: 'View Activity Log', icon: 'i-heroicons-clock', onSelect: () => openActivity(row.original) },
-                    { label: 'Download Letter', icon: 'i-heroicons-document-text', onSelect: () => onDownloadLetter(row.original) }
+                    { label: 'Download Letter', icon: 'i-heroicons-document-text', onSelect: () => onDownloadLetter(row.original) },
+                    { label: 'Wages Summary', icon: 'i-heroicons-document-chart-bar', onSelect: () => openWagesSummary(row.original) }
                   ]]"
                 >
                   <UButton size="xs" variant="ghost" color="neutral" icon="i-heroicons-ellipsis-vertical" />
@@ -528,7 +537,8 @@ const headerActions = [
               <UDropdownMenu 
                 :items="[[
                   { label: 'View Activity Log', icon: 'i-heroicons-clock', onSelect: () => openActivity(emp) },
-                  { label: 'Download Letter', icon: 'i-heroicons-document-text', onSelect: () => onDownloadLetter(emp) }
+                  { label: 'Download Letter', icon: 'i-heroicons-document-text', onSelect: () => onDownloadLetter(emp) },
+                  { label: 'Wages Summary', icon: 'i-heroicons-document-chart-bar', onSelect: () => openWagesSummary(emp) }
                 ]]"
               >
                 <UButton size="xs" variant="ghost" color="neutral" icon="i-heroicons-ellipsis-horizontal" />
@@ -591,6 +601,12 @@ const headerActions = [
     </UModal>
 
     <BulkEditModal :is-open="isBulkEditOpen" @close="isBulkEditOpen = false" @saved="fetchData" />
+
+    <UModal v-model:open="isWagesSummaryOpen" :title="'Wages Statement: ' + selectedEmployeeForWages?.employee_name" :ui="{ content: 'w-full sm:max-w-4xl' }">
+      <template #body>
+        <WagesSummaryModal v-if="selectedEmployeeForWages" :employee="selectedEmployeeForWages" @close="isWagesSummaryOpen = false" />
+      </template>
+    </UModal>
   </div>
 </template>
 

@@ -85,6 +85,20 @@ export const useWages = () => {
     return await api.get('/banking')
   }
 
+  const fetchEmployeeWageHistory = async (masterRollId: string) => {
+    loading.value = true
+    try {
+      return await api.get(`/wages/history/${masterRollId}`)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const exportEmployeeWageHistory = async (masterRollId: string, name: string) => {
+    const safeName = name.replace(/[^a-zA-Z0-9]/g, '_')
+    await api.download(`/wages/history/${masterRollId}/export`, `Wages_Statement_${safeName}.xlsx`)
+  }
+
   return {
     loading,
     wages,
@@ -99,6 +113,8 @@ export const useWages = () => {
     downloadEPFESICReport,
     downloadWageSlip,
     downloadBulkWageSlips,
-    fetchBankAccounts
+    fetchBankAccounts,
+    fetchEmployeeWageHistory,
+    exportEmployeeWageHistory
   }
 }
