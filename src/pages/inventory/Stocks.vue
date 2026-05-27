@@ -31,7 +31,13 @@
         </div>
       </div>
       
-      <div class="overflow-x-auto">
+      <!-- Loader -->
+      <div v-if="loading" class="flex flex-col items-center justify-center py-24 gap-4">
+        <UIcon name="i-heroicons-arrow-path" class="w-10 h-10 animate-spin text-blue-600" />
+        <p class="text-xs font-black uppercase tracking-widest text-slate-400">Loading stock register...</p>
+      </div>
+
+      <div v-else class="overflow-x-auto">
         <table class="w-full text-left">
           <thead>
             <tr class="bg-slate-50/50 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
@@ -142,7 +148,7 @@ import CreateStockModal from '@/components/inventory/CreateStockModal.vue';
 import EditStockModal from '@/components/inventory/EditStockModal.vue';
 import StockHistoryModal from '@/components/inventory/StockHistoryModal.vue';
 
-const { stocks, fetchStocks } = useInventory();
+const { stocks, fetchStocks, loading } = useInventory();
 const searchQuery = ref('');
 const showCreateModal = ref(false);
 const showEditModal = ref(false);

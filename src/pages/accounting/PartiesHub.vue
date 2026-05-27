@@ -42,7 +42,12 @@
       </div>
 
       <!-- Parties Grid -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div v-if="loading" class="flex flex-col items-center justify-center py-20 gap-4 bg-white rounded-2xl border border-slate-200 shadow-sm">
+        <UIcon name="i-heroicons-arrow-path" class="w-10 h-10 animate-spin text-indigo-600" />
+        <p class="text-xs font-black uppercase tracking-widest text-slate-400">Loading parties...</p>
+      </div>
+
+      <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         <div v-for="party in filteredParties" :key="party._id" class="bg-white rounded-2xl border border-slate-200 hover:border-indigo-300 shadow-sm hover:shadow-xl transition-all group overflow-hidden flex flex-col">
           <!-- Card Top -->
           <div :class="getAvatarColor(party.name)" class="p-5 text-white bg-gradient-to-br">
@@ -112,7 +117,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useBilling } from '../../composables/useBilling';
 import PartyModal from '@/components/inventory/PartyModal.vue';
 
-const { parties, fetchParties } = useBilling();
+const { parties, fetchParties, loading } = useBilling();
 
 const searchQuery = ref('');
 const typeFilter = ref('');

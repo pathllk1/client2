@@ -48,7 +48,13 @@
 
     <!-- Movements Table -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      <div class="overflow-x-auto">
+      <!-- Loader -->
+      <div v-if="loading" class="flex flex-col items-center justify-center py-20 gap-4">
+        <UIcon name="i-heroicons-arrow-path" class="w-10 h-10 animate-spin text-blue-600" />
+        <p class="text-xs font-black uppercase tracking-widest text-slate-400">Loading movements...</p>
+      </div>
+
+      <div v-else class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
           <thead>
             <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-100">
@@ -100,7 +106,7 @@ import { ref, reactive, onMounted, computed } from 'vue';
 import { useInventory } from '@/composables/useInventory';
 import { api } from '@/utils/api';
 
-const { movements, fetchMovements } = useInventory();
+const { movements, fetchMovements, loading } = useInventory();
 
 const filters = reactive({
   type: '',

@@ -45,62 +45,70 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
        <!-- Accounts List -->
        <div class="lg:col-span-2 space-y-4">
-          <div v-for="acc in accountsWithBalances" :key="acc._id" class="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 hover:shadow-md transition-all group">
-             <div class="flex flex-col md:flex-row justify-between gap-6">
-                <div class="flex gap-6">
-                   <div class="w-16 h-16 rounded-3xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-500 transition-colors">
-                      <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                   </div>
-                   <div>
-                      <div class="flex items-center gap-3 mb-1">
-                         <h3 class="text-xl font-black text-slate-900">{{ acc.account_name }}</h3>
-                         <span v-if="acc.is_default" class="px-2 py-0.5 rounded-lg bg-emerald-100 text-emerald-700 text-[8px] font-black uppercase tracking-tighter">Primary</span>
-                         <span class="px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-tighter" :class="acc.status === 'ACTIVE' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-500'">{{ acc.status }}</span>
-                      </div>
-                      <p class="text-sm font-bold text-slate-500">{{ acc.bank_name }} <span class="text-slate-300 mx-2">|</span> {{ acc.branch_name }}</p>
-                      <div class="grid grid-cols-2 gap-x-8 gap-y-1 mt-4">
-                         <div>
-                            <p class="text-[9px] font-black text-slate-400 uppercase">Account Number</p>
-                            <p class="text-xs font-bold text-slate-700 font-mono">{{ acc.account_number }}</p>
-                         </div>
-                         <div>
-                            <p class="text-[9px] font-black text-slate-400 uppercase">IFSC Code</p>
-                            <p class="text-xs font-bold text-slate-700 font-mono">{{ acc.ifsc_code }}</p>
-                         </div>
-                      </div>
-                   </div>
-                </div>
-                <div class="flex flex-col items-end justify-between min-w-[200px]">
-                   <div class="text-right">
-                      <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Current Balance</p>
-                      <div class="text-2xl font-black font-mono" :class="acc.balanceType === 'DR' ? 'text-emerald-600' : 'text-rose-600'">
-                         ₹{{ acc.balance?.toLocaleString() || '0' }}
-                         <span class="text-[10px] ml-1">{{ acc.balanceType }}</span>
-                      </div>
-                   </div>
-                   <div class="flex gap-2">
-                      <button @click="viewHistory(acc._id)" class="p-2.5 rounded-xl bg-slate-50 text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-all" title="Transaction History">
-                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                      </button>
-                      <button @click="openEditModal(acc)" class="p-2.5 rounded-xl bg-slate-50 text-slate-500 hover:bg-slate-900 hover:text-white transition-all">
-                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                      </button>
-                      <button @click="confirmDelete(acc)" class="p-2.5 rounded-xl bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-all">
-                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                      </button>
-                   </div>
-                </div>
-             </div>
+          <!-- Loader -->
+          <div v-if="loading" class="bg-white rounded-[2.5rem] p-12 border border-slate-100 flex flex-col items-center justify-center gap-4">
+             <UIcon name="i-heroicons-arrow-path" class="w-10 h-10 animate-spin text-blue-600" />
+             <p class="text-xs font-black uppercase tracking-widest text-slate-400">Loading bank accounts...</p>
           </div>
 
-          <div v-if="accounts.length === 0" class="bg-slate-50 rounded-[2.5rem] border-2 border-dashed border-slate-200 py-20 text-center">
-             <div class="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-6 text-slate-400">
-                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+          <template v-else>
+             <div v-for="acc in accountsWithBalances" :key="acc._id" class="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 hover:shadow-md transition-all group">
+                <div class="flex flex-col md:flex-row justify-between gap-6">
+                   <div class="flex gap-6">
+                      <div class="w-16 h-16 rounded-3xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-500 transition-colors">
+                         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                      </div>
+                      <div>
+                         <div class="flex items-center gap-3 mb-1">
+                            <h3 class="text-xl font-black text-slate-900">{{ acc.account_name }}</h3>
+                            <span v-if="acc.is_default" class="px-2 py-0.5 rounded-lg bg-emerald-100 text-emerald-700 text-[8px] font-black uppercase tracking-tighter">Primary</span>
+                            <span class="px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-tighter" :class="acc.status === 'ACTIVE' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-500'">{{ acc.status }}</span>
+                         </div>
+                         <p class="text-sm font-bold text-slate-500">{{ acc.bank_name }} <span class="text-slate-300 mx-2">|</span> {{ acc.branch_name }}</p>
+                         <div class="grid grid-cols-2 gap-x-8 gap-y-1 mt-4">
+                            <div>
+                               <p class="text-[9px] font-black text-slate-400 uppercase">Account Number</p>
+                               <p class="text-xs font-bold text-slate-700 font-mono">{{ acc.account_number }}</p>
+                            </div>
+                            <div>
+                               <p class="text-[9px] font-black text-slate-400 uppercase">IFSC Code</p>
+                               <p class="text-xs font-bold text-slate-700 font-mono">{{ acc.ifsc_code }}</p>
+                            </div>
+                         </div>
+                      </div>
+                   </div>
+                   <div class="flex flex-col items-end justify-between min-w-[200px]">
+                      <div class="text-right">
+                         <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Current Balance</p>
+                         <div class="text-2xl font-black font-mono" :class="acc.balanceType === 'DR' ? 'text-emerald-600' : 'text-rose-600'">
+                            ₹{{ acc.balance?.toLocaleString() || '0' }}
+                            <span class="text-[10px] ml-1">{{ acc.balanceType }}</span>
+                         </div>
+                      </div>
+                      <div class="flex gap-2">
+                         <button @click="viewHistory(acc._id)" class="p-2.5 rounded-xl bg-slate-50 text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-all" title="Transaction History">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                         </button>
+                         <button @click="openEditModal(acc)" class="p-2.5 rounded-xl bg-slate-50 text-slate-500 hover:bg-slate-900 hover:text-white transition-all">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                         </button>
+                         <button @click="confirmDelete(acc)" class="p-2.5 rounded-xl bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-all">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                         </button>
+                      </div>
+                   </div>
+                </div>
              </div>
-             <h3 class="text-xl font-black text-slate-900 tracking-tight">No Bank Accounts Found</h3>
-             <p class="text-slate-500 font-medium max-w-sm mx-auto mt-2">Create your first bank account to enable bank-based vouchers and professional invoice printing.</p>
-             <button @click="openCreateModal" class="mt-8 px-8 py-3 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition-all">Add First Account</button>
-          </div>
+
+             <div v-if="accounts.length === 0" class="bg-slate-50 rounded-[2.5rem] border-2 border-dashed border-slate-200 py-20 text-center">
+                <div class="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-6 text-slate-400">
+                   <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                </div>
+                <h3 class="text-xl font-black text-slate-900 tracking-tight">No Bank Accounts Found</h3>
+                <p class="text-slate-500 font-medium max-w-sm mx-auto mt-2">Create your first bank account to enable bank-based vouchers and professional invoice printing.</p>
+                <button @click="openCreateModal" class="mt-8 px-8 py-3 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition-all">Add First Account</button>
+             </div>
+          </template>
        </div>
 
        <!-- Side Stats / Help -->
@@ -170,8 +178,10 @@ const selectedHistoryAcc = ref<string | null>(null);
 
 const showModal = ref(false);
 const selectedAcc = ref<any>(null);
+const loading = ref(false);
 
 const fetchData = async () => {
+  loading.value = true;
   try {
     const res = await api.get('/banking');
     if (res.success) {
@@ -186,6 +196,8 @@ const fetchData = async () => {
     }
   } catch (err) {
     console.error('Failed to fetch accounts', err);
+  } finally {
+    loading.value = false;
   }
 };
 

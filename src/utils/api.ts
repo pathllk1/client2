@@ -1,4 +1,20 @@
+import { ref } from 'vue'
 import { authState, setAccessToken, setRefreshToken, clearAuth } from '@/stores/auth'
+
+export const isGlobalLoading = ref(false)
+let activeRequestsCount = 0
+
+const startRequest = () => {
+  activeRequestsCount++
+  isGlobalLoading.value = true
+}
+
+const endRequest = () => {
+  activeRequestsCount = Math.max(0, activeRequestsCount - 1)
+  if (activeRequestsCount === 0) {
+    isGlobalLoading.value = false
+  }
+}
 
 let isRefreshing = false
 let refreshPromise: Promise<any> | null = null
@@ -158,7 +174,12 @@ const rawRequest = async (endpoint: string, options: any = {}): Promise<any> => 
     return response.json()
   }
 
-  return performRequest()
+  startRequest()
+  try {
+    return await performRequest()
+  } finally {
+    endRequest()
+  }
 }
 
 // Named export 'api' for consistent usage in billing/inventory

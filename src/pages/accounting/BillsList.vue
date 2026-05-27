@@ -63,7 +63,13 @@
 
     <!-- Bills Table -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      <div class="overflow-x-auto">
+      <!-- Loader -->
+      <div v-if="loading" class="flex flex-col items-center justify-center py-20 gap-4">
+        <UIcon name="i-heroicons-arrow-path" class="w-10 h-10 animate-spin text-blue-600" />
+        <p class="text-xs font-black uppercase tracking-widest text-slate-400">Loading invoices...</p>
+      </div>
+
+      <div v-else class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
           <thead>
             <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-100">
@@ -143,7 +149,7 @@ import { api } from '@/utils/api';
 import BillDetailsModal from '@/components/accounting/BillDetailsModal.vue';
 
 const router = useRouter();
-const { bills, fetchBills } = useBilling();
+const { bills, fetchBills, loading } = useBilling();
 
 const selectedBillId = ref<string | null>(null);
 const showDetailsModal = ref(false);
