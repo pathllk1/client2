@@ -120,8 +120,17 @@
           </div>
           <button type="button" class="drawer-close" @click="showPartyModal = false">Close</button>
         </header>
+        <div class="search-box">
+          <input 
+            v-model="partySearchQuery" 
+            type="text" 
+            placeholder="Search by name, GSTIN, state..." 
+            class="search-input" 
+            @keydown.stop
+          />
+        </div>
         <div class="party-list">
-          <button v-for="party in state.parties" :key="party._id" class="party-option" type="button" @click="onPartySelect(party)">
+          <button v-for="party in filteredParties" :key="party._id" class="party-option" type="button" @click="onPartySelect(party)">
             <strong>{{ party.name || party.firm }}</strong>
             <span>{{ party.gstin || 'UNREGISTERED' }} | {{ party.state || '-' }}</span>
           </button>
@@ -132,7 +141,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useBillingState } from '@/composables/useBillingState';
 import PartyManager from '@/components/inventory/PartyManager.vue';
@@ -153,6 +162,24 @@ const toast = useToast();
 
 const showStockModal = ref(false);
 const showPartyModal = ref(false);
+const partySearchQuery = ref('');
+
+const filteredParties = computed(() => {
+  const query = partySearchQuery.value.trim().toLowerCase();
+  if (!query) return state.parties;
+  return state.parties.filter(party => {
+    const name = (party.name || party.firm || '').toLowerCase();
+    const gstin = (party.gstin || '').toLowerCase();
+    const stateName = (party.state || '').toLowerCase();
+    return name.includes(query) || gstin.includes(query) || stateName.includes(query);
+  });
+});
+
+watch(showPartyModal, (val) => {
+  if (!val) {
+    partySearchQuery.value = '';
+  }
+});
 const showCreatePartyModal = ref(false);
 const showCreateStockModal = ref(false);
 const showEditStockModal = ref(false);
@@ -578,6 +605,12 @@ textarea:focus {
   font-size: 12px;
   font-weight: 800;
   cursor: pointer;
+}
+.search-box {
+  margin-bottom: 12px;
+}
+.search-input {
+  width: 100%;
 }
 .party-list {
   display: grid;
