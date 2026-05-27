@@ -40,6 +40,18 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/labor',
+      name: 'labor-dashboard',
+      component: () => import('../pages/labor/Dashboard.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/labor/periods/:id',
+      name: 'labor-period-details',
+      component: () => import('../pages/labor/PeriodDetails.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/inventory',
       name: 'inventory-dashboard',
       component: () => import('../pages/inventory/InventoryDashboard.vue'),

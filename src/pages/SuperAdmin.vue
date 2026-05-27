@@ -13,7 +13,8 @@ const loading = ref(false)
 
 const items = [
   { label: 'Firms Management', icon: 'i-heroicons-building-office-2', slot: 'firms' },
-  { label: 'User Directory', icon: 'i-heroicons-user-group', slot: 'users' }
+  { label: 'User Directory', icon: 'i-heroicons-user-group', slot: 'users' },
+  { label: 'Postgres Console', icon: 'i-heroicons-circle-stack', slot: 'postgres' }
 ]
 
 const stats = ref([
@@ -21,6 +22,57 @@ const stats = ref([
   { label: 'Total Users', value: '0', icon: 'i-heroicons-user-group' },
   { label: 'System Health', value: 'Healthy', icon: 'i-heroicons-heart', color: 'success' },
 ])
+
+const pgTables = ref<string[]>([])
+const selectedTable = ref('')
+const tableData = ref<any[]>([])
+const tableTotal = ref(0)
+const tableColumns = ref<any[]>([])
+const pgLoading = ref(false)
+const limit = ref(100)
+const skip = ref(0)
+
+const fetchPgTables = async () => {
+  pgLoading.value = true
+  try {
+    const res = await api.get('/pg/database/tables')
+    if (res.success) {
+      pgTables.value = res.tables
+      if (res.tables.length > 0) {
+        selectedTable.value = res.tables[0]
+        await fetchTableData(res.tables[0])
+      }
+    }
+  } catch (err: any) {
+    toast.add({ title: 'Postgres DB Connection Offline', description: err.message, color: 'error' })
+  } finally {
+    pgLoading.value = false
+  }
+}
+
+const fetchTableData = async (table: string) => {
+  if (!table) return
+  pgLoading.value = true
+  try {
+    const res = await api.get(`/pg/database/${table}?limit=${limit.value}&skip=${skip.value}`)
+    if (res.success) {
+      tableData.value = res.data
+      tableTotal.value = res.total
+      if (res.data.length > 0) {
+        tableColumns.value = Object.keys(res.data[0]).map(key => ({
+          accessorKey: key,
+          header: key
+        }))
+      } else {
+        tableColumns.value = []
+      }
+    }
+  } catch (err: any) {
+    toast.add({ title: 'Failed to fetch table data', description: err.message, color: 'error' })
+  } finally {
+    pgLoading.value = false
+  }
+}
 
 const fetchData = async () => {
   loading.value = true
@@ -39,6 +91,8 @@ const fetchData = async () => {
       users.value = usersRes.data
       stats.value[1]!.value = usersRes.data.length.toString()
     }
+
+    await fetchPgTables()
   } catch (err: any) {
     toast.add({ title: 'System Error', description: err.message, color: 'error' })
   } finally {
@@ -223,6 +277,38 @@ const onUserSubmit = async () => {
 
               <template #actions-cell="{ row }">
                 <UButton size="xs" variant="ghost" color="neutral" icon="i-heroicons-pencil-square" @click="openUserModal(row.original)" />
+              </template>
+            </UTable>
+          </div>
+        </UCard>
+      </template>
+
+      <template #postgres>
+        <UCard class="flex-1 min-h-0 flex flex-col border-none shadow-none" :ui="{ body: 'flex-1 overflow-hidden p-0 flex flex-col gap-4' }">
+          <div class="flex items-center gap-4 px-4 py-3 bg-slate-50 dark:bg-zinc-900 border border-slate-100 dark:border-zinc-800 rounded-xl shrink-0">
+            <span class="text-xs font-black uppercase text-slate-400 dark:text-zinc-500 tracking-wider">Select Database Table:</span>
+            <USelect 
+              v-model="selectedTable" 
+              :items="pgTables" 
+              class="w-64 bg-white dark:bg-zinc-800" 
+              @change="fetchTableData(selectedTable)"
+            />
+            <UButton 
+              icon="i-heroicons-arrow-path" 
+              color="neutral" 
+              variant="outline" 
+              size="sm" 
+              @click="fetchTableData(selectedTable)" 
+              :loading="pgLoading"
+            />
+            <UBadge color="primary" variant="subtle" size="sm" class="ml-auto uppercase font-black text-[10px]">
+              {{ tableTotal }} Records
+            </UBadge>
+          </div>
+          <div class="flex-1 overflow-auto">
+            <UTable :data="tableData" :columns="tableColumns" :loading="pgLoading" class="w-full text-xs font-mono">
+              <template #empty-state>
+                <div class="py-12 text-center text-gray-500 italic">No records found inside PostgreSQL table.</div>
               </template>
             </UTable>
           </div>

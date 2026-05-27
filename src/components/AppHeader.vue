@@ -30,7 +30,8 @@ const navLinks = computed(() => [
     { label: 'Inventory', to: '/inventory' },
     { label: 'Accounting', to: '/accounting/ledger' },
     { label: 'Master Roll', to: '/master-roll' },
-    { label: 'Wages', to: '/wages' }
+    { label: 'Wages', to: '/wages' },
+    { label: 'Labor System', to: '/labor' }
   ] : []),
   ...(isAuthenticated.value && user.value?.role === 'superadmin' ? [
     { label: 'Admin Panel', to: '/superadmin' }

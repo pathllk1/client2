@@ -77,6 +77,12 @@ const navItems = computed(() => [
     path: '/wages',
     icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
     show: hasFirm.value
+  },
+  {
+    name: 'Labor System',
+    path: '/labor',
+    icon: 'M20.25 7.5l-.625 10.125a3.75 3.75 0 0 1-3.75 3.75H8.125a3.75 3.75 0 0 1-3.75-3.75L3.75 7.5M12 12h.008v.008H12V12zM12 3a3 3 0 0 0-3 3v1.5h6V6a3 3 0 0 0-3-3z',
+    show: hasFirm.value
   }
 ])
 </script>
