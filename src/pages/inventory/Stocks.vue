@@ -1,121 +1,156 @@
 <template>
-  <div class="p-6 w-full mx-auto space-y-8">
-    <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
-      <div class="space-y-1">
-        <div class="flex items-center gap-2">
-           <span class="w-3 h-3 rounded-full bg-blue-500 animate-pulse"></span>
-           <span class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Master Data</span>
-        </div>
-        <h1 class="text-3xl font-black text-slate-900 tracking-tight">Stock Register</h1>
-        <p class="text-sm text-slate-500 font-medium">Complete listing of all items and current balances</p>
-      </div>
+  <div class="p-4 py-3 w-full mx-auto space-y-3">
+    <!-- Header Section -->
+    <div class="flex justify-between items-center mb-2">
       <div class="flex items-center gap-3">
-        <button @click="$router.back()" class="px-6 py-3 bg-slate-100 text-slate-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all flex items-center gap-2">
-          Back
-        </button>
-        <button @click="showCreateModal = true" class="px-6 py-3 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center gap-2">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-          Add New Stock
-        </button>
+        <div class="p-2 bg-primary/10 rounded-xl">
+          <UIcon name="i-heroicons-squares-2x2" class="w-6 h-6 text-primary" />
+        </div>
+        <div>
+          <h1 class="text-xl font-black tracking-tight uppercase text-gray-900 dark:text-white leading-none">Stock Register</h1>
+          <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">Complete listing of all items and current balances</p>
+        </div>
       </div>
-    </header>
+      <div class="flex gap-2">
+        <UButton
+          color="neutral"
+          variant="outline"
+          size="sm"
+          label="Back"
+          class="font-semibold text-xs h-8"
+          @click="$router.back()"
+        />
+        <UButton
+          color="primary"
+          icon="i-heroicons-plus"
+          size="sm"
+          label="Add New Stock"
+          class="font-semibold text-xs h-8"
+          @click="showCreateModal = true"
+        />
+      </div>
+    </div>
 
-    <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
-      <div class="p-8 border-b border-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div class="relative group w-full sm:w-96">
-          <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-          <input type="text" v-model="searchQuery" placeholder="Search by name, HSN, or Part No..." class="pl-12 pr-6 py-4 bg-slate-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-blue-500 outline-none transition-all font-bold text-sm w-full" />
-        </div>
-        <div class="flex items-center gap-2">
-           <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total: {{ filteredStocks.length }} SKUs</span>
-        </div>
+    <!-- Search Section -->
+    <div class="bg-white dark:bg-zinc-900 p-2.5 rounded-2xl shadow-sm border border-gray-100 dark:border-zinc-800 mb-2 flex items-center justify-between gap-3">
+      <div class="w-96">
+        <UInput 
+          v-model="searchQuery" 
+          placeholder="Search by name, HSN, or Part No..." 
+          icon="i-heroicons-magnifying-glass"
+          size="sm"
+          class="w-full" 
+        />
       </div>
-      
+      <div class="text-[10px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest px-2">
+        Total: {{ filteredStocks.length }} SKUs
+      </div>
+    </div>
+
+    <!-- Stock Table Card -->
+    <UCard class="w-full shadow-sm rounded-2xl border border-gray-100 dark:border-gray-800" :ui="{ body: 'p-0 overflow-hidden' }">
       <!-- Loader -->
-      <div v-if="loading" class="flex flex-col items-center justify-center py-24 gap-4">
+      <div v-if="loading" class="flex flex-col items-center justify-center py-16 gap-4 bg-white dark:bg-zinc-900">
         <UIcon name="i-heroicons-arrow-path" class="w-10 h-10 animate-spin text-blue-600" />
-        <p class="text-xs font-black uppercase tracking-widest text-slate-400">Loading stock register...</p>
+        <p class="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-zinc-500">Loading stock register...</p>
       </div>
 
       <div v-else class="overflow-x-auto">
-        <table class="w-full text-left">
+        <table class="w-full text-left text-xs divide-y divide-gray-100 dark:divide-zinc-800">
           <thead>
-            <tr class="bg-slate-50/50 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-              <th class="px-8 py-5">Item Details</th>
-              <th class="px-6 py-5">Part No / OEM</th>
-              <th class="px-6 py-5 text-right">Quantity</th>
-              <th class="px-6 py-5 text-right">Avg Rate</th>
-              <th class="px-6 py-5 text-right">Total Value</th>
-              <th class="px-8 py-5 text-center">Status</th>
-              <th class="px-6 py-5 text-center">Actions</th>
+            <tr class="text-[10px] font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider bg-gray-50/80 dark:bg-zinc-800/80">
+              <th class="py-2.5 px-4">Item Details</th>
+              <th class="py-2.5 px-4">Part No / OEM</th>
+              <th class="py-2.5 px-4 text-right">Quantity</th>
+              <th class="py-2.5 px-4 text-right">Avg Rate</th>
+              <th class="py-2.5 px-4 text-right">Total Value</th>
+              <th class="py-2.5 px-4 text-center">Status</th>
+              <th class="py-2.5 px-4 text-center">Actions</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-50">
+          <tbody class="divide-y divide-gray-100 dark:divide-zinc-800">
             <template v-for="stock in filteredStocks" :key="stock.id">
-              <tr class="hover:bg-slate-50 transition-all cursor-pointer group" @click="toggleExpand(stock.id)">
-                <td class="px-8 py-5">
-                  <div class="flex items-center gap-3">
-                    <div class="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
-                      <svg :class="{'rotate-180': expandedRows.has(stock.id)}" class="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+              <tr class="hover:bg-gray-50/50 dark:hover:bg-zinc-800/30 transition-colors cursor-pointer group" @click="toggleExpand(stock.id)">
+                <td class="py-2 px-4">
+                  <div class="flex items-center gap-2">
+                    <div class="w-5 h-5 rounded-md bg-gray-100 dark:bg-zinc-800 flex items-center justify-center group-hover:bg-blue-100 dark:group-hover:bg-blue-900/50 transition-colors">
+                      <UIcon :name="expandedRows.has(stock.id) ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="w-3.5 h-3.5 text-gray-400 group-hover:text-blue-600 transition-all" />
                     </div>
                     <div>
-                      <div class="font-black text-slate-900 group-hover:text-blue-600 transition-colors">{{ stock.item }}</div>
-                      <div class="text-[10px] text-slate-400 font-bold tracking-widest mt-0.5">HSN: {{ stock.hsn }}</div>
+                      <div class="font-bold text-gray-900 dark:text-white group-hover:text-blue-600 transition-colors">{{ stock.item }}</div>
+                      <div class="text-[9px] text-gray-400 dark:text-zinc-500 font-bold tracking-widest mt-0.5">HSN: {{ stock.hsn }}</div>
                     </div>
                   </div>
                 </td>
-                <td class="px-6 py-5">
-                  <div class="font-bold text-slate-700">{{ stock.pno || '—' }}</div>
-                  <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{{ stock.oem || '—' }}</div>
+                <td class="py-2 px-4">
+                  <div class="font-semibold text-gray-700 dark:text-zinc-300">{{ stock.pno || '—' }}</div>
+                  <div class="text-[9px] text-gray-400 dark:text-zinc-500 font-bold uppercase tracking-wider">{{ stock.oem || '—' }}</div>
                 </td>
-                <td class="px-6 py-5 text-right">
-                  <div class="font-black text-slate-900">{{ stock.qty.toLocaleString() }} <span class="text-[10px] text-slate-400 ml-1">{{ stock.uom }}</span></div>
-                  <div v-if="stock.batches?.length > 1" class="text-[9px] text-blue-500 font-black uppercase tracking-widest">{{ stock.batches.length }} Batches</div>
+                <td class="py-2 px-4 text-right">
+                  <div class="font-bold text-gray-900 dark:text-white">{{ stock.qty.toLocaleString() }} <span class="text-[9px] text-gray-400 dark:text-zinc-500 ml-0.5">{{ stock.uom }}</span></div>
+                  <div v-if="stock.batches?.length > 1" class="text-[8px] text-blue-500 font-black uppercase tracking-widest">{{ stock.batches.length }} Batches</div>
                 </td>
-                <td class="px-6 py-5 text-right">
-                  <div class="font-bold text-slate-600">₹{{ stock.rate.toLocaleString() }}</div>
+                <td class="py-2 px-4 text-right">
+                  <div class="text-gray-600 dark:text-zinc-400 font-medium">₹{{ stock.rate.toLocaleString() }}</div>
                 </td>
-                <td class="px-6 py-5 text-right">
-                  <div class="font-black text-slate-900">₹{{ stock.total.toLocaleString() }}</div>
+                <td class="py-2 px-4 text-right">
+                  <div class="font-bold text-gray-900 dark:text-white">₹{{ stock.total.toLocaleString() }}</div>
                 </td>
-                <td class="px-8 py-5 text-center">
-                  <span :class="getStockHealthClass(stock.qty)" class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">
+                <td class="py-2 px-4 text-center">
+                  <UBadge 
+                    :color="getStockHealthColor(stock.qty)" 
+                    size="sm" 
+                    variant="subtle" 
+                    class="px-2 py-0.5 font-black uppercase tracking-widest text-[9px] rounded-md"
+                  >
                     {{ getStockHealthLabel(stock.qty) }}
-                  </span>
+                  </UBadge>
                 </td>
-                <td class="px-6 py-5 text-center" @click.stop>
-                  <button @click="editStock(stock)" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit Item">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                  </button>
+                <td class="py-2 px-4 text-center" @click.stop>
+                  <UButton 
+                    size="xs" 
+                    variant="ghost" 
+                    color="neutral" 
+                    icon="i-heroicons-pencil-square" 
+                    @click="editStock(stock)"
+                    title="Edit Item" 
+                  />
                 </td>
               </tr>
               <!-- Expanded Batch Details -->
-              <tr v-if="expandedRows.has(stock.id)" class="bg-slate-50/50">
-                <td colspan="7" class="px-12 py-6">
-                  <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                    <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-                      <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Batch Inventory Breakdown</h4>
-                      <button @click="viewHistory(stock)" class="text-[9px] font-black text-blue-600 uppercase tracking-widest hover:underline">Full History →</button>
+              <tr v-if="expandedRows.has(stock.id)" class="bg-gray-50/50 dark:bg-zinc-800/30">
+                <td colspan="7" class="px-6 py-3">
+                  <div class="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm overflow-hidden">
+                    <div class="px-4 py-2 bg-gray-50/50 dark:bg-zinc-800/50 border-b border-gray-100 dark:border-zinc-800 flex items-center justify-between">
+                      <h4 class="text-[9px] font-black text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Batch Inventory Breakdown</h4>
+                      <UButton
+                        color="primary"
+                        variant="link"
+                        size="xs"
+                        label="Full History →"
+                        class="p-0 font-bold text-[9px]"
+                        @click="viewHistory(stock)"
+                      />
                     </div>
-                    <table class="w-full text-left text-xs">
+                    <table class="w-full text-left text-xs divide-y divide-gray-100 dark:divide-zinc-800">
                       <thead>
-                        <tr class="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                          <th class="px-6 py-3">Batch Number</th>
-                          <th class="px-6 py-3 text-right">Quantity</th>
-                          <th class="px-6 py-3 text-right">Rate</th>
-                          <th class="px-6 py-3 text-right">GST %</th>
-                          <th class="px-6 py-3 text-right">MRP</th>
-                          <th class="px-6 py-3">Expiry</th>
+                        <tr class="text-[9px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest bg-gray-50/20 dark:bg-zinc-800/20">
+                          <th class="px-4 py-2">Batch Number</th>
+                          <th class="px-4 py-2 text-right">Quantity</th>
+                          <th class="px-4 py-2 text-right">Rate</th>
+                          <th class="px-4 py-2 text-right">GST %</th>
+                          <th class="px-4 py-2 text-right">MRP</th>
+                          <th class="px-4 py-2">Expiry</th>
                         </tr>
                       </thead>
-                      <tbody class="divide-y divide-slate-50">
-                        <tr v-for="batch in stock.batches" :key="batch._id" class="text-slate-600">
-                          <td class="px-6 py-3 font-bold">{{ batch.batch || 'DEFAULT' }}</td>
-                          <td class="px-6 py-3 text-right font-black text-slate-900">{{ batch.qty }} {{ batch.uom }}</td>
-                          <td class="px-6 py-3 text-right">₹{{ batch.rate.toLocaleString() }}</td>
-                          <td class="px-6 py-3 text-right">{{ batch.grate }}%</td>
-                          <td class="px-6 py-3 text-right font-bold text-slate-700">{{ batch.mrp ? '₹' + batch.mrp.toLocaleString() : '—' }}</td>
-                          <td class="px-6 py-3">{{ batch.expiry ? new Date(batch.expiry).toLocaleDateString('en-IN') : '—' }}</td>
+                      <tbody class="divide-y divide-gray-50 dark:divide-zinc-850">
+                        <tr v-for="batch in stock.batches" :key="batch._id" class="text-gray-600 dark:text-zinc-400">
+                          <td class="px-4 py-1.5 font-bold">{{ batch.batch || 'DEFAULT' }}</td>
+                          <td class="px-4 py-1.5 text-right font-bold text-gray-900 dark:text-white">{{ batch.qty }} {{ batch.uom }}</td>
+                          <td class="px-4 py-1.5 text-right">₹{{ batch.rate.toLocaleString() }}</td>
+                          <td class="px-4 py-1.5 text-right">{{ batch.grate }}%</td>
+                          <td class="px-4 py-1.5 text-right font-bold text-gray-700 dark:text-zinc-300">{{ batch.mrp ? '₹' + batch.mrp.toLocaleString() : '—' }}</td>
+                          <td class="px-4 py-1.5">{{ batch.expiry ? new Date(batch.expiry).toLocaleDateString('en-IN') : '—' }}</td>
                         </tr>
                       </tbody>
                     </table>
@@ -126,14 +161,14 @@
           </tbody>
         </table>
         
-        <div v-if="filteredStocks.length === 0" class="p-20 text-center">
-           <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg class="w-10 h-10 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+        <div v-if="filteredStocks.length === 0" class="p-16 text-center bg-white dark:bg-zinc-900">
+           <div class="w-12 h-12 bg-slate-50 dark:bg-zinc-850 rounded-full flex items-center justify-center mx-auto mb-2">
+              <UIcon name="i-heroicons-inbox" class="w-6 h-6 text-slate-300 dark:text-zinc-500" />
            </div>
-           <h3 class="text-slate-400 font-black uppercase tracking-[0.2em]">No Items Found</h3>
+           <h3 class="text-slate-400 dark:text-zinc-500 text-xs font-black uppercase tracking-wider">No Items Found</h3>
         </div>
       </div>
-    </div>
+    </UCard>
 
     <CreateStockModal v-model="showCreateModal" @saved="fetchStocks" />
     <EditStockModal v-model="showEditModal" :stock="selectedStock" @saved="fetchStocks" />
@@ -142,7 +177,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, reactive } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useInventory } from '@/composables/useInventory';
 import CreateStockModal from '@/components/inventory/CreateStockModal.vue';
 import EditStockModal from '@/components/inventory/EditStockModal.vue';
@@ -177,11 +212,11 @@ function toggleExpand(id: string) {
   }
 }
 
-function getStockHealthClass(qty: number) {
-  if (qty <= 0) return 'bg-rose-100 text-rose-600';
-  if (qty <= 5) return 'bg-amber-100 text-amber-600';
-  if (qty <= 20) return 'bg-blue-100 text-blue-600';
-  return 'bg-emerald-100 text-emerald-600';
+function getStockHealthColor(qty: number) {
+  if (qty <= 0) return 'error';
+  if (qty <= 5) return 'warning';
+  if (qty <= 20) return 'primary';
+  return 'success';
 }
 
 function getStockHealthLabel(qty: number) {

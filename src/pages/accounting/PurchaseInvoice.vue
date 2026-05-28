@@ -111,6 +111,43 @@
     <PartyModal v-model="showCreatePartyModal" @saved="(p: any) => { fetchData(); onPartySelect(p); }" />
     <OtherChargesModal v-model="showOtherChargesModal" :other-charges="state.otherCharges" />
 
+    <UModal v-model:open="showPrintModal" title="Bill Saved Successfully" :ui="{ content: 'sm:max-w-md' }">
+      <template #body>
+        <div class="p-4 flex flex-col items-center text-center gap-4 bg-white dark:bg-zinc-900 rounded-2xl">
+          <div class="p-3 bg-green-500/10 dark:bg-green-500/20 rounded-full">
+            <UIcon name="i-heroicons-check-circle" class="w-12 h-12 text-green-600 dark:text-green-400" />
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white">Bill #{{ createdBill?.bno }} Saved</h3>
+            <p class="text-sm text-gray-500 dark:text-zinc-400 mt-1">Would you like to print or download the bill now?</p>
+          </div>
+          <div class="flex gap-3 mt-4 w-full justify-center">
+            <UButton 
+              color="primary" 
+              icon="i-heroicons-arrow-down-tray" 
+              label="Download PDF" 
+              class="flex-1 sm:flex-none font-bold"
+              @click="downloadCreatedPDF" 
+            />
+            <UButton 
+              color="success" 
+              icon="i-heroicons-table-cells" 
+              label="Export Excel" 
+              class="flex-1 sm:flex-none font-bold"
+              @click="downloadCreatedExcel" 
+            />
+            <UButton 
+              color="neutral" 
+              variant="outline" 
+              label="Close" 
+              class="flex-1 sm:flex-none font-bold"
+              @click="showPrintModal = false" 
+            />
+          </div>
+        </div>
+      </template>
+    </UModal>
+
     <div v-if="showPartyModal" class="drawer-backdrop" @click.self="showPartyModal = false">
       <div class="party-drawer" role="dialog" aria-modal="true" aria-label="Select supplier">
         <header class="drawer-head">
@@ -163,6 +200,59 @@ const toast = useToast();
 const showStockModal = ref(false);
 const showPartyModal = ref(false);
 const partySearchQuery = ref('');
+const showPrintModal = ref(false);
+const createdBill = ref<any>(null);
+
+function resetFormState() {
+  state.cart = [];
+  state.selectedParty = null;
+  state.selectedPartyGstin = null;
+  state.selectedPartyLocation = null;
+  state.selectedConsignee = null;
+  state.consigneeSameAsBillTo = true;
+  state.meta.referenceNo = '';
+  state.meta.vehicleNo = '';
+  state.meta.dispatchThrough = '';
+  state.meta.narration = '';
+  state.meta.reverseCharge = false;
+  state.meta.supplierBillNo = '';
+  state.otherCharges = [];
+  fetchNextBillNo(state.meta.btype);
+}
+
+async function downloadCreatedPDF() {
+  if (!createdBill.value) return;
+  try {
+    const blob = await api.get(`/accounting/bills/${createdBill.value._id}/pdf`, { responseType: 'blob' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Invoice_${createdBill.value.bno}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    toast.add({ title: 'Error', description: 'PDF download failed.', color: 'error' });
+  }
+}
+
+async function downloadCreatedExcel() {
+  if (!createdBill.value) return;
+  try {
+    const blob = await api.get(`/accounting/bills/export`, { params: { id: createdBill.value._id }, responseType: 'blob' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Invoice_${createdBill.value.bno}.xlsx`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    toast.add({ title: 'Error', description: 'Excel export failed.', color: 'error' });
+  }
+}
 
 const filteredParties = computed(() => {
   const query = partySearchQuery.value.trim().toLowerCase();
@@ -337,7 +427,9 @@ async function saveInvoice() {
         description: state.isReturnMode ? 'Debit Note created successfully' : 'Purchase Bill created successfully',
         color: 'success'
       });
-      router.push('/accounting/bills');
+      createdBill.value = res.data;
+      showPrintModal.value = true;
+      resetFormState();
     }
   } catch (err: any) {
     toast.add({

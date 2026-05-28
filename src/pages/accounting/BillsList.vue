@@ -1,141 +1,220 @@
 <template>
-  <div class="p-6 w-full mx-auto">
-    <div class="flex justify-between items-center mb-8">
-      <div>
-        <h1 class="text-3xl font-bold text-gray-900">Invoices & Notes</h1>
-        <p class="text-gray-600 mt-1">Manage sales, purchases, and returns</p>
+  <div class="p-4 py-3 w-full mx-auto">
+    <!-- Header Section -->
+    <div class="flex justify-between items-center mb-3">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-primary/10 rounded-xl">
+          <UIcon name="i-heroicons-document-text" class="w-6 h-6 text-primary" />
+        </div>
+        <div>
+          <h1 class="text-xl font-black tracking-tight uppercase text-gray-900 dark:text-white leading-none">Invoices & Notes</h1>
+          <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">Manage sales, purchases, and returns</p>
+        </div>
       </div>
-      <div class="flex space-x-3">
-        <button
+      <div class="flex gap-2">
+        <UButton
+          color="success"
+          variant="outline"
+          icon="i-heroicons-plus"
+          size="sm"
+          label="Purchase"
+          class="font-semibold text-xs h-8"
           @click="$router.push('/accounting/purchases/new')"
-          class="px-4 py-2 bg-white border border-green-600 text-green-700 rounded-lg shadow-sm hover:bg-green-50 flex items-center font-semibold"
-        >
-          + Purchase
-        </button>
-        <button
+        />
+        <UButton
+          color="primary"
+          icon="i-heroicons-plus"
+          size="sm"
+          label="Sales Invoice"
+          class="font-semibold text-xs h-8"
           @click="$router.push('/accounting/sales/new')"
-          class="px-4 py-2 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 flex items-center font-semibold"
-        >
-          + Sales Invoice
-        </button>
+        />
       </div>
     </div>
 
-    <!-- Filters -->
-    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex flex-wrap gap-4 items-end">
-       <div class="flex-1 min-w-[200px]">
-          <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Type</label>
-          <select v-model="filters.btype" @change="fetchBills(filters)" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-             <option value="">All Transactions</option>
-             <option value="SALES">Sales Invoices</option>
-             <option value="PURCHASE">Purchase Bills</option>
-             <option value="CREDIT_NOTE">Credit Notes (Returns)</option>
-             <option value="DEBIT_NOTE">Debit Notes (Returns)</option>
-          </select>
+    <!-- Filters Section -->
+    <div class="bg-white dark:bg-zinc-900 p-3 rounded-2xl shadow-sm border border-gray-100 dark:border-zinc-800 mb-3 flex flex-wrap gap-3 items-end">
+       <div class="flex-1 min-w-[200px] flex flex-col gap-1">
+          <label class="text-[10px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest px-1">Type</label>
+          <USelect 
+             v-model="filters.btype" 
+             :items="typeOptions" 
+             class="w-full" 
+             placeholder="Select Type"
+             size="sm"
+             @update:model-value="handleFilterChange" 
+          />
        </div>
-       <div class="w-64">
-          <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Search Party</label>
-          <input type="text" v-model="partySearch" placeholder="Search by name..." class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+       <div class="w-64 flex flex-col gap-1">
+          <label class="text-[10px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest px-1">Search Party</label>
+          <UInput 
+             v-model="partySearch" 
+             placeholder="Search by name..." 
+             icon="i-heroicons-magnifying-glass"
+             size="sm"
+             class="w-full" 
+          />
        </div>
-       <div class="flex space-x-2">
-         <button
+       <div class="flex gap-2">
+         <UButton
+           color="neutral"
+           variant="outline"
+           icon="i-heroicons-table-cells"
+           label="Export Excel"
+           size="sm"
+           class="h-8 text-xs font-bold"
            @click="exportExcel"
-           class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg shadow-sm hover:bg-gray-50 flex items-center font-semibold text-sm h-10 transition-colors"
            title="Export Filtered Bills to Excel"
-         >
-           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 2.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-           </svg>
-           Export Excel
-         </button>
-         <button
+         />
+         <UButton
+           color="neutral"
+           variant="outline"
+           icon="i-heroicons-document-arrow-down"
+           label="Export PDF"
+           size="sm"
+           class="h-8 text-xs font-bold"
            @click="exportPDF"
-           class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg shadow-sm hover:bg-gray-50 flex items-center font-semibold text-sm h-10 transition-colors"
            title="Export Filtered Bills to PDF Report"
-         >
-           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 2.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-           </svg>
-           Export PDF
-         </button>
+         />
        </div>
     </div>
 
-    <!-- Bills Table -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <!-- Bills Table Card -->
+    <UCard class="w-full shadow-sm rounded-2xl border border-gray-100 dark:border-gray-800" :ui="{ body: 'p-0 overflow-hidden' }">
       <!-- Loader -->
-      <div v-if="loading" class="flex flex-col items-center justify-center py-20 gap-4">
+      <div v-if="loading" class="flex flex-col items-center justify-center py-16 gap-4 bg-white dark:bg-zinc-900">
         <UIcon name="i-heroicons-arrow-path" class="w-10 h-10 animate-spin text-blue-600" />
-        <p class="text-xs font-black uppercase tracking-widest text-slate-400">Loading invoices...</p>
+        <p class="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-zinc-500">Loading invoices...</p>
       </div>
 
+      <!-- Table View -->
       <div v-else class="overflow-x-auto">
-        <table class="w-full text-left border-collapse">
-          <thead>
-            <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-100">
-              <th class="px-6 py-4 font-semibold">Bill Info</th>
-              <th class="px-6 py-4 font-semibold">Party Name</th>
-              <th class="px-6 py-4 font-semibold">Status</th>
-              <th class="px-6 py-4 font-semibold text-right">Taxable</th>
-              <th class="px-6 py-4 font-semibold text-right">Total Tax</th>
-              <th class="px-6 py-4 font-semibold text-right">Net Amount</th>
-              <th class="px-6 py-4 text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-100">
-            <tr v-for="bill in filteredBills" :key="bill._id" class="hover:bg-gray-50 transition-colors">
-              <td class="px-6 py-4">
-                <div class="font-bold text-gray-900">{{ bill.bno }}</div>
-                <div class="text-[10px] uppercase font-bold tracking-widest mt-0.5" :class="getTypeColor(bill.btype)">{{ bill.btype }}</div>
-                <div class="text-xs text-gray-400 mt-1">{{ formatDate(bill.bdate) }}</div>
-              </td>
-              <td class="px-6 py-4">
-                <div class="font-medium text-gray-800">{{ bill.partyName }}</div>
-                <div class="text-[10px] text-gray-400 mt-0.5">{{ bill.partyGstin || 'UNREGISTERED' }}</div>
-              </td>
-              <td class="px-6 py-4">
-                 <span :class="bill.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'" class="px-2 py-1 rounded text-[10px] font-bold">
-                    {{ bill.status }}
-                 </span>
-              </td>
-              <td class="px-6 py-4 text-right text-gray-600">₹{{ (bill.grossTotal || 0).toLocaleString() }}</td>
-              <td class="px-6 py-4 text-right text-gray-600">₹{{ ((bill.cgst || 0) + (bill.sgst || 0) + (bill.igst || 0)).toLocaleString() }}</td>
-              <td class="px-6 py-4 text-right font-bold text-gray-900">₹{{ (bill.netTotal || 0).toLocaleString() }}</td>
-              <td class="px-6 py-4 text-center">
-                 <div class="flex justify-center space-x-2">
-                    <button @click="viewBillDetails(bill._id)" class="p-1 text-gray-400 hover:text-indigo-600" title="View Details">
-                       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                       </svg>
-                    </button>
-                    <button @click="downloadPDF(bill)" class="p-1 text-gray-400 hover:text-blue-600" title="View PDF">
-                       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 2.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                       </svg>
-                    </button>
-                    <button v-if="bill.status === 'ACTIVE' && (bill.btype === 'SALES' || bill.btype === 'PURCHASE')" @click="handleReturn(bill)" class="p-1 text-gray-400 hover:text-amber-600" title="Return / Credit Note">
-                       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z" />
-                       </svg>
-                    </button>
-                    <button v-if="bill.status === 'ACTIVE'" @click="handleCancel(bill._id)" class="p-1 text-gray-400 hover:text-red-600" title="Cancel Bill">
-                       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                       </svg>
-                    </button>
-                 </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <UTable 
+          :data="filteredBills" 
+          :columns="columns" 
+          :loading="loading" 
+          class="w-full text-xs"
+          :ui="{ 
+            td: 'py-2 px-4 text-gray-700 dark:text-zinc-300',
+            th: 'py-2.5 px-4 text-gray-500 font-bold uppercase tracking-wider bg-gray-50/80 dark:bg-zinc-800/80 border-b border-gray-100 dark:border-zinc-800',
+            tr: 'hover:bg-gray-50/50 dark:hover:bg-zinc-800/30 transition-colors'
+          }"
+        >
+          <!-- Bill Info Column -->
+          <template #bno-cell="{ row }">
+            <div>
+              <div class="font-bold text-gray-900 dark:text-white leading-tight">{{ row.original.bno }}</div>
+              <div class="text-[10px] uppercase font-black tracking-widest mt-0.5" :class="getTypeColor(row.original.btype)">
+                {{ row.original.btype.replace('_', ' ') }}
+              </div>
+              <div class="text-[9px] text-gray-400 dark:text-zinc-500 font-bold uppercase tracking-widest mt-0.5">
+                {{ formatDate(row.original.bdate) }}
+              </div>
+            </div>
+          </template>
+
+          <!-- Party Name Column -->
+          <template #partyName-cell="{ row }">
+            <div>
+              <div class="font-bold text-gray-800 dark:text-zinc-200 leading-tight">{{ row.original.partyName }}</div>
+              <div class="text-[10px] text-gray-400 dark:text-zinc-500 mt-0.5 font-mono">{{ row.original.partyGstin || 'UNREGISTERED' }}</div>
+            </div>
+          </template>
+
+          <!-- Status Column -->
+          <template #status-cell="{ row }">
+            <UBadge 
+              :color="row.original.status === 'ACTIVE' ? 'success' : 'error'" 
+              size="sm" 
+              variant="subtle" 
+              class="px-2 py-0.5 font-black uppercase tracking-widest text-[9px] rounded-md"
+            >
+              {{ row.original.status }}
+            </UBadge>
+          </template>
+
+          <!-- Taxable Amount Column -->
+          <template #grossTotal-header>
+            <div class="text-right w-full">Taxable</div>
+          </template>
+          <template #grossTotal-cell="{ row }">
+            <div class="text-right w-full text-gray-600 dark:text-zinc-400 font-medium">
+              ₹{{ (row.original.grossTotal || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+            </div>
+          </template>
+
+          <!-- Total Tax Column -->
+          <template #totalTax-header>
+            <div class="text-right w-full">Total Tax</div>
+          </template>
+          <template #totalTax-cell="{ row }">
+            <div class="text-right w-full text-gray-600 dark:text-zinc-400 font-medium">
+              ₹{{ ((row.original.cgst || 0) + (row.original.sgst || 0) + (row.original.igst || 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+            </div>
+          </template>
+
+          <!-- Net Amount Column -->
+          <template #netTotal-header>
+            <div class="text-right w-full">Net Amount</div>
+          </template>
+          <template #netTotal-cell="{ row }">
+            <div class="text-right w-full font-black text-gray-900 dark:text-white">
+              ₹{{ (row.original.netTotal || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+            </div>
+          </template>
+
+          <!-- Actions Column -->
+          <template #actions-header>
+            <div class="text-center w-full">Actions</div>
+          </template>
+          <template #actions-cell="{ row }">
+            <div class="flex justify-center items-center gap-1">
+              <UTooltip text="View Details">
+                <UButton 
+                  size="xs" 
+                  variant="ghost" 
+                  color="neutral" 
+                  icon="i-heroicons-eye" 
+                  @click="viewBillDetails(row.original._id)" 
+                />
+              </UTooltip>
+              <UTooltip text="View PDF">
+                <UButton 
+                  size="xs" 
+                  variant="ghost" 
+                  color="neutral" 
+                  icon="i-heroicons-arrow-down-tray" 
+                  @click="downloadPDF(row.original)" 
+                />
+              </UTooltip>
+              <UTooltip v-if="row.original.status === 'ACTIVE' && (row.original.btype === 'SALES' || row.original.btype === 'PURCHASE')" text="Return / Credit Note">
+                <UButton 
+                  size="xs" 
+                  variant="ghost" 
+                  color="warning" 
+                  icon="i-heroicons-arrow-uturn-left" 
+                  @click="handleReturn(row.original)" 
+                />
+              </UTooltip>
+              <UTooltip v-if="row.original.status === 'ACTIVE'" text="Cancel Bill">
+                <UButton 
+                  size="xs" 
+                  variant="ghost" 
+                  color="error" 
+                  icon="i-heroicons-x-circle" 
+                  @click="handleCancel(row.original._id)" 
+                />
+              </UTooltip>
+            </div>
+          </template>
+        </UTable>
       </div>
-    </div>
+    </UCard>
 
     <BillDetailsModal
       v-model="showDetailsModal"
       :billId="selectedBillId"
-      @cancelled="fetchBills(filters)"
+      @cancelled="handleFilterChange"
       @view-bill="viewBillDetails"
     />
   </div>
@@ -154,18 +233,44 @@ const { bills, fetchBills, loading } = useBilling();
 const selectedBillId = ref<string | null>(null);
 const showDetailsModal = ref(false);
 
+const columns = [
+  { accessorKey: 'bno', header: 'Bill Info' },
+  { accessorKey: 'partyName', header: 'Party Name' },
+  { accessorKey: 'status', header: 'Status' },
+  { accessorKey: 'grossTotal', header: 'Taxable' },
+  { accessorKey: 'totalTax', header: 'Total Tax' },
+  { accessorKey: 'netTotal', header: 'Net Amount' },
+  { id: 'actions', header: 'Actions' }
+];
+
+const typeOptions = [
+  { label: 'All Transactions', value: 'ALL' },
+  { label: 'Sales Invoices', value: 'SALES' },
+  { label: 'Purchase Bills', value: 'PURCHASE' },
+  { label: 'Credit Notes (Returns)', value: 'CREDIT_NOTE' },
+  { label: 'Debit Notes (Returns)', value: 'DEBIT_NOTE' }
+];
+
 function viewBillDetails(id: string) {
   selectedBillId.value = id;
   showDetailsModal.value = true;
 }
 
 const filters = reactive({
-  btype: ''
+  btype: 'ALL'
 });
 const partySearch = ref('');
 
+function handleFilterChange() {
+  const params: any = {};
+  if (filters.btype && filters.btype !== 'ALL') {
+    params.btype = filters.btype;
+  }
+  fetchBills(params);
+}
+
 onMounted(() => {
-  fetchBills(filters);
+  handleFilterChange();
 });
 
 const filteredBills = computed(() => {
@@ -180,12 +285,12 @@ function formatDate(iso: string) {
 
 function getTypeColor(type: string) {
   const map: any = {
-    'SALES': 'text-blue-600',
-    'PURCHASE': 'text-green-600',
-    'CREDIT_NOTE': 'text-purple-600',
-    'DEBIT_NOTE': 'text-orange-600'
+    'SALES': 'text-blue-600 dark:text-blue-400',
+    'PURCHASE': 'text-green-600 dark:text-green-400',
+    'CREDIT_NOTE': 'text-purple-600 dark:text-purple-400',
+    'DEBIT_NOTE': 'text-orange-600 dark:text-orange-400'
   };
-  return map[type] || 'text-gray-600';
+  return map[type] || 'text-gray-600 dark:text-gray-400';
 }
 
 function handleReturn(bill: any) {
@@ -197,7 +302,7 @@ async function handleCancel(id: string) {
   if (!confirm('Are you sure you want to cancel this bill? This will reverse all stock and ledger effects.')) return;
   try {
     await api.post(`/accounting/bills/${id}/cancel`, { reason: 'User requested cancellation' });
-    fetchBills(filters);
+    handleFilterChange();
   } catch (err) {
     alert('Cancellation failed');
   }
@@ -222,7 +327,7 @@ async function downloadPDF(bill: any) {
 async function exportPDF() {
   try {
     const params: any = {};
-    if (filters.btype) params.btype = filters.btype;
+    if (filters.btype && filters.btype !== 'ALL') params.btype = filters.btype;
     if (partySearch.value) params.searchTerm = partySearch.value;
 
     const blob = await api.get('/accounting/bills/export/pdf', { params, responseType: 'blob' });
@@ -242,7 +347,7 @@ async function exportPDF() {
 async function exportExcel() {
   try {
     const params: any = {};
-    if (filters.btype) params.btype = filters.btype;
+    if (filters.btype && filters.btype !== 'ALL') params.btype = filters.btype;
 
     const blob = await api.get('/accounting/bills/export', { params, responseType: 'blob' });
     const url = window.URL.createObjectURL(blob);
