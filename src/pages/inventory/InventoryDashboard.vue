@@ -241,6 +241,20 @@
                    <h4 class="text-white text-xs font-bold truncate">Invoices & Notes</h4>
                    <p class="text-[9px] text-slate-500 font-bold uppercase leading-none mt-0.5">Billing Hub</p>
                 </button>
+                <button @click="$router.push('/accounting/gst-returns')" class="p-2.5 rounded-xl bg-white/5 border border-white/10 text-left hover:bg-white/10 transition-all group">
+                   <div class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                      <UIcon name="i-heroicons-document-duplicate" class="w-4.5 h-4.5" />
+                   </div>
+                   <h4 class="text-white text-xs font-bold truncate">GST Returns</h4>
+                   <p class="text-[9px] text-slate-500 font-bold uppercase leading-none mt-0.5">Tax Filing</p>
+                </button>
+                <button @click="$router.push('/accounting/trial-balance')" class="p-2.5 rounded-xl bg-white/5 border border-white/10 text-left hover:bg-white/10 transition-all group">
+                   <div class="w-8 h-8 rounded-lg bg-violet-500/20 text-violet-400 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                      <UIcon name="i-heroicons-scale" class="w-4.5 h-4.5" />
+                   </div>
+                   <h4 class="text-white text-xs font-bold truncate">Trial Balance</h4>
+                   <p class="text-[9px] text-slate-500 font-bold uppercase leading-none mt-0.5">Verification</p>
+                </button>
              </div>
           </UCard>
 

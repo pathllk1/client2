@@ -106,6 +106,12 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/accounting/gst-returns',
+      name: 'gst-returns',
+      component: () => import('../pages/accounting/GSTReturns.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/accounting/coa',
       name: 'chart-of-accounts',
       component: () => import('../pages/accounting/ChartOfAccounts.vue'),
