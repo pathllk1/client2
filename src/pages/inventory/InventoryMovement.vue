@@ -6,43 +6,54 @@
         <p class="text-gray-600 mt-1">Full audit trail of inventory ins and outs</p>
       </div>
       <div class="flex space-x-3">
-        <button
+        <UButton
+          color="neutral"
+          variant="outline"
+          icon="i-heroicons-arrow-path"
+          label="Refresh"
+          size="sm"
+          class="font-bold text-xs h-8"
           @click="fetchMovements({})"
-          class="px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm text-gray-700 hover:bg-gray-50 flex items-center"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-          Refresh
-        </button>
-        <button
+        />
+        <UButton
+          color="success"
+          icon="i-heroicons-table-cells"
+          label="Export Excel"
+          size="sm"
+          class="font-bold text-xs h-8"
           @click="exportExcel"
-          class="px-4 py-2 bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700 flex items-center"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 2.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          Export Excel
-        </button>
+        />
       </div>
     </div>
 
     <!-- Filters -->
     <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex flex-wrap gap-4 items-end">
        <div class="flex-1 min-w-[200px]">
-          <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Filter by Type</label>
-          <select v-model="filters.type" @change="fetchMovements(filters)" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-             <option value="">All Movements</option>
-             <option value="SALE">Sales</option>
-             <option value="PURCHASE">Purchases</option>
-             <option value="CREDIT_NOTE">Sales Returns</option>
-             <option value="DEBIT_NOTE">Purchase Returns</option>
-             <option value="ADJUSTMENT">Manual Adjustments</option>
-          </select>
+          <label class="block text-xs font-bold text-gray-400 uppercase mb-1.5">Filter by Type</label>
+          <USelect
+            v-model="filters.type"
+            :items="[
+              { label: 'All Movements', value: '' },
+              { label: 'Sales', value: 'SALE' },
+              { label: 'Purchases', value: 'PURCHASE' },
+              { label: 'Sales Returns', value: 'CREDIT_NOTE' },
+              { label: 'Purchase Returns', value: 'DEBIT_NOTE' },
+              { label: 'Manual Adjustments', value: 'ADJUSTMENT' }
+            ]"
+            class="w-full"
+            size="sm"
+            @change="fetchMovements(filters)"
+          />
        </div>
        <div class="w-64">
-          <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Item Search</label>
-          <input type="text" v-model="itemSearch" placeholder="Filter by item name..." class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+          <label class="block text-xs font-bold text-gray-400 uppercase mb-1.5">Item Search</label>
+          <UInput
+            v-model="itemSearch"
+            placeholder="Filter by item name..."
+            icon="i-heroicons-magnifying-glass"
+            size="sm"
+            class="w-full"
+          />
        </div>
     </div>
 

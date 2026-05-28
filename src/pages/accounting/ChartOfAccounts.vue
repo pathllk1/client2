@@ -240,15 +240,11 @@ onMounted(fetchCOA)
           </UFormField>
           
           <UFormField label="Account Type" required>
-            <select 
+            <USelect
               v-model="form.account_type"
-              class="w-full h-10 px-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 appearance-none"
-              required
-            >
-              <option v-for="type in accountTypes" :key="type.value" :value="type.value">
-                {{ type.label }}
-              </option>
-            </select>
+              :items="accountTypes"
+              class="w-full"
+            />
           </UFormField>
 
           <UFormField label="Opening Balance (₹)">

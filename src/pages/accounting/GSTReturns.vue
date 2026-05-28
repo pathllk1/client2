@@ -336,14 +336,12 @@ const gstr1TabConfig = computed(() => {
         </div>
         <div>
           <label class="block text-[10px] font-black text-gray-500 dark:text-zinc-400 uppercase tracking-wider mb-2">Firm GSTIN</label>
-          <select 
-            v-model="firmGstin" 
-            class="w-full px-3 py-1.5 border border-gray-200 dark:border-zinc-800 dark:bg-zinc-900 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 dark:text-white"
-          >
-            <option v-for="g in firmGstins" :key="g.gst_number" :value="g.gst_number">
-              {{ g.label }}
-            </option>
-          </select>
+          <USelect
+            v-model="firmGstin"
+            :items="firmGstins.map(g => ({ label: g.label, value: g.gst_number }))"
+            class="w-full"
+            size="sm"
+          />
         </div>
         <div>
           <UButton 
