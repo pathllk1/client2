@@ -1,230 +1,281 @@
 <template>
-  <div class="p-6 w-full mx-auto space-y-8">
+  <div class="p-4 py-3 w-full mx-auto space-y-3">
     <!-- Header Section -->
-    <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
-      <div class="space-y-1">
-        <div class="flex items-center gap-2">
-           <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
-           <span class="text-[10px] font-black text-emerald-600 uppercase tracking-widest">System Live</span>
-        </div>
-        <h1 class="text-3xl font-black text-slate-900 tracking-tight">Inventory Intelligence</h1>
-        <p class="text-sm text-slate-500 font-medium">Monitoring {{ stocks.length }} SKUs across your warehouses</p>
-      </div>
+    <div class="flex justify-between items-center mb-2">
       <div class="flex items-center gap-3">
-        <button @click="refreshAll" class="p-3 bg-slate-50 text-slate-600 rounded-2xl hover:bg-slate-100 transition-all border border-slate-200">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-        </button>
-        <button @click="$router.push('/accounting/sales/new')" class="px-6 py-3 bg-rose-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-rose-100 hover:bg-rose-700 transition-all flex items-center gap-2">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-          New Sale
-        </button>
-        <button @click="$router.push('/accounting/purchases/new')" class="px-6 py-3 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-emerald-100 hover:bg-emerald-700 transition-all flex items-center gap-2">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-          New Purchase
-        </button>
-        <button @click="showCreateModal = true" class="px-6 py-3 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center gap-2">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-          New Stock
-        </button>
+        <div class="p-2 bg-primary/10 rounded-xl">
+          <UIcon name="i-heroicons-chart-bar-square" class="w-6 h-6 text-primary" />
+        </div>
+        <div>
+          <h1 class="text-xl font-black tracking-tight uppercase text-gray-900 dark:text-white leading-none">Inventory Intelligence</h1>
+          <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">Monitoring {{ stocks.length }} SKUs across your warehouses</p>
+        </div>
       </div>
-    </header>
+      <div class="flex items-center gap-2">
+        <UButton
+          color="neutral"
+          variant="outline"
+          icon="i-heroicons-arrow-path"
+          size="sm"
+          class="h-8 w-8 flex items-center justify-center p-0"
+          @click="refreshAll"
+          title="Refresh Dashboard"
+        />
+        <UButton
+          color="error"
+          icon="i-heroicons-plus"
+          size="sm"
+          label="New Sale"
+          class="font-semibold text-xs h-8"
+          @click="$router.push('/accounting/sales/new')"
+        />
+        <UButton
+          color="success"
+          icon="i-heroicons-plus"
+          size="sm"
+          label="New Purchase"
+          class="font-semibold text-xs h-8"
+          @click="$router.push('/accounting/purchases/new')"
+        />
+        <UButton
+          color="primary"
+          icon="i-heroicons-plus"
+          size="sm"
+          label="New Stock"
+          class="font-semibold text-xs h-8"
+          @click="showCreateModal = true"
+        />
+      </div>
+    </div>
 
     <!-- Loader -->
-    <div v-if="loading" class="flex flex-col items-center justify-center py-32 gap-4 bg-white rounded-[2.5rem] border border-slate-100">
-      <UIcon name="i-heroicons-arrow-path" class="w-12 h-12 animate-spin text-indigo-600" />
-      <p class="text-xs font-black uppercase tracking-widest text-slate-400">Loading dashboard...</p>
+    <div v-if="loading" class="flex flex-col items-center justify-center py-24 gap-4 bg-white dark:bg-zinc-900 rounded-2xl border border-gray-100 dark:border-zinc-800 shadow-sm">
+      <UIcon name="i-heroicons-arrow-path" class="w-10 h-10 animate-spin text-primary" />
+      <p class="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-zinc-500">Loading dashboard...</p>
     </div>
 
     <template v-else>
       <!-- KPI Section -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-        <div v-for="kpi in kpis" :key="kpi.label" class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-md transition-all group">
-           <div class="flex items-center justify-between mb-4">
-              <div :class="kpi.color" class="w-10 h-10 rounded-2xl flex items-center justify-center bg-opacity-10">
-                 <component :is="kpi.icon" class="w-5 h-5" />
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+        <div v-for="kpi in kpis" :key="kpi.label" class="bg-white dark:bg-zinc-900 p-3.5 rounded-2xl border border-gray-100 dark:border-zinc-800 shadow-sm hover:shadow-md transition-all group">
+           <div class="flex items-center justify-between mb-2">
+              <div :class="kpi.color" class="w-8 h-8 rounded-lg flex items-center justify-center">
+                 <UIcon :name="kpi.icon" class="w-4.5 h-4.5" />
               </div>
-              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{{ kpi.meta }}</span>
+              <span class="text-[9px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-widest">{{ kpi.meta }}</span>
            </div>
-           <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{{ kpi.label }}</p>
-           <h3 class="text-2xl font-black text-slate-900 tracking-tight">{{ kpi.value }}</h3>
+           <p class="text-[9px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-[0.2em] mb-0.5">{{ kpi.label }}</p>
+           <h3 class="text-xl font-black text-gray-900 dark:text-white tracking-tight">{{ kpi.value }}</h3>
         </div>
       </div>
 
       <!-- Main Content Grid -->
-      <div class="grid grid-cols-1 xl:grid-cols-[1.5fr_1fr] gap-8">
+      <div class="grid grid-cols-1 xl:grid-cols-[1.50fr_1fr] gap-3">
         <!-- Left Column: Stocks & Movements -->
-        <div class="space-y-8">
-          <!-- Stock Table -->
-          <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
-            <div class="p-8 border-b border-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="space-y-3">
+          <!-- Stock Table Card -->
+          <UCard class="w-full shadow-sm rounded-2xl border border-gray-100 dark:border-zinc-800" :ui="{ body: 'p-0 overflow-hidden' }">
+            <div class="p-4 py-3 border-b border-gray-50 dark:border-zinc-800 flex items-center justify-between gap-4">
               <div>
-                <h2 class="text-xl font-black text-slate-900 tracking-tight">Inventory Register</h2>
-                <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Real-time stock availability</p>
+                <h2 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight leading-none">Inventory Register</h2>
+                <p class="text-[9px] text-gray-400 dark:text-zinc-500 font-bold uppercase tracking-widest mt-1">Real-time stock availability</p>
               </div>
-              <div class="relative group">
-                <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                <input type="text" v-model="stockSearch" placeholder="Filter items..." class="pl-12 pr-6 py-3 bg-slate-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-blue-500 outline-none transition-all font-bold text-sm w-full sm:w-64" />
+              <div class="w-64">
+                <UInput 
+                  v-model="stockSearch" 
+                  placeholder="Filter items..." 
+                  icon="i-heroicons-magnifying-glass"
+                  size="sm"
+                  class="w-full" 
+                />
               </div>
             </div>
+            
             <div class="overflow-x-auto">
-              <table class="w-full text-left">
+              <table class="w-full text-left text-xs divide-y divide-gray-100 dark:divide-zinc-800">
                 <thead>
-                  <tr class="bg-slate-50/50 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                    <th class="px-8 py-5">Item Details</th>
-                    <th class="px-6 py-5">Part No</th>
-                    <th class="px-6 py-5 text-right">Quantity</th>
-                    <th class="px-6 py-5 text-right">Avg Rate</th>
-                    <th class="px-6 py-5 text-right">Total Value</th>
-                    <th class="px-8 py-5 text-center">Health</th>
+                  <tr class="text-[10px] font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider bg-gray-50/80 dark:bg-zinc-800/80">
+                    <th class="py-2 px-3">Item Details</th>
+                    <th class="py-2 px-3">Part No</th>
+                    <th class="py-2 px-3 text-right">Quantity</th>
+                    <th class="py-2 px-3 text-right">Avg Rate</th>
+                    <th class="py-2 px-3 text-right">Total Value</th>
+                    <th class="py-2 px-3 text-center">Health</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-50">
-                  <tr v-for="stock in filteredStocks.slice(0, 10)" :key="stock.id" class="hover:bg-slate-50/80 transition-all cursor-pointer group" @click="viewHistory(stock)">
-                    <td class="px-8 py-5">
-                      <div class="font-black text-slate-900 group-hover:text-blue-600 transition-colors">{{ stock.item }}</div>
-                      <div class="text-[10px] text-slate-400 font-bold tracking-widest mt-0.5">HSN: {{ stock.hsn }}</div>
+                <tbody class="divide-y divide-gray-100 dark:divide-zinc-800">
+                  <tr v-for="stock in filteredStocks.slice(0, 10)" :key="stock.id" class="hover:bg-gray-50/50 dark:hover:bg-zinc-800/30 transition-colors cursor-pointer group" @click="viewHistory(stock)">
+                    <td class="py-2 px-3">
+                      <div class="font-bold text-gray-900 dark:text-white group-hover:text-blue-600 transition-colors">{{ stock.item }}</div>
+                      <div class="text-[9px] text-gray-400 dark:text-zinc-500 font-bold tracking-widest mt-0.5">HSN: {{ stock.hsn }}</div>
                     </td>
-                    <td class="px-6 py-5">
-                      <div class="font-bold text-slate-700">{{ stock.pno || '—' }}</div>
-                      <div v-if="stock.oem" class="text-[9px] text-slate-400 font-bold uppercase">{{ stock.oem }}</div>
+                    <td class="py-2 px-3">
+                      <div class="font-semibold text-gray-700 dark:text-zinc-300">{{ stock.pno || '—' }}</div>
+                      <div v-if="stock.oem" class="text-[9px] text-gray-450 dark:text-zinc-500 font-bold uppercase tracking-wider">{{ stock.oem }}</div>
                     </td>
-                    <td class="px-6 py-5 text-right">
-                      <div class="font-black text-slate-900">{{ stock.qty.toLocaleString() }} <span class="text-[10px] text-slate-400 ml-1">{{ stock.uom }}</span></div>
-                      <div v-if="stock.batches?.length > 1" class="text-[9px] text-blue-500 font-black uppercase tracking-widest">{{ stock.batches.length }} Batches</div>
+                    <td class="py-2 px-3 text-right">
+                      <div class="font-bold text-gray-900 dark:text-white">{{ stock.qty.toLocaleString() }} <span class="text-[9px] text-gray-450 dark:text-zinc-550 ml-0.5">{{ stock.uom }}</span></div>
+                      <div v-if="stock.batches?.length > 1" class="text-[8px] text-blue-500 font-black uppercase tracking-widest">{{ stock.batches.length }} Batches</div>
                     </td>
-                    <td class="px-6 py-5 text-right">
-                      <div class="font-bold text-slate-600">₹{{ stock.rate.toLocaleString() }}</div>
+                    <td class="py-2 px-3 text-right">
+                      <div class="text-gray-650 dark:text-zinc-400 font-medium">₹{{ stock.rate.toLocaleString() }}</div>
                     </td>
-                    <td class="px-6 py-5 text-right">
-                      <div class="font-black text-slate-900">₹{{ stock.total.toLocaleString() }}</div>
+                    <td class="py-2 px-3 text-right">
+                      <div class="font-bold text-gray-900 dark:text-white">₹{{ stock.total.toLocaleString() }}</div>
                     </td>
-                    <td class="px-8 py-5 text-center">
-                      <span :class="getStockHealthClass(stock.qty)" class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">
+                    <td class="py-2 px-3 text-center">
+                      <UBadge 
+                        :color="getStockHealthColor(stock.qty)" 
+                        size="sm" 
+                        variant="subtle" 
+                        class="px-2 py-0.5 font-black uppercase tracking-widest text-[9px] rounded-md"
+                      >
                         {{ getStockHealthLabel(stock.qty) }}
-                      </span>
+                      </UBadge>
                     </td>
                   </tr>
                 </tbody>
               </table>
             </div>
-            <div v-if="filteredStocks.length > 10" class="p-4 bg-slate-50/50 text-center border-t border-slate-50">
-               <button @click="$router.push('/inventory/stocks')" class="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:text-blue-700">View All {{ filteredStocks.length }} Items →</button>
+            
+            <div v-if="filteredStocks.length > 10" class="p-2 bg-gray-50/50 dark:bg-zinc-800/20 text-center border-t border-gray-100 dark:border-zinc-800">
+               <UButton
+                 color="primary"
+                 variant="link"
+                 size="xs"
+                 class="font-black text-[10px] uppercase tracking-widest"
+                 @click="$router.push('/inventory/stocks')"
+               >
+                 View All {{ filteredStocks.length }} Items →
+               </UButton>
             </div>
-          </div>
+          </UCard>
 
-          <!-- Recent Movements -->
-          <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-8">
-             <div class="flex items-center justify-between mb-8">
+          <!-- Recent Movements Card -->
+          <UCard class="w-full shadow-sm rounded-2xl border border-gray-100 dark:border-zinc-800" :ui="{ body: 'p-4 py-3' }">
+             <div class="flex items-center justify-between mb-4">
                 <div>
-                  <h2 class="text-xl font-black text-slate-900 tracking-tight">Stock Movement Feed</h2>
-                  <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Trace inward and outward transactions</p>
+                  <h2 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight leading-none">Stock Movement Feed</h2>
+                  <p class="text-[9px] text-gray-400 dark:text-zinc-500 font-bold uppercase tracking-widest mt-1">Trace inward and outward transactions</p>
                 </div>
-                <button @click="$router.push('/inventory/movements')" class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Full Ledger</button>
+                <UButton
+                  color="primary"
+                  variant="link"
+                  size="xs"
+                  label="Full Ledger"
+                  class="font-black text-[10px] uppercase tracking-widest p-0"
+                  @click="$router.push('/inventory/movements')"
+                />
              </div>
-             <div class="space-y-4">
-                <div v-for="move in movements.slice(0, 6)" :key="move.id" class="flex items-center gap-4 p-4 rounded-3xl bg-slate-50 hover:bg-slate-100 transition-all border border-slate-100/50">
-                   <div :class="move.type === 'SALE' ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'" class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0">
-                      <svg v-if="move.type === 'SALE'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
-                      <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 17H17M17 17V7M17 17L7 7"/></svg>
+             <div class="space-y-2">
+                <div v-for="move in movements.slice(0, 6)" :key="move.id" class="flex items-center gap-3 p-2 px-3 rounded-2xl bg-gray-50/60 dark:bg-zinc-800/40 hover:bg-gray-100 dark:hover:bg-zinc-800/80 transition-all border border-gray-100/50 dark:border-zinc-800/50">
+                   <div :class="move.type === 'SALE' ? 'bg-rose-100 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400' : 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400'" class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0">
+                      <UIcon v-if="move.type === 'SALE'" name="i-heroicons-arrow-trending-down" class="w-5 h-5" />
+                      <UIcon v-else name="i-heroicons-arrow-trending-up" class="w-5 h-5" />
                    </div>
                    <div class="flex-1 min-w-0">
                       <div class="flex items-center justify-between gap-2">
-                         <h4 class="font-black text-slate-900 truncate">{{ move.item }}</h4>
-                         <span class="text-[10px] font-black text-slate-400 uppercase">{{ formatDate(move.createdAt) }}</span>
+                         <h4 class="font-bold text-xs text-gray-900 dark:text-white truncate leading-none">{{ move.item }}</h4>
+                         <span class="text-[9px] font-bold text-gray-400 dark:text-zinc-500 uppercase">{{ formatDate(move.createdAt) }}</span>
                       </div>
                       <div class="flex items-center gap-2 mt-1">
-                         <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{{ move.supply || 'INTERNAL' }}</span>
-                         <span class="text-[10px] font-black" :class="move.type === 'SALE' ? 'text-rose-500' : 'text-emerald-500'">{{ move.type }}</span>
+                         <span class="text-[9px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider leading-none">{{ move.supply || 'INTERNAL' }}</span>
+                         <span class="text-[9px] font-black leading-none" :class="move.type === 'SALE' ? 'text-rose-500' : 'text-emerald-500'">{{ move.type }}</span>
                       </div>
                    </div>
                    <div class="text-right">
-                      <div class="font-black text-slate-900">{{ move.type === 'SALE' ? '-' : '+' }}{{ move.qty }}</div>
-                      <div class="text-[10px] font-bold text-slate-400 uppercase">Balance: {{ move.qtyh }}</div>
+                      <div class="font-bold text-sm text-gray-900 dark:text-white leading-none">{{ move.type === 'SALE' ? '-' : '+' }}{{ move.qty }}</div>
+                      <div class="text-[9px] font-bold text-gray-400 dark:text-zinc-500 uppercase mt-0.5 leading-none">Bal: {{ move.qtyh }}</div>
                    </div>
                 </div>
-                <div v-if="movements.length === 0" class="py-12 text-center text-slate-300 font-bold uppercase text-xs tracking-widest">No recent movements recorded</div>
+                <div v-if="movements.length === 0" class="py-8 text-center text-gray-400 dark:text-zinc-500 font-bold uppercase text-[10px] tracking-widest">No recent movements recorded</div>
              </div>
-          </div>
+          </UCard>
         </div>
 
-        <!-- Right Column: Recent Bills & Quick Links -->
-        <div class="space-y-8">
+        <!-- Right Column: Quick Links & Recent Bills -->
+        <div class="space-y-3">
           <!-- Quick Access -->
-          <div class="bg-slate-900 rounded-[2.5rem] p-8 shadow-2xl">
-             <h2 class="text-white font-black tracking-tight mb-6">Quick Actions</h2>
-             <div class="grid grid-cols-2 gap-4">
-                <button @click="$router.push('/accounting/parties')" class="p-4 rounded-3xl bg-white/5 border border-white/10 text-left hover:bg-white/10 transition-all group">
-                   <div class="w-10 h-10 rounded-2xl bg-blue-500/20 text-blue-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+          <UCard class="w-full shadow-sm rounded-2xl border border-gray-100 dark:border-zinc-800 bg-zinc-900 dark:bg-zinc-950" :ui="{ body: 'p-4 py-3.5' }">
+             <h2 class="text-white font-black text-sm uppercase tracking-wider mb-4 leading-none">Quick Actions</h2>
+             <div class="grid grid-cols-2 gap-2.5">
+                <button @click="$router.push('/accounting/parties')" class="p-2.5 rounded-xl bg-white/5 border border-white/10 text-left hover:bg-white/10 transition-all group">
+                   <div class="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                      <UIcon name="i-heroicons-user-group" class="w-4.5 h-4.5" />
                    </div>
-                   <h4 class="text-white text-sm font-black tracking-tight">Parties Hub</h4>
-                   <p class="text-[10px] text-slate-500 font-bold mt-1 uppercase">Manage Clients</p>
+                   <h4 class="text-white text-xs font-bold truncate">Parties Hub</h4>
+                   <p class="text-[9px] text-slate-500 font-bold uppercase leading-none mt-0.5">Clients</p>
                 </button>
-                <button @click="$router.push('/inventory/stocks')" class="p-4 rounded-3xl bg-white/5 border border-white/10 text-left hover:bg-white/10 transition-all group">
-                   <div class="w-10 h-10 rounded-2xl bg-orange-500/20 text-orange-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                      <ClipboardDocumentListIcon class="w-5 h-5" />
+                <button @click="$router.push('/inventory/stocks')" class="p-2.5 rounded-xl bg-white/5 border border-white/10 text-left hover:bg-white/10 transition-all group">
+                   <div class="w-8 h-8 rounded-lg bg-orange-500/20 text-orange-400 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                      <UIcon name="i-heroicons-clipboard-document-list" class="w-4.5 h-4.5" />
                    </div>
-                   <h4 class="text-white text-sm font-black tracking-tight">Stock Register</h4>
-                   <p class="text-[10px] text-slate-500 font-bold mt-1 uppercase">Inventory List</p>
+                   <h4 class="text-white text-xs font-bold truncate">Stock Register</h4>
+                   <p class="text-[9px] text-slate-500 font-bold uppercase leading-none mt-0.5">Inventory</p>
                 </button>
-                <button @click="$router.push('/inventory/reports')" class="p-4 rounded-3xl bg-white/5 border border-white/10 text-left hover:bg-white/10 transition-all group">
-                   <div class="w-10 h-10 rounded-2xl bg-purple-500/20 text-purple-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 2.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <button @click="$router.push('/inventory/reports')" class="p-2.5 rounded-xl bg-white/5 border border-white/10 text-left hover:bg-white/10 transition-all group">
+                   <div class="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                      <UIcon name="i-heroicons-document-chart-bar" class="w-4.5 h-4.5" />
                    </div>
-                   <h4 class="text-white text-sm font-black tracking-tight">Reports</h4>
-                   <p class="text-[10px] text-slate-500 font-bold mt-1 uppercase">Analysis</p>
+                   <h4 class="text-white text-xs font-bold truncate">Reports</h4>
+                   <p class="text-[9px] text-slate-500 font-bold uppercase leading-none mt-0.5">Analysis</p>
                 </button>
-                <button @click="$router.push('/accounting/ledger')" class="p-4 rounded-3xl bg-white/5 border border-white/10 text-left hover:bg-white/10 transition-all group">
-                   <div class="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h18M7 15h1m4 0h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                <button @click="$router.push('/accounting/ledger')" class="p-2.5 rounded-xl bg-white/5 border border-white/10 text-left hover:bg-white/10 transition-all group">
+                   <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                      <UIcon name="i-heroicons-credit-card" class="w-4.5 h-4.5" />
                    </div>
-                   <h4 class="text-white text-sm font-black tracking-tight">General Ledger</h4>
-                   <p class="text-[10px] text-slate-500 font-bold mt-1 uppercase">Accounting</p>
+                   <h4 class="text-white text-xs font-bold truncate">General Ledger</h4>
+                   <p class="text-[9px] text-slate-500 font-bold uppercase leading-none mt-0.5">Accounting</p>
                 </button>
-                <button @click="showAdjustmentModal = true" class="p-4 rounded-3xl bg-white/5 border border-white/10 text-left hover:bg-white/10 transition-all group">
-                   <div class="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                <button @click="showAdjustmentModal = true" class="p-2.5 rounded-xl bg-white/5 border border-white/10 text-left hover:bg-white/10 transition-all group">
+                   <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                      <UIcon name="i-heroicons-exclamation-triangle" class="w-4.5 h-4.5" />
                    </div>
-                   <h4 class="text-white text-sm font-black tracking-tight">Adjustment</h4>
-                   <p class="text-[10px] text-slate-500 font-bold mt-1 uppercase">Stock Fix</p>
+                   <h4 class="text-white text-xs font-bold truncate">Adjustment</h4>
+                   <p class="text-[9px] text-slate-500 font-bold uppercase leading-none mt-0.5">Stock Fix</p>
                 </button>
-                <button @click="$router.push('/accounting/bills')" class="p-4 rounded-3xl bg-white/5 border border-white/10 text-left hover:bg-white/10 transition-all group">
-                   <div class="w-10 h-10 rounded-2xl bg-sky-500/20 text-sky-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                      <DocumentTextIcon class="w-5 h-5" />
+                <button @click="$router.push('/accounting/bills')" class="p-2.5 rounded-xl bg-white/5 border border-white/10 text-left hover:bg-white/10 transition-all group">
+                   <div class="w-8 h-8 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                      <UIcon name="i-heroicons-document-text" class="w-4.5 h-4.5" />
                    </div>
-                   <h4 class="text-white text-sm font-black tracking-tight">Invoices & Notes</h4>
-                   <p class="text-[10px] text-slate-500 font-bold mt-1 uppercase">Billing Hub</p>
+                   <h4 class="text-white text-xs font-bold truncate">Invoices & Notes</h4>
+                   <p class="text-[9px] text-slate-500 font-bold uppercase leading-none mt-0.5">Billing Hub</p>
                 </button>
              </div>
-          </div>
+          </UCard>
 
-          <!-- Recent Bills -->
-          <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-8">
-             <div class="flex items-center justify-between mb-8">
+          <!-- Recent Invoices -->
+          <UCard class="w-full shadow-sm rounded-2xl border border-gray-100 dark:border-zinc-800" :ui="{ body: 'p-4 py-3' }">
+             <div class="flex items-center justify-between mb-4">
                 <div>
-                  <h2 class="text-xl font-black text-slate-900 tracking-tight">Recent Invoices</h2>
-                  <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Latest billing activity</p>
+                  <h2 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight leading-none">Recent Invoices</h2>
+                  <p class="text-[9px] text-gray-400 dark:text-zinc-500 font-bold uppercase tracking-widest mt-1">Latest billing activity</p>
                 </div>
-                <button @click="$router.push('/accounting/bills')" class="text-[10px] font-black text-blue-600 uppercase tracking-widest">View All</button>
+                <UButton
+                  color="primary"
+                  variant="link"
+                  size="xs"
+                  label="View All"
+                  class="font-black text-[10px] uppercase tracking-widest p-0"
+                  @click="$router.push('/accounting/bills')"
+                />
              </div>
-             <div class="space-y-3">
-                <div v-for="bill in bills.slice(0, 6)" :key="bill._id" class="flex items-center gap-4 p-4 rounded-3xl border border-slate-50 hover:bg-slate-50 transition-all cursor-pointer" @click="$router.push('/accounting/bills')">
-                   <div :class="bill.btype === 'SALES' ? 'bg-blue-100 text-blue-600' : 'bg-emerald-100 text-emerald-600'" class="w-10 h-10 rounded-xl flex items-center justify-center font-black text-[10px] shrink-0">
+             <div class="space-y-2">
+                <div v-for="bill in bills.slice(0, 6)" :key="bill._id" class="flex items-center gap-3 p-2 px-3 rounded-2xl border border-gray-100/60 dark:border-zinc-800/60 hover:bg-gray-50/50 dark:hover:bg-zinc-850/50 transition-all cursor-pointer" @click="$router.push('/accounting/bills')">
+                   <div :class="bill.btype === 'SALES' ? 'bg-blue-100 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400' : 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400'" class="w-8 h-8 rounded-lg flex items-center justify-center font-black text-[9px] shrink-0 leading-none">
                       {{ bill.btype === 'SALES' ? 'SLS' : 'PUR' }}
                    </div>
                    <div class="flex-1 min-w-0">
-                      <h4 class="text-sm font-black text-slate-900 truncate">{{ bill.partyName }}</h4>
-                      <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{{ bill.bno }}</p>
+                      <h4 class="text-xs font-bold text-gray-900 dark:text-white truncate leading-none">{{ bill.partyName }}</h4>
+                      <p class="text-[9px] text-gray-450 dark:text-zinc-500 font-bold uppercase mt-0.5 leading-none">{{ bill.bno }}</p>
                    </div>
                    <div class="text-right">
-                      <div class="text-sm font-black text-slate-900">₹{{ bill.netTotal.toLocaleString() }}</div>
-                      <div class="text-[10px] text-slate-400 font-bold uppercase">{{ formatDate(bill.bdate) }}</div>
+                      <div class="text-xs font-bold text-gray-900 dark:text-white leading-none">₹{{ bill.netTotal.toLocaleString() }}</div>
+                      <div class="text-[9px] text-gray-450 dark:text-zinc-500 font-bold uppercase mt-0.5 leading-none">{{ formatDate(bill.bdate) }}</div>
                    </div>
                 </div>
              </div>
-          </div>
+          </UCard>
         </div>
       </div>
     </template>
@@ -242,15 +293,6 @@ import { useBilling } from '@/composables/useBilling';
 import StockHistoryModal from '@/components/inventory/StockHistoryModal.vue';
 import CreateStockModal from '@/components/inventory/CreateStockModal.vue';
 import StockAdjustmentModal from '@/components/inventory/StockAdjustmentModal.vue';
-import { 
-  CubeIcon, 
-  ExclamationTriangleIcon, 
-  CurrencyRupeeIcon, 
-  ArrowPathIcon,
-  UserGroupIcon,
-  DocumentTextIcon,
-  ClipboardDocumentListIcon
-} from '@heroicons/vue/24/outline';
 
 const { stocks, movements, fetchStocks, fetchMovements, loading: inventoryLoading } = useInventory();
 const { bills, fetchBills, fetchParties, parties, loading: billingLoading } = useBilling();
@@ -288,19 +330,19 @@ const lowStockCount = computed(() => stocks.value.filter(s => s.qty > 0 && s.qty
 const outOfStockCount = computed(() => stocks.value.filter(s => s.qty <= 0).length);
 
 const kpis = computed(() => [
-  { label: 'Total Value', value: `₹${totalValue.value.toLocaleString()}`, icon: CurrencyRupeeIcon, color: 'text-emerald-500', meta: 'Asset' },
-  { label: 'Live SKUs', value: stocks.value.length, icon: CubeIcon, color: 'text-blue-500', meta: 'Items' },
-  { label: 'Low Stock', value: lowStockCount.value, icon: ExclamationTriangleIcon, color: 'text-amber-500', meta: 'Alerts' },
-  { label: 'Out of Stock', value: outOfStockCount.value, icon: ExclamationTriangleIcon, color: 'text-rose-500', meta: 'Critical' },
-  { label: 'Total Parties', value: parties.value.length, icon: UserGroupIcon, color: 'text-indigo-500', meta: 'Network' },
-  { label: 'Active Bills', value: bills.value.length, icon: DocumentTextIcon, color: 'text-sky-500', meta: 'Registry' }
+  { label: 'Total Value', value: `₹${totalValue.value.toLocaleString()}`, icon: 'i-heroicons-currency-rupee', color: 'text-emerald-500 bg-emerald-500/10 dark:bg-emerald-500/25', meta: 'Asset' },
+  { label: 'Live SKUs', value: stocks.value.length, icon: 'i-heroicons-cube', color: 'text-blue-500 bg-blue-500/10 dark:bg-blue-500/25', meta: 'Items' },
+  { label: 'Low Stock', value: lowStockCount.value, icon: 'i-heroicons-exclamation-triangle', color: 'text-amber-500 bg-amber-500/10 dark:bg-amber-500/25', meta: 'Alerts' },
+  { label: 'Out of Stock', value: outOfStockCount.value, icon: 'i-heroicons-exclamation-triangle', color: 'text-rose-500 bg-rose-500/10 dark:bg-rose-500/25', meta: 'Critical' },
+  { label: 'Total Parties', value: parties.value.length, icon: 'i-heroicons-user-group', color: 'text-indigo-500 bg-indigo-500/10 dark:bg-indigo-500/25', meta: 'Network' },
+  { label: 'Active Bills', value: bills.value.length, icon: 'i-heroicons-document-text', color: 'text-sky-500 bg-sky-500/10 dark:bg-sky-500/25', meta: 'Registry' }
 ]);
 
-function getStockHealthClass(qty: number) {
-  if (qty <= 0) return 'bg-rose-100 text-rose-600';
-  if (qty <= 5) return 'bg-amber-100 text-amber-600';
-  if (qty <= 20) return 'bg-blue-100 text-blue-600';
-  return 'bg-emerald-100 text-emerald-600';
+function getStockHealthColor(qty: number) {
+  if (qty <= 0) return 'error';
+  if (qty <= 5) return 'warning';
+  if (qty <= 20) return 'primary';
+  return 'success';
 }
 
 function getStockHealthLabel(qty: number) {

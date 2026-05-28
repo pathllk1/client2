@@ -240,274 +240,297 @@ onMounted(loadData);
 </script>
 
 <template>
-  <div class="p-6 max-w-[1600px] mx-auto space-y-6 print:p-0 print:space-y-4">
+  <div class="p-4 py-3 max-w-[1600px] mx-auto space-y-3 print:p-0 print:space-y-2">
     <!-- Header -->
-    <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 print:shadow-none print:border-none print:p-0">
-      <div class="space-y-1">
-        <p class="text-[10px] font-black text-violet-600 uppercase tracking-widest print:hidden">Accounting Reports</p>
-        <h1 class="text-3xl font-black text-slate-900 tracking-tight">Financial Statements</h1>
-        <p class="text-sm text-slate-500 font-medium">Profit & Loss Statement and Balance Sheet</p>
-        <p v-if="fromDate || toDate" class="text-xs text-violet-600 font-bold hidden print:block">
-          Period: {{ fromDate ? fromDate : 'Beginning' }} to {{ toDate }}
-        </p>
+    <div class="flex justify-between items-end mb-1 print:hidden">
+      <div>
+        <div class="flex items-center gap-2 mb-0.5">
+           <span class="w-2.5 h-2.5 rounded-full bg-violet-500 animate-pulse"></span>
+           <span class="text-[9px] font-black text-violet-600 dark:text-violet-400 uppercase tracking-widest leading-none">Accounting Reports</span>
+        </div>
+        <h1 class="text-xl font-black tracking-tight uppercase text-gray-900 dark:text-white leading-none">Financial Statements</h1>
+        <p class="text-[10px] text-slate-500 dark:text-zinc-400 font-bold mt-1">Profit &amp; Loss Statement and Balance Sheet</p>
       </div>
       
       <!-- Date Filters & Actions -->
-      <div class="flex flex-wrap items-center gap-3 print:hidden">
-        <!-- Date fields inside header -->
-        <div class="flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2">
-          <input type="date" v-model="fromDate" class="bg-transparent text-xs text-slate-700 outline-none w-28 font-bold" />
-          <span class="text-xs text-slate-400">–</span>
-          <input type="date" v-model="toDate" class="bg-transparent text-xs text-slate-700 outline-none w-28 font-bold" />
+      <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1.5 mr-1">
+          <span class="text-[9px] font-black uppercase text-slate-400 dark:text-zinc-500 ml-1">From</span>
+          <UInput type="date" v-model="fromDate" size="sm" class="w-36" />
+          <span class="text-[9px] font-black uppercase text-slate-400 dark:text-zinc-500 ml-1">To</span>
+          <UInput type="date" v-model="toDate" size="sm" class="w-36" />
         </div>
-        <button @click="loadData" class="px-5 py-2.5 bg-violet-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-violet-700 transition-all">Apply</button>
-        <button @click="clearFilters" class="px-5 py-2.5 bg-slate-100 text-slate-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all">Reset</button>
-        <button 
+        <UButton color="primary" label="Apply" size="sm" class="font-bold text-xs h-8" @click="loadData" />
+        <UButton color="neutral" variant="ghost" label="Reset" size="sm" class="font-bold text-xs h-8" @click="clearFilters" />
+        <UButton 
+          color="success" 
+          variant="outline" 
+          icon="i-heroicons-arrow-down-tray"
+          label="PDF"
+          size="sm"
+          class="font-bold text-xs h-8"
+          :loading="exportLoading"
           @click="onExportPDF"
-          :disabled="exportLoading"
-          class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:shadow-lg transition-all flex items-center gap-1.5 disabled:opacity-50"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-          </svg>
-          {{ exportLoading ? 'Exporting...' : 'Export PDF' }}
-        </button>
-        <button 
+        />
+        <UButton 
+          color="success" 
+          variant="outline" 
+          icon="i-heroicons-arrow-down-tray"
+          label="Excel"
+          size="sm"
+          class="font-bold text-xs h-8"
+          :loading="exportLoading"
           @click="onExportExcel"
-          :disabled="exportLoading"
-          class="px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:shadow-lg transition-all flex items-center gap-1.5 disabled:opacity-50"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-          </svg>
-          {{ exportLoading ? 'Exporting...' : 'Export Excel' }}
-        </button>
-        <button @click="triggerPrint" class="px-5 py-2.5 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all flex items-center gap-1.5">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-          Print
-        </button>
-        <button @click="router.push('/accounting/ledger')" class="px-5 py-2.5 bg-white text-slate-900 border-2 border-slate-200 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-50 transition-all">Dashboard</button>
+        />
+        <UButton 
+          color="primary" 
+          variant="solid" 
+          icon="i-heroicons-printer"
+          label="Print"
+          size="sm"
+          class="font-bold text-xs h-8"
+          @click="triggerPrint"
+        />
+        <UButton 
+          color="neutral" 
+          variant="outline" 
+          icon="i-heroicons-arrow-left"
+          label="Dashboard"
+          size="sm"
+          class="font-bold text-xs h-8"
+          @click="router.push('/accounting/ledger')"
+        />
       </div>
-    </header>
+    </div>
+
+    <!-- Print Header Information -->
+    <div class="hidden print:block mb-4 space-y-1">
+      <h1 class="text-xl font-black uppercase tracking-tight">Financial Statements</h1>
+      <p class="text-[10px] text-slate-500 font-medium">Profit &amp; Loss Statement and Balance Sheet</p>
+      <p v-if="fromDate || toDate" class="text-[10px] font-bold text-violet-600">
+        Period: {{ fromDate ? fromDate : 'Beginning' }} to {{ toDate }}
+      </p>
+    </div>
 
     <!-- Tab Selection -->
-    <div class="flex items-center gap-4 bg-white p-2 rounded-2xl border border-slate-100 shadow-sm w-fit print:hidden">
-      <button 
+    <div class="flex items-center gap-1 bg-white dark:bg-zinc-900 p-1 rounded-xl border border-gray-100 dark:border-zinc-800 shadow-sm w-fit print:hidden">
+      <UButton 
+        :variant="activeTab === 'pl' ? 'solid' : 'ghost'"
+        :color="activeTab === 'pl' ? 'primary' : 'neutral'"
+        size="sm"
+        class="font-black text-[10px] uppercase tracking-wider rounded-lg px-4"
+        label="Profit & Loss"
         @click="activeTab = 'pl'"
-        :class="activeTab === 'pl' ? 'bg-violet-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-900'"
-        class="px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
-      >
-        Profit &amp; Loss
-      </button>
-      <button 
+      />
+      <UButton 
+        :variant="activeTab === 'bs' ? 'solid' : 'ghost'"
+        :color="activeTab === 'bs' ? 'primary' : 'neutral'"
+        size="sm"
+        class="font-black text-[10px] uppercase tracking-wider rounded-lg px-4"
+        label="Balance Sheet"
         @click="activeTab = 'bs'"
-        :class="activeTab === 'bs' ? 'bg-violet-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-900'"
-        class="px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
-      >
-        Balance Sheet
-      </button>
+      />
     </div>
 
     <!-- Error State -->
-    <div v-if="error" class="p-6 bg-rose-50 border border-rose-100 text-rose-800 rounded-3xl flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <svg class="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-        <p class="text-sm font-bold">{{ error }}</p>
+    <div v-if="error" class="p-3 bg-rose-50 border border-rose-100 text-rose-800 rounded-xl flex items-center justify-between print:hidden">
+      <div class="flex items-center gap-2">
+        <UIcon name="i-heroicons-exclamation-triangle" class="w-4 h-4 text-rose-500" />
+        <p class="text-xs font-bold">{{ error }}</p>
       </div>
-      <button @click="loadData" class="px-4 py-2 bg-rose-600 text-white rounded-xl text-xs font-black uppercase hover:bg-rose-700 transition-all">Retry</button>
+      <UButton color="error" size="xs" label="Retry" @click="loadData" />
     </div>
 
     <!-- Loader -->
-    <div v-if="loading" class="flex flex-col items-center justify-center py-20 gap-4 bg-white rounded-[2.5rem] border border-slate-100">
-      <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-violet-600"></div>
-      <p class="text-xs font-black uppercase tracking-widest text-slate-400">Loading statements...</p>
+    <div v-if="loading" class="flex flex-col items-center justify-center py-20 gap-3 bg-white rounded-xl border border-gray-100 dark:border-zinc-800">
+      <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-primary" />
+      <p class="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-zinc-500">Loading statements...</p>
     </div>
 
     <!-- MAIN PANELS -->
-    <div v-else-if="!loading">
+    <div v-else-if="!loading" class="space-y-3">
       
       <!-- 1. PROFIT & LOSS TAB -->
-      <div v-show="activeTab === 'pl'" class="space-y-6 print-tab-content">
-        
+      <div v-show="activeTab === 'pl'" class="space-y-3 print-tab-content">
         <!-- KPI Row -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 print:grid-cols-4 print:gap-2">
-          <div class="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col justify-between border-l-4 border-l-emerald-500">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Revenue</p>
-            <p class="text-xl font-black text-slate-900 font-mono mt-1">{{ formatINR(plModel.totalRevenueCr) }}</p>
-            <p class="text-[9px] text-slate-400 font-bold mt-1 uppercase">{{ plModel.crIncome.length }} account(s)</p>
-          </div>
-          <div class="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col justify-between border-l-4 border-l-sky-500">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Gross Profit</p>
-            <p class="text-xl font-black text-slate-900 font-mono mt-1" :class="plModel.grossProfit >= 0 ? 'text-sky-600' : 'text-rose-600'">{{ formatINR(Math.abs(plModel.grossProfit)) }}</p>
-            <p class="text-[9px] text-slate-400 font-bold mt-1 uppercase">{{ formatPercent(plModel.gpMargin) }} GP Margin</p>
-          </div>
-          <div class="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col justify-between border-l-4 border-l-amber-500">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Total OpEx</p>
-            <p class="text-xl font-black text-slate-900 font-mono mt-1">{{ formatINR(plModel.totalOpex) }}</p>
-            <p class="text-[9px] text-slate-400 font-bold mt-1 uppercase">{{ plModel.drOpex.length }} account(s)</p>
-          </div>
-          <div class="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col justify-between border-l-4 border-l-violet-500">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Net Profit</p>
-            <p class="text-xl font-black font-mono mt-1" :class="plModel.netProfit >= 0 ? 'text-violet-600' : 'text-rose-600'">{{ formatINR(Math.abs(plModel.netProfit)) }}</p>
-            <p class="text-[9px] text-slate-400 font-bold mt-1 uppercase">{{ formatPercent(plModel.npMargin) }} NP Margin</p>
-          </div>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 print:grid-cols-4 print:gap-1">
+          <UCard class="border-l-4 border-l-emerald-500 shadow-sm rounded-xl" :ui="{ body: 'p-3 py-2.5' }">
+            <p class="text-[9px] font-black text-slate-400 dark:text-zinc-500 uppercase tracking-wider mb-0.5">Revenue</p>
+            <div class="text-lg font-black text-slate-900 dark:text-white font-mono leading-tight">{{ formatINR(plModel.totalRevenueCr) }}</div>
+            <p class="text-[8px] text-slate-400 dark:text-zinc-500 font-bold uppercase mt-0.5 leading-none">{{ plModel.crIncome.length }} account(s)</p>
+          </UCard>
+          <UCard class="border-l-4 border-l-sky-500 shadow-sm rounded-xl" :ui="{ body: 'p-3 py-2.5' }">
+            <p class="text-[9px] font-black text-slate-400 dark:text-zinc-500 uppercase tracking-wider mb-0.5">Gross Profit</p>
+            <div class="text-lg font-black font-mono leading-tight" :class="plModel.grossProfit >= 0 ? 'text-sky-600 dark:text-sky-400' : 'text-rose-600 dark:text-rose-400'">{{ formatINR(Math.abs(plModel.grossProfit)) }}</div>
+            <p class="text-[8px] text-slate-400 dark:text-zinc-500 font-bold uppercase mt-0.5 leading-none">{{ formatPercent(plModel.gpMargin) }} GP Margin</p>
+          </UCard>
+          <UCard class="border-l-4 border-l-amber-500 shadow-sm rounded-xl" :ui="{ body: 'p-3 py-2.5' }">
+            <p class="text-[9px] font-black text-slate-400 dark:text-zinc-500 uppercase tracking-wider mb-0.5">Total OpEx</p>
+            <div class="text-lg font-black text-slate-900 dark:text-white font-mono leading-tight">{{ formatINR(plModel.totalOpex) }}</div>
+            <p class="text-[8px] text-slate-400 dark:text-zinc-500 font-bold uppercase mt-0.5 leading-none">{{ plModel.drOpex.length }} account(s)</p>
+          </UCard>
+          <UCard class="border-l-4 border-l-violet-500 shadow-sm rounded-xl" :ui="{ body: 'p-3 py-2.5' }">
+            <p class="text-[9px] font-black text-slate-400 dark:text-zinc-500 uppercase tracking-wider mb-0.5">Net Profit</p>
+            <div class="text-lg font-black font-mono leading-tight" :class="plModel.netProfit >= 0 ? 'text-violet-600 dark:text-violet-400' : 'text-rose-600 dark:text-rose-400'">{{ formatINR(Math.abs(plModel.netProfit)) }}</div>
+            <p class="text-[8px] text-slate-400 dark:text-zinc-500 font-bold uppercase mt-0.5 leading-none">{{ formatPercent(plModel.npMargin) }} NP Margin</p>
+          </UCard>
         </div>
 
-        <div v-if="plModel.isEmpty" class="bg-white p-20 rounded-[2.5rem] border border-slate-100 text-center text-slate-400">
+        <div v-if="plModel.isEmpty" class="bg-white dark:bg-zinc-900 p-16 rounded-xl border border-gray-100 dark:border-zinc-800 text-center text-slate-400 dark:text-zinc-500 italic">
           No Income/Expense transactions to generate Profit &amp; Loss.
         </div>
 
         <!-- Statement T-Table -->
-        <div v-else class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
-          <header class="bg-slate-900 px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 text-white">
+        <UCard v-else class="w-full shadow-sm rounded-xl border border-gray-100 dark:border-zinc-800 overflow-hidden" :ui="{ body: 'p-0' }">
+          <div class="bg-slate-950 dark:bg-zinc-900 px-4 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 text-white">
             <div>
-              <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Trading &amp; Profit &amp; Loss Statement</p>
-              <p class="text-xs text-slate-300 font-medium">Point-in-time calculation</p>
+              <p class="text-[9px] font-black uppercase tracking-wider text-slate-400">Trading &amp; Profit &amp; Loss Statement</p>
+              <p class="text-[8px] text-slate-300 font-bold">Point-in-time calculation</p>
             </div>
-            <div class="flex items-center gap-6 text-xs font-mono font-black">
+            <div class="flex items-center gap-4 text-[10px] font-mono font-bold">
               <div class="text-right">
-                <span class="text-slate-400 text-[10px] uppercase mr-2">Dr:</span>
-                <span class="text-rose-300">{{ formatINR(plModel.drGrand) }}</span>
+                <span class="text-slate-400 uppercase mr-1.5">Dr:</span>
+                <span class="text-rose-400">{{ formatINR(plModel.drGrand) }}</span>
               </div>
-              <div class="h-6 w-px bg-slate-800"></div>
+              <div class="h-4 w-px bg-slate-800"></div>
               <div class="text-right">
-                <span class="text-slate-400 text-[10px] uppercase mr-2">Cr:</span>
-                <span class="text-emerald-300">{{ formatINR(plModel.crGrand) }}</span>
+                <span class="text-slate-400 uppercase mr-1.5">Cr:</span>
+                <span class="text-emerald-400">{{ formatINR(plModel.crGrand) }}</span>
               </div>
             </div>
-          </header>
+          </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+          <div class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-100 dark:divide-zinc-800">
             <!-- DEBIT SIDE (EXPENSES) -->
             <div class="flex flex-col">
-              <div class="px-5 py-2.5 bg-slate-50 border-b border-slate-100 text-[10px] font-black text-rose-700 uppercase tracking-widest flex items-center gap-2">
+              <div class="py-2 px-4 bg-slate-50/50 dark:bg-zinc-800/20 border-b border-gray-100 dark:border-zinc-800 text-[10px] font-black text-rose-700 dark:text-rose-400 uppercase tracking-widest flex items-center gap-1.5 leading-none">
                 <span class="w-2 h-2 rounded-full bg-rose-500"></span> Debit Side (Dr)
               </div>
               
               <!-- COGS Segment -->
               <div>
-                <div class="px-4 py-2 bg-slate-50/50 text-[9px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100 flex justify-between">
+                <div class="py-1.5 px-4 bg-slate-50/20 dark:bg-zinc-800/10 text-[8px] font-black text-slate-400 dark:text-zinc-500 uppercase tracking-wider border-b border-gray-100 dark:border-zinc-800 flex justify-between leading-none">
                   <span>To Cost of Goods Sold</span>
                   <span>{{ plModel.drCOGS.length }} A/Cs</span>
                 </div>
-                <div v-for="a in plModel.drCOGS" :key="a.head" class="px-5 py-2 hover:bg-slate-50/50 flex justify-between text-xs font-medium text-slate-700 border-b border-slate-50">
-                  <span @click="viewLedger(a.head)" class="hover:text-indigo-600 cursor-pointer font-bold">{{ a.head }}</span>
+                <div v-for="a in plModel.drCOGS" :key="a.head" class="py-1.5 px-4 hover:bg-slate-50/50 dark:hover:bg-zinc-805/20 flex justify-between text-xs font-medium text-slate-700 dark:text-zinc-300 border-b border-gray-100 dark:border-zinc-800/40">
+                  <span @click="viewLedger(a.head)" class="hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer font-bold">{{ a.head }}</span>
                   <span class="font-mono font-bold">{{ formatINR(Math.abs(a.netCr)) }}</span>
                 </div>
-                <div v-if="plModel.drCOGS.length === 0" class="px-5 py-3 text-center text-[10px] text-slate-400 border-b border-slate-50">No COGS accounts</div>
-                <div class="px-5 py-2.5 bg-amber-50/40 text-[10px] font-black text-slate-500 uppercase tracking-wider flex justify-between border-b border-slate-100">
+                <div v-if="plModel.drCOGS.length === 0" class="py-2 px-4 text-center text-[10px] text-slate-400 border-b border-gray-100 dark:border-zinc-800/40 italic">No COGS accounts</div>
+                <div class="py-1.5 px-4 bg-amber-50/30 dark:bg-amber-950/10 text-[9px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider flex justify-between border-b border-gray-100 dark:border-zinc-800 leading-none">
                   <span>Total Cost of Sales</span>
-                  <span class="font-mono text-amber-700">{{ formatINR(plModel.totalCOGS) }}</span>
+                  <span class="font-mono text-amber-700 dark:text-amber-400 font-bold">{{ formatINR(plModel.totalCOGS) }}</span>
                 </div>
               </div>
 
               <!-- Contra Income Segment -->
               <div v-if="plModel.drContraIncome.length > 0">
-                <div class="px-4 py-2 bg-slate-50/50 text-[9px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100 flex justify-between">
+                <div class="py-1.5 px-4 bg-slate-50/20 dark:bg-zinc-800/10 text-[8px] font-black text-slate-400 dark:text-zinc-500 uppercase tracking-wider border-b border-gray-100 dark:border-zinc-800 flex justify-between leading-none">
                   <span>To Returns / Contra Income</span>
                   <span>{{ plModel.drContraIncome.length }} A/Cs</span>
                 </div>
-                <div v-for="a in plModel.drContraIncome" :key="a.head" class="px-5 py-2 hover:bg-slate-50/50 flex justify-between text-xs font-medium text-slate-700 border-b border-slate-50">
-                  <span @click="viewLedger(a.head)" class="hover:text-indigo-600 cursor-pointer font-bold">{{ a.head }}</span>
+                <div v-for="a in plModel.drContraIncome" :key="a.head" class="py-1.5 px-4 hover:bg-slate-50/50 dark:hover:bg-zinc-805/20 flex justify-between text-xs font-medium text-slate-700 dark:text-zinc-300 border-b border-gray-100 dark:border-zinc-800/40">
+                  <span @click="viewLedger(a.head)" class="hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer font-bold">{{ a.head }}</span>
                   <span class="font-mono font-bold">{{ formatINR(Math.abs(a.netCr)) }}</span>
                 </div>
-                <div class="px-5 py-2.5 bg-orange-50/40 text-[10px] font-black text-slate-500 uppercase tracking-wider flex justify-between border-b border-slate-100">
+                <div class="py-1.5 px-4 bg-orange-50/30 dark:bg-orange-950/10 text-[9px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider flex justify-between border-b border-gray-100 dark:border-zinc-800 leading-none">
                   <span>Total Contra Income</span>
-                  <span class="font-mono text-orange-700">{{ formatINR(plModel.totalContraInc) }}</span>
+                  <span class="font-mono text-orange-700 dark:text-orange-400 font-bold">{{ formatINR(plModel.totalContraInc) }}</span>
                 </div>
               </div>
 
               <!-- Operating Expenses Segment -->
               <div>
-                <div class="px-4 py-2 bg-slate-50/50 text-[9px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100 flex justify-between">
+                <div class="py-1.5 px-4 bg-slate-50/20 dark:bg-zinc-800/10 text-[8px] font-black text-slate-400 dark:text-zinc-500 uppercase tracking-wider border-b border-gray-100 dark:border-zinc-800 flex justify-between leading-none">
                   <span>To Operating Expenses</span>
                   <span>{{ plModel.drOpex.length }} A/Cs</span>
                 </div>
-                <div v-for="a in plModel.drOpex" :key="a.head" class="px-5 py-2 hover:bg-slate-50/50 flex justify-between text-xs font-medium text-slate-700 border-b border-slate-50">
-                  <span @click="viewLedger(a.head)" class="hover:text-indigo-600 cursor-pointer font-bold">{{ a.head }}</span>
+                <div v-for="a in plModel.drOpex" :key="a.head" class="py-1.5 px-4 hover:bg-slate-50/50 dark:hover:bg-zinc-805/20 flex justify-between text-xs font-medium text-slate-700 dark:text-zinc-300 border-b border-gray-100 dark:border-zinc-800/40">
+                  <span @click="viewLedger(a.head)" class="hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer font-bold">{{ a.head }}</span>
                   <span class="font-mono font-bold">{{ formatINR(Math.abs(a.netCr)) }}</span>
                 </div>
-                <div v-if="plModel.drOpex.length === 0" class="px-5 py-3 text-center text-[10px] text-slate-400 border-b border-slate-50">No operating expenses</div>
-                <div class="px-5 py-2.5 bg-rose-50/40 text-[10px] font-black text-slate-500 uppercase tracking-wider flex justify-between border-b border-slate-100">
+                <div v-if="plModel.drOpex.length === 0" class="py-2 px-4 text-center text-[10px] text-slate-400 border-b border-gray-100 dark:border-zinc-800/40 italic">No operating expenses</div>
+                <div class="py-1.5 px-4 bg-rose-50/30 dark:bg-rose-950/10 text-[9px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider flex justify-between border-b border-gray-100 dark:border-zinc-800 leading-none">
                   <span>Total Operating Expenses</span>
-                  <span class="font-mono text-rose-700">{{ formatINR(plModel.totalOpex) }}</span>
+                  <span class="font-mono text-rose-700 dark:text-rose-400 font-bold">{{ formatINR(plModel.totalOpex) }}</span>
                 </div>
               </div>
 
               <!-- General net debit Segment -->
               <div v-if="plModel.drGeneral.length > 0">
-                <div class="px-4 py-2 bg-slate-50/50 text-[9px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100">To Miscellaneous Expenses</div>
-                <div v-for="a in plModel.drGeneral" :key="a.head" class="px-5 py-2 hover:bg-slate-50/50 flex justify-between text-xs font-medium text-slate-700 border-b border-slate-50">
-                  <span @click="viewLedger(a.head)" class="hover:text-indigo-600 cursor-pointer font-bold">{{ a.head }}</span>
+                <div class="py-1.5 px-4 bg-slate-50/20 dark:bg-zinc-800/10 text-[8px] font-black text-slate-400 dark:text-zinc-500 uppercase tracking-wider border-b border-gray-100 dark:border-zinc-800 leading-none">To Miscellaneous Expenses</div>
+                <div v-for="a in plModel.drGeneral" :key="a.head" class="py-1.5 px-4 hover:bg-slate-50/50 dark:hover:bg-zinc-805/20 flex justify-between text-xs font-medium text-slate-700 dark:text-zinc-300 border-b border-gray-100 dark:border-zinc-800/40">
+                  <span @click="viewLedger(a.head)" class="hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer font-bold">{{ a.head }}</span>
                   <span class="font-mono font-bold">{{ formatINR(Math.abs(a.netCr)) }}</span>
                 </div>
               </div>
 
               <!-- Balancing figure Net Profit -->
-              <div v-if="plModel.netProfit >= 0" class="px-5 py-4 mt-auto bg-violet-50/60 border-t border-violet-100 flex justify-between text-sm font-black text-violet-800">
+              <div v-if="plModel.netProfit >= 0" class="py-3 px-4 mt-auto bg-violet-50/60 dark:bg-violet-950/20 border-t border-violet-100 dark:border-violet-850/40 flex justify-between text-xs font-black text-violet-800 dark:text-violet-400">
                 <div>
-                  <p class="text-xs uppercase tracking-wider font-black">To Net Profit</p>
-                  <p class="text-[9px] text-slate-400 font-bold uppercase font-sans tracking-wide">Transferred to Capital</p>
+                  <p class="uppercase tracking-wider font-black">To Net Profit</p>
+                  <p class="text-[8px] text-slate-400 dark:text-zinc-500 font-bold uppercase mt-0.5">Transferred to Capital</p>
                 </div>
-                <span class="font-mono text-base font-black">{{ formatINR(plModel.netProfit) }}</span>
+                <span class="font-mono text-sm font-black">{{ formatINR(plModel.netProfit) }}</span>
               </div>
             </div>
 
             <!-- CREDIT SIDE (REVENUES) -->
             <div class="flex flex-col">
-              <div class="px-5 py-2.5 bg-slate-50 border-b border-slate-100 text-[10px] font-black text-emerald-700 uppercase tracking-widest flex items-center gap-2">
+              <div class="py-2 px-4 bg-slate-50/50 dark:bg-zinc-800/20 border-b border-gray-100 dark:border-zinc-800 text-[10px] font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-widest flex items-center gap-1.5 leading-none">
                 <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Credit Side (Cr)
               </div>
 
               <!-- Revenue Sales Segment -->
               <div>
-                <div class="px-4 py-2 bg-slate-50/50 text-[9px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100 flex justify-between">
+                <div class="py-1.5 px-4 bg-slate-50/20 dark:bg-zinc-800/10 text-[8px] font-black text-slate-400 dark:text-zinc-500 uppercase tracking-wider border-b border-gray-100 dark:border-zinc-800 flex justify-between leading-none">
                   <span>By Revenue / Sales</span>
                   <span>{{ plModel.crIncome.length }} A/Cs</span>
                 </div>
-                <div v-for="a in plModel.crIncome" :key="a.head" class="px-5 py-2 hover:bg-slate-50/50 flex justify-between text-xs font-medium text-slate-700 border-b border-slate-50">
-                  <span @click="viewLedger(a.head)" class="hover:text-indigo-600 cursor-pointer font-bold">{{ a.head }}</span>
+                <div v-for="a in plModel.crIncome" :key="a.head" class="py-1.5 px-4 hover:bg-slate-50/50 dark:hover:bg-zinc-805/20 flex justify-between text-xs font-medium text-slate-700 dark:text-zinc-300 border-b border-gray-100 dark:border-zinc-800/40">
+                  <span @click="viewLedger(a.head)" class="hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer font-bold">{{ a.head }}</span>
                   <span class="font-mono font-bold">{{ formatINR(a.netCr) }}</span>
                 </div>
-                <div v-if="plModel.crIncome.length === 0" class="px-5 py-3 text-center text-[10px] text-slate-400 border-b border-slate-50">No income accounts</div>
-                <div class="px-5 py-2.5 bg-emerald-50/40 text-[10px] font-black text-slate-500 uppercase tracking-wider flex justify-between border-b border-slate-100">
+                <div v-if="plModel.crIncome.length === 0" class="py-2 px-4 text-center text-[10px] text-slate-400 border-b border-gray-100 dark:border-zinc-800/40 italic">No income accounts</div>
+                <div class="py-1.5 px-4 bg-emerald-50/30 dark:bg-emerald-950/10 text-[9px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider flex justify-between border-b border-gray-100 dark:border-zinc-800 leading-none">
                   <span>Total Revenue</span>
-                  <span class="font-mono text-emerald-700">{{ formatINR(plModel.totalRevenueCr) }}</span>
+                  <span class="font-mono text-emerald-700 dark:text-emerald-400 font-bold">{{ formatINR(plModel.totalRevenueCr) }}</span>
                 </div>
               </div>
 
               <!-- General net credit Segment -->
               <div v-if="plModel.crGeneral.length > 0">
-                <div class="px-4 py-2 bg-slate-50/50 text-[9px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100 flex justify-between">
+                <div class="py-1.5 px-4 bg-slate-50/20 dark:bg-zinc-800/10 text-[8px] font-black text-slate-400 dark:text-zinc-500 uppercase tracking-wider border-b border-gray-100 dark:border-zinc-800 flex justify-between leading-none">
                   <span>By Miscellaneous Income</span>
                   <span>{{ plModel.crGeneral.length }} A/Cs</span>
                 </div>
-                <div v-for="a in plModel.crGeneral" :key="a.head" class="px-5 py-2 hover:bg-slate-50/50 flex justify-between text-xs font-medium text-slate-700 border-b border-slate-50">
-                  <span @click="viewLedger(a.head)" class="hover:text-indigo-600 cursor-pointer font-bold">{{ a.head }}</span>
+                <div v-for="a in plModel.crGeneral" :key="a.head" class="py-1.5 px-4 hover:bg-slate-50/50 dark:hover:bg-zinc-805/20 flex justify-between text-xs font-medium text-slate-700 dark:text-zinc-300 border-b border-gray-100 dark:border-zinc-800/40">
+                  <span @click="viewLedger(a.head)" class="hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer font-bold">{{ a.head }}</span>
                   <span class="font-mono font-bold">{{ formatINR(a.netCr) }}</span>
                 </div>
-                <div class="px-5 py-2.5 bg-teal-50/40 text-[10px] font-black text-slate-500 uppercase tracking-wider flex justify-between border-b border-slate-100">
+                <div class="py-1.5 px-4 bg-teal-50/30 dark:bg-teal-950/10 text-[9px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider flex justify-between border-b border-gray-100 dark:border-zinc-800 leading-none">
                   <span>Total Misc Income</span>
-                  <span class="font-mono text-teal-700">{{ formatINR(plModel.crGeneral.reduce((s,a)=>s+a.netCr,0)) }}</span>
+                  <span class="font-mono text-teal-700 dark:text-teal-400 font-bold">{{ formatINR(plModel.crGeneral.reduce((s,a)=>s+a.netCr,0)) }}</span>
                 </div>
               </div>
 
               <!-- Contra Expense Segment -->
               <div v-if="plModel.crCOGS.length + plModel.crOpex.length > 0">
-                <div class="px-4 py-2 bg-slate-50/50 text-[9px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100">By Contra Expense</div>
-                <div v-for="a in [...plModel.crCOGS, ...plModel.crOpex]" :key="a.head" class="px-5 py-2 hover:bg-slate-50/50 flex justify-between text-xs font-medium text-slate-700 border-b border-slate-50">
-                  <span @click="viewLedger(a.head)" class="hover:text-indigo-600 cursor-pointer font-bold">{{ a.head }}</span>
+                <div class="py-1.5 px-4 bg-slate-50/20 dark:bg-zinc-800/10 text-[8px] font-black text-slate-400 dark:text-zinc-500 uppercase tracking-wider border-b border-gray-100 dark:border-zinc-800 leading-none">By Contra Expense</div>
+                <div v-for="a in [...plModel.crCOGS, ...plModel.crOpex]" :key="a.head" class="py-1.5 px-4 hover:bg-slate-50/50 dark:hover:bg-zinc-805/20 flex justify-between text-xs font-medium text-slate-700 dark:text-zinc-300 border-b border-gray-100 dark:border-zinc-800/40">
+                  <span @click="viewLedger(a.head)" class="hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer font-bold">{{ a.head }}</span>
                   <span class="font-mono font-bold">{{ formatINR(a.netCr) }}</span>
                 </div>
               </div>
 
               <!-- Balancing figure Net Loss -->
-              <div v-if="plModel.netProfit < 0" class="px-5 py-4 mt-auto bg-rose-50/60 border-t border-rose-100 flex justify-between text-sm font-black text-rose-800">
+              <div v-if="plModel.netProfit < 0" class="py-3 px-4 mt-auto bg-rose-50/60 dark:bg-rose-950/20 border-t border-rose-100 dark:border-rose-850/40 flex justify-between text-xs font-black text-rose-800 dark:text-rose-400">
                 <div>
                   <p class="text-xs uppercase tracking-wider font-black">By Net Loss</p>
-                  <p class="text-[9px] text-slate-400 font-bold uppercase font-sans tracking-wide">Transferred to Capital</p>
+                  <p class="text-[8px] text-slate-400 dark:text-zinc-500 font-bold uppercase mt-0.5">Transferred to Capital</p>
                 </div>
-                <span class="font-mono text-base font-black">{{ formatINR(Math.abs(plModel.netProfit)) }}</span>
+                <span class="font-mono text-sm font-black">{{ formatINR(Math.abs(plModel.netProfit)) }}</span>
               </div>
               <div v-else class="flex-1 min-h-[36px]"></div>
             </div>
@@ -515,287 +538,285 @@ onMounted(loadData);
 
           <!-- Statement Footer Totals -->
           <div class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-white/10 text-white font-black" :class="plModel.netProfit >= 0 ? 'bg-gradient-to-br from-violet-600 to-indigo-700' : 'bg-gradient-to-br from-rose-600 to-pink-800'">
-            <div class="flex items-center justify-between px-6 py-4">
-              <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-white/70">Dr Total</span>
-              <span class="text-lg font-black font-mono tabular-nums">{{ formatINR(plModel.drGrand) }}</span>
+            <div class="flex items-center justify-between px-4 py-3">
+              <span class="text-[9px] font-bold uppercase tracking-[0.2em] text-white/70">Dr Total</span>
+              <span class="text-base font-black font-mono tabular-nums leading-none">{{ formatINR(plModel.drGrand) }}</span>
             </div>
-            <div class="flex items-center justify-between px-6 py-4">
-              <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-white/70">Cr Total</span>
-              <span class="text-lg font-black font-mono tabular-nums">{{ formatINR(plModel.crGrand) }}</span>
+            <div class="flex items-center justify-between px-4 py-3">
+              <span class="text-[9px] font-bold uppercase tracking-[0.2em] text-white/70">Cr Total</span>
+              <span class="text-base font-black font-mono tabular-nums leading-none">{{ formatINR(plModel.crGrand) }}</span>
             </div>
           </div>
-        </div>
-
+        </UCard>
       </div>
 
       <!-- 2. BALANCE SHEET TAB -->
-      <div v-show="activeTab === 'bs'" class="space-y-6 print-tab-content">
-        
+      <div v-show="activeTab === 'bs'" class="space-y-3 print-tab-content">
         <!-- BS KPI Row -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 print:grid-cols-4 print:gap-2">
-          <div class="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col justify-between border-l-4 border-l-sky-500">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Total Assets</p>
-            <p class="text-xl font-black text-slate-900 font-mono mt-1">{{ formatINR(bsModel.totalAssets) }}</p>
-            <p class="text-[9px] text-slate-400 font-bold mt-1 uppercase">{{ bsModel.assetSideCount }} asset A/Cs</p>
-          </div>
-          <div class="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col justify-between border-l-4 border-l-rose-500">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">External Liabilities</p>
-            <p class="text-xl font-black text-slate-900 font-mono mt-1">{{ formatINR(bsModel.totalExtLib) }}</p>
-            <p class="text-[9px] text-slate-400 font-bold mt-1 uppercase">{{ bsModel.liabilitySideCount }} liability A/Cs</p>
-          </div>
-          <div class="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col justify-between border-l-4 border-l-emerald-500">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Capital (Equity)</p>
-            <p class="text-xl font-black font-mono mt-1" :class="bsModel.capital >= 0 ? 'text-emerald-600' : 'text-rose-600'">{{ formatINR(Math.abs(bsModel.capital)) }}</p>
-            <p class="text-[9px] text-slate-400 font-bold mt-1 uppercase">{{ bsModel.capital >= 0 ? 'Owner Equity' : 'Equity Deficit' }}</p>
-          </div>
-          <div class="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col justify-between border-l-4 border-l-violet-500">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Net Profit / (Loss)</p>
-            <p class="text-xl font-black font-mono mt-1" :class="bsModel.netProfit >= 0 ? 'text-violet-600' : 'text-rose-600'">{{ formatINR(Math.abs(bsModel.netProfit)) }}</p>
-            <p class="text-[9px] text-slate-400 font-bold mt-1 uppercase">Period Income</p>
-          </div>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 print:grid-cols-4 print:gap-1">
+          <UCard class="border-l-4 border-l-sky-500 shadow-sm rounded-xl" :ui="{ body: 'p-3 py-2.5' }">
+            <p class="text-[9px] font-black text-slate-400 dark:text-zinc-500 uppercase tracking-wider mb-0.5">Total Assets</p>
+            <div class="text-lg font-black text-slate-900 dark:text-white font-mono leading-tight">{{ formatINR(bsModel.totalAssets) }}</div>
+            <p class="text-[8px] text-slate-400 dark:text-zinc-500 font-bold uppercase mt-0.5 leading-none">{{ bsModel.assetSideCount }} asset A/Cs</p>
+          </UCard>
+          <UCard class="border-l-4 border-l-rose-500 shadow-sm rounded-xl" :ui="{ body: 'p-3 py-2.5' }">
+            <p class="text-[9px] font-black text-slate-400 dark:text-zinc-500 uppercase tracking-wider mb-0.5">External Liabilities</p>
+            <div class="text-lg font-black text-slate-900 dark:text-white font-mono leading-tight">{{ formatINR(bsModel.totalExtLib) }}</div>
+            <p class="text-[8px] text-slate-400 dark:text-zinc-500 font-bold uppercase mt-0.5 leading-none">{{ bsModel.liabilitySideCount }} liability A/Cs</p>
+          </UCard>
+          <UCard class="border-l-4 border-l-emerald-500 shadow-sm rounded-xl" :ui="{ body: 'p-3 py-2.5' }">
+            <p class="text-[9px] font-black text-slate-400 dark:text-zinc-500 uppercase tracking-wider mb-0.5">Capital (Equity)</p>
+            <div class="text-lg font-black font-mono leading-tight" :class="bsModel.capital >= 0 ? 'text-emerald-600' : 'text-rose-600'">{{ formatINR(Math.abs(bsModel.capital)) }}</div>
+            <p class="text-[8px] text-slate-400 dark:text-zinc-500 font-bold uppercase mt-0.5 leading-none">{{ bsModel.capital >= 0 ? 'Owner Equity' : 'Equity Deficit' }}</p>
+          </UCard>
+          <UCard class="border-l-4 border-l-violet-500 shadow-sm rounded-xl" :ui="{ body: 'p-3 py-2.5' }">
+            <p class="text-[9px] font-black text-slate-400 dark:text-zinc-500 uppercase tracking-wider mb-0.5">Net Profit / (Loss)</p>
+            <div class="text-lg font-black font-mono leading-tight" :class="bsModel.netProfit >= 0 ? 'text-violet-600' : 'text-rose-600'">{{ formatINR(Math.abs(bsModel.netProfit)) }}</div>
+            <p class="text-[8px] text-slate-400 dark:text-zinc-500 font-bold uppercase mt-0.5 leading-none">Period Income</p>
+          </UCard>
         </div>
 
         <!-- Balance sheet warning/balanced tag -->
         <div class="flex items-center gap-2 print:hidden">
-          <span class="inline-flex items-center gap-1.5 rounded-full px-4 py-1 text-xs font-black" :class="bsModel.balanced ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'">
-            <svg v-if="bsModel.balanced" class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
-            <svg v-else class="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+          <UBadge 
+            :color="bsModel.balanced ? 'success' : 'error'" 
+            variant="subtle" 
+            size="sm" 
+            class="font-black text-[9px] uppercase rounded-md"
+          >
+            <UIcon v-if="bsModel.balanced" name="i-heroicons-check-circle" class="w-3.5 h-3.5 mr-1" />
+            <UIcon v-else name="i-heroicons-exclamation-triangle" class="w-3.5 h-3.5 mr-1" />
             {{ bsModel.balanced ? 'Balanced' : `Imbalanced — ${formatINR(Math.abs(bsModel.totalAssets - bsModel.totalLiabSide))} difference` }}
-          </span>
-          <span class="text-[10px] text-slate-400 font-bold uppercase">Capital is computed dynamically as: Total Assets - Liabilities - Net Profit</span>
+          </UBadge>
+          <span class="text-[8px] text-slate-400 dark:text-zinc-500 font-bold uppercase">Capital is computed dynamically as: Total Assets - Liabilities - Net Profit</span>
         </div>
 
-        <div v-if="bsModel.isEmpty" class="bg-white p-20 rounded-[2.5rem] border border-slate-100 text-center text-slate-400">
+        <div v-if="bsModel.isEmpty" class="bg-white dark:bg-zinc-900 p-16 rounded-xl border border-gray-100 dark:border-zinc-800 text-center text-slate-400 dark:text-zinc-500 italic">
           No Asset/Liability transactions to generate Balance Sheet.
         </div>
 
         <!-- Balance Sheet T-Table -->
-        <div v-else class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
-          <header class="bg-slate-900 px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 text-white">
+        <UCard v-else class="w-full shadow-sm rounded-xl border border-gray-100 dark:border-zinc-800 overflow-hidden" :ui="{ body: 'p-0' }">
+          <div class="bg-slate-950 dark:bg-zinc-900 px-4 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 text-white">
             <div>
-              <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Balance Sheet</p>
-              <p class="text-xs text-slate-300 font-medium">Double-entry balancing statement</p>
+              <p class="text-[9px] font-black uppercase tracking-wider text-slate-400">Balance Sheet</p>
+              <p class="text-[8px] text-slate-300 font-bold">Double-entry balancing statement</p>
             </div>
-            <div class="flex items-center gap-6 text-xs font-mono font-black">
+            <div class="flex items-center gap-4 text-[10px] font-mono font-bold">
               <div class="text-right">
-                <span class="text-slate-400 text-[10px] uppercase mr-2">Liabilities Total:</span>
+                <span class="text-slate-400 uppercase mr-1.5">Liabilities Total:</span>
                 <span class="text-rose-300">{{ formatINR(bsModel.totalLiabSide) }}</span>
               </div>
-              <div class="h-6 w-px bg-slate-800"></div>
+              <div class="h-4 w-px bg-slate-800"></div>
               <div class="text-right">
-                <span class="text-slate-400 text-[10px] uppercase mr-2">Assets Total:</span>
-                <span class="text-emerald-300">{{ formatINR(bsModel.totalAssets) }}</span>
+                <span class="text-slate-400 uppercase mr-1.5">Assets Total:</span>
+                <span class="text-emerald-400">{{ formatINR(bsModel.totalAssets) }}</span>
               </div>
             </div>
-          </header>
+          </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+          <div class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100 dark:divide-zinc-800">
             <!-- LIABILITIES & CAPITAL SIDE (L) -->
             <div class="flex flex-col">
-              <div class="px-5 py-2.5 bg-slate-50 border-b border-slate-100 text-[10px] font-black text-rose-700 uppercase tracking-widest flex items-center gap-2">
+              <div class="py-2 px-4 bg-slate-50/50 dark:bg-zinc-800/20 border-b border-gray-100 dark:border-zinc-800 text-[10px] font-black text-rose-700 dark:text-rose-400 uppercase tracking-widest flex items-center gap-1.5 leading-none">
                 <span class="w-2 h-2 rounded-full bg-rose-500"></span> Liabilities &amp; Capital
               </div>
 
               <!-- Capital account details -->
-              <div class="border-b border-slate-50">
-                <div class="px-4 py-2 bg-emerald-50/50 text-[9px] font-black text-emerald-800 uppercase tracking-wider flex justify-between">
+              <div class="border-b border-gray-100 dark:border-zinc-800/40">
+                <div class="py-1 px-4 bg-emerald-50/30 dark:bg-emerald-950/10 text-[8px] font-black text-emerald-800 dark:text-emerald-400 uppercase tracking-wider flex justify-between leading-none">
                   <span>Capital Account</span>
                   <span>Computed</span>
                 </div>
-                <div class="px-5 py-2 flex justify-between text-xs font-medium text-slate-700">
+                <div class="py-1.5 px-4 flex justify-between text-xs font-medium text-slate-700 dark:text-zinc-300">
                   <div class="flex flex-col">
                     <span class="font-bold">Capital / Owner's Equity</span>
-                    <span class="text-[9px] text-slate-400 uppercase">Assets – Liabilities – Net Profit</span>
+                    <span class="text-[8px] text-slate-400 dark:text-zinc-500 uppercase mt-0.5">Assets – Liabilities – Net Profit</span>
                   </div>
-                  <span class="font-mono font-bold" :class="bsModel.capital >= 0 ? 'text-emerald-700' : 'text-rose-600'">{{ formatINR(Math.abs(bsModel.capital)) }}</span>
+                  <span class="font-mono font-bold" :class="bsModel.capital >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'">{{ formatINR(Math.abs(bsModel.capital)) }}</span>
                 </div>
-                <div class="px-5 py-2 flex justify-between text-xs font-medium text-slate-700 border-t border-slate-50">
+                <div class="py-1.5 px-4 flex justify-between text-xs font-medium text-slate-700 dark:text-zinc-300 border-t border-gray-100 dark:border-zinc-800/30">
                   <div class="flex flex-col">
                     <span class="font-bold">{{ bsModel.netProfit >= 0 ? 'Add: Net Profit' : 'Less: Net Loss' }}</span>
-                    <span class="text-[9px] text-slate-400 uppercase">From current period P&amp;L</span>
+                    <span class="text-[8px] text-slate-400 dark:text-zinc-500 uppercase mt-0.5">From current period P&amp;L</span>
                   </div>
-                  <span class="font-mono font-bold text-violet-700">{{ formatINR(Math.abs(bsModel.netProfit)) }}</span>
+                  <span class="font-mono font-bold text-violet-700 dark:text-violet-400">{{ formatINR(Math.abs(bsModel.netProfit)) }}</span>
                 </div>
-                <div class="px-5 py-2 bg-slate-50/30 text-[10px] font-black text-slate-500 uppercase tracking-wider flex justify-between border-t border-slate-100">
+                <div class="py-1.5 px-4 bg-slate-50/30 dark:bg-zinc-800/10 text-[9px] font-black text-slate-500 dark:text-zinc-400 uppercase tracking-wider flex justify-between border-t border-gray-100 dark:border-zinc-800/40 leading-none">
                   <span>Total Capital Pool</span>
-                  <span class="font-mono text-slate-700 font-black">{{ formatINR(bsModel.capital + bsModel.netProfit) }}</span>
+                  <span class="font-mono text-slate-700 dark:text-zinc-300 font-black">{{ formatINR(bsModel.capital + bsModel.netProfit) }}</span>
                 </div>
               </div>
 
               <!-- Loans & Liabilities -->
               <div v-if="bsModel.liabilities.length > 0">
-                <div class="px-4 py-2 bg-slate-50/50 text-[9px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100 flex justify-between">
+                <div class="py-1.5 px-4 bg-slate-50/20 dark:bg-zinc-800/10 text-[8px] font-black text-slate-400 dark:text-zinc-500 uppercase tracking-wider border-b border-gray-100 dark:border-zinc-800 flex justify-between leading-none">
                   <span>Loans &amp; Liabilities</span>
                   <span>{{ bsModel.liabilities.length }} A/Cs</span>
                 </div>
-                <div v-for="a in bsModel.liabilities" :key="a.head" class="px-5 py-2 hover:bg-slate-50/50 flex justify-between text-xs font-medium text-slate-700 border-b border-slate-50">
-                  <span @click="viewLedger(a.head)" class="hover:text-indigo-600 cursor-pointer font-bold">{{ a.head }}</span>
+                <div v-for="a in bsModel.liabilities" :key="a.head" class="py-1.5 px-4 hover:bg-slate-50/50 dark:hover:bg-zinc-805/20 flex justify-between text-xs font-medium text-slate-700 dark:text-zinc-300 border-b border-gray-100 dark:border-zinc-800/40">
+                  <span @click="viewLedger(a.head)" class="hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer font-bold">{{ a.head }}</span>
                   <span class="font-mono font-bold">{{ formatINR(a.netCr) }}</span>
                 </div>
-                <div class="px-5 py-2.5 bg-rose-50/30 text-[10px] font-black text-slate-500 uppercase tracking-wider flex justify-between border-b border-slate-100">
+                <div class="py-1.5 px-4 bg-rose-50/30 dark:bg-rose-950/10 text-[9px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider flex justify-between border-b border-gray-100 dark:border-zinc-800 leading-none">
                   <span>Total Liabilities</span>
-                  <span class="font-mono text-rose-700">{{ formatINR(bsModel.totalLiab) }}</span>
+                  <span class="font-mono text-rose-700 dark:text-rose-400 font-bold">{{ formatINR(bsModel.totalLiab) }}</span>
                 </div>
               </div>
 
               <!-- Creditors -->
               <div v-if="bsModel.creditors.length > 0">
-                <div class="px-4 py-2 bg-slate-50/50 text-[9px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100 flex justify-between">
+                <div class="py-1.5 px-4 bg-slate-50/20 dark:bg-zinc-800/10 text-[8px] font-black text-slate-400 dark:text-zinc-500 uppercase tracking-wider border-b border-gray-100 dark:border-zinc-800 flex justify-between leading-none">
                   <span>Sundry Creditors</span>
                   <span>{{ bsModel.creditors.length }} A/Cs</span>
                 </div>
-                <div v-for="a in bsModel.creditors" :key="a.head" class="px-5 py-2 hover:bg-slate-50/50 flex justify-between text-xs font-medium text-slate-700 border-b border-slate-50">
-                  <span @click="viewLedger(a.head)" class="hover:text-indigo-600 cursor-pointer font-bold">{{ a.head }}</span>
+                <div v-for="a in bsModel.creditors" :key="a.head" class="py-1.5 px-4 hover:bg-slate-50/50 dark:hover:bg-zinc-805/20 flex justify-between text-xs font-medium text-slate-700 dark:text-zinc-300 border-b border-gray-100 dark:border-zinc-800/40">
+                  <span @click="viewLedger(a.head)" class="hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer font-bold">{{ a.head }}</span>
                   <span class="font-mono font-bold">{{ formatINR(a.netCr) }}</span>
                 </div>
-                <div class="px-5 py-2.5 bg-amber-50/30 text-[10px] font-black text-slate-500 uppercase tracking-wider flex justify-between border-b border-slate-100">
+                <div class="py-1.5 px-4 bg-amber-50/30 dark:bg-amber-950/10 text-[9px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider flex justify-between border-b border-gray-100 dark:border-zinc-800 leading-none">
                   <span>Total Creditors</span>
-                  <span class="font-mono text-amber-700">{{ formatINR(bsModel.totalCred) }}</span>
+                  <span class="font-mono text-amber-700 dark:text-amber-400 font-bold">{{ formatINR(bsModel.totalCred) }}</span>
                 </div>
               </div>
 
               <!-- Debtor Credit Balances -->
-              <div v-if="bsModel.debtorCreditBalances.length > 0">
-                <div class="px-4 py-2 bg-slate-50/50 text-[9px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100">Debtor Accounts (Credit Balance)</div>
-                <div v-for="a in bsModel.debtorCreditBalances" :key="a.head" class="px-5 py-2 hover:bg-slate-50/50 flex justify-between text-xs font-medium text-slate-700 border-b border-slate-50">
-                  <span @click="viewLedger(a.head)" class="hover:text-indigo-600 cursor-pointer font-bold">{{ a.head }}</span>
+              <div v-if="bsModel.debtorCreditBalances.length > 0" class="border-b border-gray-100 dark:border-zinc-800/40">
+                <div class="py-1.5 px-4 bg-slate-50/20 dark:bg-zinc-800/10 text-[8px] font-black text-slate-400 dark:text-zinc-500 uppercase tracking-wider border-b border-gray-100 dark:border-zinc-800 leading-none">Debtor Accounts (Credit Balance)</div>
+                <div v-for="a in bsModel.debtorCreditBalances" :key="a.head" class="py-1.5 px-4 hover:bg-slate-50/50 dark:hover:bg-zinc-805/20 flex justify-between text-xs font-medium text-slate-700 dark:text-zinc-300 border-b border-gray-100 dark:border-zinc-800/40">
+                  <span @click="viewLedger(a.head)" class="hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer font-bold">{{ a.head }}</span>
                   <span class="font-mono font-bold">{{ formatINR(a.netCr) }}</span>
                 </div>
               </div>
 
               <!-- Cash & Bank Credit Balances -->
-              <div v-if="bsModel.cashBankCreditBalances.length > 0">
-                <div class="px-4 py-2 bg-slate-50/50 text-[9px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100">Cash &amp; Bank (Overdraft)</div>
-                <div v-for="a in bsModel.cashBankCreditBalances" :key="a.head" class="px-5 py-2 hover:bg-slate-50/50 flex justify-between text-xs font-medium text-slate-700 border-b border-slate-50">
-                  <span @click="viewLedger(a.head)" class="hover:text-indigo-600 cursor-pointer font-bold">{{ a.head }}</span>
+              <div v-if="bsModel.cashBankCreditBalances.length > 0" class="border-b border-gray-100 dark:border-zinc-800/40">
+                <div class="py-1.5 px-4 bg-slate-50/20 dark:bg-zinc-800/10 text-[8px] font-black text-slate-400 dark:text-zinc-500 uppercase tracking-wider border-b border-gray-100 dark:border-zinc-800 leading-none">Cash &amp; Bank (Overdraft)</div>
+                <div v-for="a in bsModel.cashBankCreditBalances" :key="a.head" class="py-1.5 px-4 hover:bg-slate-50/50 dark:hover:bg-zinc-805/20 flex justify-between text-xs font-medium text-slate-700 dark:text-zinc-300 border-b border-gray-100 dark:border-zinc-800/40">
+                  <span @click="viewLedger(a.head)" class="hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer font-bold">{{ a.head }}</span>
                   <span class="font-mono font-bold">{{ formatINR(a.netCr) }}</span>
                 </div>
               </div>
 
               <!-- Asset Credit Balances -->
-              <div v-if="bsModel.assetCreditBalances.length > 0">
-                <div class="px-4 py-2 bg-slate-50/50 text-[9px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100">Asset Accounts (Credit Balance)</div>
-                <div v-for="a in bsModel.assetCreditBalances" :key="a.head" class="px-5 py-2 hover:bg-slate-50/50 flex justify-between text-xs font-medium text-slate-700 border-b border-slate-50">
-                  <span @click="viewLedger(a.head)" class="hover:text-indigo-600 cursor-pointer font-bold">{{ a.head }}</span>
+              <div v-if="bsModel.assetCreditBalances.length > 0" class="border-b border-gray-100 dark:border-zinc-800/40">
+                <div class="py-1.5 px-4 bg-slate-50/20 dark:bg-zinc-800/10 text-[8px] font-black text-slate-400 dark:text-zinc-500 uppercase tracking-wider border-b border-gray-100 dark:border-zinc-800 leading-none">Asset Accounts (Credit Balance)</div>
+                <div v-for="a in bsModel.assetCreditBalances" :key="a.head" class="py-1.5 px-4 hover:bg-slate-50/50 dark:hover:bg-zinc-805/20 flex justify-between text-xs font-medium text-slate-700 dark:text-zinc-300 border-b border-gray-100 dark:border-zinc-800/40">
+                  <span @click="viewLedger(a.head)" class="hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer font-bold">{{ a.head }}</span>
                   <span class="font-mono font-bold">{{ formatINR(a.netCr) }}</span>
                 </div>
               </div>
-
-              <div class="flex-1 min-h-[24px]"></div>
             </div>
 
             <!-- ASSETS SIDE (A) -->
             <div class="flex flex-col">
-              <div class="px-5 py-2.5 bg-slate-50 border-b border-slate-100 text-[10px] font-black text-emerald-700 uppercase tracking-widest flex items-center gap-2">
+              <div class="py-2 px-4 bg-slate-50/50 dark:bg-zinc-800/20 border-b border-gray-100 dark:border-zinc-800 text-[10px] font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-widest flex items-center gap-1.5 leading-none">
                 <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Asset Side (As)
               </div>
 
               <!-- Fixed / Other Assets -->
               <div v-if="bsModel.otherAssets.length > 0">
-                <div class="px-4 py-2 bg-slate-50/50 text-[9px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100 flex justify-between">
+                <div class="py-1.5 px-4 bg-slate-50/20 dark:bg-zinc-800/10 text-[8px] font-black text-slate-400 dark:text-zinc-500 uppercase tracking-wider border-b border-gray-100 dark:border-zinc-800 flex justify-between leading-none">
                   <span>Fixed &amp; Other Assets</span>
                   <span>{{ bsModel.otherAssets.length }} A/Cs</span>
                 </div>
-                <div v-for="a in bsModel.otherAssets" :key="a.head" class="px-5 py-2 hover:bg-slate-50/50 flex justify-between text-xs font-medium text-slate-700 border-b border-slate-50">
-                  <span @click="viewLedger(a.head)" class="hover:text-indigo-600 cursor-pointer font-bold">{{ a.head }}</span>
+                <div v-for="a in bsModel.otherAssets" :key="a.head" class="py-1.5 px-4 hover:bg-slate-50/50 dark:hover:bg-zinc-805/20 flex justify-between text-xs font-medium text-slate-700 dark:text-zinc-300 border-b border-gray-100 dark:border-zinc-800/40">
+                  <span @click="viewLedger(a.head)" class="hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer font-bold">{{ a.head }}</span>
                   <span class="font-mono font-bold">{{ formatINR(a.netDr) }}</span>
                 </div>
-                <div class="px-5 py-2.5 bg-sky-50/30 text-[10px] font-black text-slate-500 uppercase tracking-wider flex justify-between border-b border-slate-100">
+                <div class="py-1.5 px-4 bg-sky-50/30 dark:bg-sky-950/10 text-[9px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider flex justify-between border-b border-gray-100 dark:border-zinc-800 leading-none">
                   <span>Total Fixed Assets</span>
-                  <span class="font-mono text-sky-700">{{ formatINR(bsModel.totalOtherA) }}</span>
+                  <span class="font-mono text-sky-700 dark:text-sky-400 font-bold">{{ formatINR(bsModel.totalOtherA) }}</span>
                 </div>
               </div>
 
               <!-- Stock & Inventory -->
               <div v-if="bsModel.stockAssets.length > 0">
-                <div class="px-4 py-2 bg-slate-50/50 text-[9px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100 flex justify-between">
+                <div class="py-1.5 px-4 bg-slate-50/20 dark:bg-zinc-800/10 text-[8px] font-black text-slate-400 dark:text-zinc-500 uppercase tracking-wider border-b border-gray-100 dark:border-zinc-800 flex justify-between leading-none">
                   <span>Stock &amp; Inventory</span>
                   <span>{{ bsModel.stockAssets.length }} A/Cs</span>
                 </div>
-                <div v-for="a in bsModel.stockAssets" :key="a.head" class="px-5 py-2 hover:bg-slate-50/50 flex justify-between text-xs font-medium text-slate-700 border-b border-slate-50">
-                  <span @click="viewLedger(a.head)" class="hover:text-indigo-600 cursor-pointer font-bold">{{ a.head }}</span>
+                <div v-for="a in bsModel.stockAssets" :key="a.head" class="py-1.5 px-4 hover:bg-slate-50/50 dark:hover:bg-zinc-805/20 flex justify-between text-xs font-medium text-slate-700 dark:text-zinc-300 border-b border-gray-100 dark:border-zinc-800/40">
+                  <span @click="viewLedger(a.head)" class="hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer font-bold">{{ a.head }}</span>
                   <span class="font-mono font-bold">{{ formatINR(a.netDr) }}</span>
                 </div>
-                <div class="px-5 py-2.5 bg-teal-50/30 text-[10px] font-black text-slate-500 uppercase tracking-wider flex justify-between border-b border-slate-100">
+                <div class="py-1.5 px-4 bg-teal-50/30 dark:bg-teal-950/10 text-[9px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider flex justify-between border-b border-gray-100 dark:border-zinc-800 leading-none">
                   <span>Total Stock Pool</span>
-                  <span class="font-mono text-teal-700">{{ formatINR(bsModel.totalStock) }}</span>
+                  <span class="font-mono text-teal-700 dark:text-teal-400 font-bold">{{ formatINR(bsModel.totalStock) }}</span>
                 </div>
               </div>
 
               <!-- Tax Receivables -->
               <div v-if="bsModel.gstAssets.length > 0">
-                <div class="px-4 py-2 bg-slate-50/50 text-[9px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100 flex justify-between">
+                <div class="py-1.5 px-4 bg-slate-50/20 dark:bg-zinc-800/10 text-[8px] font-black text-slate-400 dark:text-zinc-500 uppercase tracking-wider border-b border-gray-100 dark:border-zinc-800 flex justify-between leading-none">
                   <span>Tax Receivables (GST Input Credit)</span>
                   <span>{{ bsModel.gstAssets.length }} A/Cs</span>
                 </div>
-                <div v-for="a in bsModel.gstAssets" :key="a.head" class="px-5 py-2 hover:bg-slate-50/50 flex justify-between text-xs font-medium text-slate-700 border-b border-slate-50">
-                  <span @click="viewLedger(a.head)" class="hover:text-indigo-600 cursor-pointer font-bold">{{ a.head }}</span>
+                <div v-for="a in bsModel.gstAssets" :key="a.head" class="py-1.5 px-4 hover:bg-slate-50/50 dark:hover:bg-zinc-805/20 flex justify-between text-xs font-medium text-slate-700 dark:text-zinc-300 border-b border-gray-100 dark:border-zinc-800/40">
+                  <span @click="viewLedger(a.head)" class="hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer font-bold">{{ a.head }}</span>
                   <span class="font-mono font-bold">{{ formatINR(a.netDr) }}</span>
                 </div>
-                <div class="px-5 py-2.5 bg-violet-50/30 text-[10px] font-black text-slate-500 uppercase tracking-wider flex justify-between border-b border-slate-100">
+                <div class="py-1.5 px-4 bg-violet-50/30 dark:bg-violet-950/10 text-[9px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider flex justify-between border-b border-gray-100 dark:border-zinc-800 leading-none">
                   <span>Total Tax Receivables</span>
-                  <span class="font-mono text-violet-700">{{ formatINR(bsModel.totalGST) }}</span>
+                  <span class="font-mono text-violet-700 dark:text-violet-400 font-bold">{{ formatINR(bsModel.totalGST) }}</span>
                 </div>
               </div>
 
               <!-- Sundry Debtors -->
               <div v-if="bsModel.debtors.length > 0">
-                <div class="px-4 py-2 bg-slate-50/50 text-[9px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100 flex justify-between">
+                <div class="py-1.5 px-4 bg-slate-50/20 dark:bg-zinc-800/10 text-[8px] font-black text-slate-400 dark:text-zinc-500 uppercase tracking-wider border-b border-gray-100 dark:border-zinc-800 flex justify-between leading-none">
                   <span>Sundry Debtors</span>
                   <span>{{ bsModel.debtors.length }} A/Cs</span>
                 </div>
-                <div v-for="a in bsModel.debtors" :key="a.head" class="px-5 py-2 hover:bg-slate-50/50 flex justify-between text-xs font-medium text-slate-700 border-b border-slate-50">
-                  <span @click="viewLedger(a.head)" class="hover:text-indigo-600 cursor-pointer font-bold">{{ a.head }}</span>
+                <div v-for="a in bsModel.debtors" :key="a.head" class="py-1.5 px-4 hover:bg-slate-50/50 dark:hover:bg-zinc-805/20 flex justify-between text-xs font-medium text-slate-700 dark:text-zinc-300 border-b border-gray-100 dark:border-zinc-800/40">
+                  <span @click="viewLedger(a.head)" class="hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer font-bold">{{ a.head }}</span>
                   <span class="font-mono font-bold">{{ formatINR(a.netDr) }}</span>
                 </div>
-                <div class="px-5 py-2.5 bg-blue-50/30 text-[10px] font-black text-slate-500 uppercase tracking-wider flex justify-between border-b border-slate-100">
+                <div class="py-1.5 px-4 bg-blue-50/30 dark:bg-blue-950/10 text-[9px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider flex justify-between border-b border-gray-100 dark:border-zinc-800 leading-none">
                   <span>Total Debtors</span>
-                  <span class="font-mono text-blue-700">{{ formatINR(bsModel.totalDebtors) }}</span>
+                  <span class="font-mono text-blue-700 dark:text-blue-400 font-bold">{{ formatINR(bsModel.totalDebtors) }}</span>
                 </div>
               </div>
 
               <!-- Cash & Bank -->
               <div v-if="bsModel.cashBank.length > 0">
-                <div class="px-4 py-2 bg-slate-50/50 text-[9px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100 flex justify-between">
+                <div class="py-1.5 px-4 bg-slate-50/20 dark:bg-zinc-800/10 text-[8px] font-black text-slate-400 dark:text-zinc-500 uppercase tracking-wider border-b border-gray-100 dark:border-zinc-800 flex justify-between leading-none">
                   <span>Cash &amp; Bank Balances</span>
                   <span>{{ bsModel.cashBank.length }} A/Cs</span>
                 </div>
-                <div v-for="a in bsModel.cashBank" :key="a.head" class="px-5 py-2 hover:bg-slate-50/50 flex justify-between text-xs font-medium text-slate-700 border-b border-slate-50">
-                  <span @click="viewLedger(a.head)" class="hover:text-indigo-600 cursor-pointer font-bold">{{ a.head }}</span>
+                <div v-for="a in bsModel.cashBank" :key="a.head" class="py-1.5 px-4 hover:bg-slate-50/50 dark:hover:bg-zinc-805/20 flex justify-between text-xs font-medium text-slate-700 dark:text-zinc-300 border-b border-gray-100 dark:border-zinc-800/40">
+                  <span @click="viewLedger(a.head)" class="hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer font-bold">{{ a.head }}</span>
                   <span class="font-mono font-bold">{{ formatINR(a.netDr) }}</span>
                 </div>
-                <div class="px-5 py-2.5 bg-emerald-50/30 text-[10px] font-black text-slate-500 uppercase tracking-wider flex justify-between border-b border-slate-100">
+                <div class="py-1.5 px-4 bg-emerald-50/30 dark:bg-emerald-950/10 text-[9px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider flex justify-between border-b border-gray-100 dark:border-zinc-800 leading-none">
                   <span>Total Cash &amp; Bank</span>
-                  <span class="font-mono text-emerald-700">{{ formatINR(bsModel.totalCashBank) }}</span>
+                  <span class="font-mono text-emerald-700 dark:text-emerald-400 font-bold">{{ formatINR(bsModel.totalCashBank) }}</span>
                 </div>
               </div>
 
               <!-- Liability Debit Balances -->
-              <div v-if="bsModel.liabilityDebitBalances.length > 0">
-                <div class="px-4 py-2 bg-slate-50/50 text-[9px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100">Liability Accounts (Debit Balance)</div>
-                <div v-for="a in bsModel.liabilityDebitBalances" :key="a.head" class="px-5 py-2 hover:bg-slate-50/50 flex justify-between text-xs font-medium text-slate-700 border-b border-slate-50">
-                  <span @click="viewLedger(a.head)" class="hover:text-indigo-600 cursor-pointer font-bold">{{ a.head }}</span>
+              <div v-if="bsModel.liabilityDebitBalances.length > 0" class="border-b border-gray-100 dark:border-zinc-800/40">
+                <div class="py-1.5 px-4 bg-slate-50/20 dark:bg-zinc-800/10 text-[8px] font-black text-slate-400 dark:text-zinc-500 uppercase tracking-wider border-b border-gray-100 dark:border-zinc-800 leading-none">Liability Accounts (Debit Balance)</div>
+                <div v-for="a in bsModel.liabilityDebitBalances" :key="a.head" class="py-1.5 px-4 hover:bg-slate-50/50 dark:hover:bg-zinc-805/20 flex justify-between text-xs font-medium text-slate-700 dark:text-zinc-300 border-b border-gray-100 dark:border-zinc-800/40">
+                  <span @click="viewLedger(a.head)" class="hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer font-bold">{{ a.head }}</span>
                   <span class="font-mono font-bold">{{ formatINR(a.netDr) }}</span>
                 </div>
               </div>
-
-              <div class="flex-1 min-h-[24px]"></div>
             </div>
           </div>
 
           <!-- Statement Footer Totals -->
           <div class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-white/10 text-white font-black" :class="bsModel.balanced ? 'bg-slate-800' : 'bg-gradient-to-br from-rose-600 to-pink-800'">
-            <div class="flex items-center justify-between px-6 py-4">
-              <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-white/70">Total Capital &amp; Liabilities</span>
-              <span class="text-lg font-black font-mono tabular-nums">{{ formatINR(bsModel.totalLiabSide) }}</span>
+            <div class="flex items-center justify-between px-4 py-3">
+              <span class="text-[9px] font-bold uppercase tracking-[0.2em] text-white/70">Total Capital &amp; Liabilities</span>
+              <span class="text-base font-black font-mono tabular-nums leading-none">{{ formatINR(bsModel.totalLiabSide) }}</span>
             </div>
-            <div class="flex items-center justify-between px-6 py-4">
-              <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-white/70">Total Assets</span>
-              <span class="text-lg font-black font-mono tabular-nums">{{ formatINR(bsModel.totalAssets) }}</span>
+            <div class="flex items-center justify-between px-4 py-3">
+              <span class="text-[9px] font-bold uppercase tracking-[0.2em] text-white/70">Total Assets</span>
+              <span class="text-base font-black font-mono tabular-nums leading-none">{{ formatINR(bsModel.totalAssets) }}</span>
             </div>
           </div>
-        </div>
-
+        </UCard>
       </div>
 
     </div>
@@ -823,8 +844,8 @@ onMounted(loadData);
   .print\:p-0 {
     padding: 0 !important;
   }
-  .print\:space-y-4 > :not([class*="hidden"]) ~ :not([class*="hidden"]) {
-    margin-top: 1rem !important;
+  .print\:space-y-2 > :not([class*="hidden"]) ~ :not([class*="hidden"]) {
+    margin-top: 0.5rem !important;
   }
   /* Make both tabs visible when printing */
   .print-tab-content {

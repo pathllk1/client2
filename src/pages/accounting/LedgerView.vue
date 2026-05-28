@@ -1,102 +1,124 @@
 <template>
-  <div class="p-6 max-w-7xl mx-auto">
-    <div class="flex justify-between items-center mb-8">
+  <div class="p-4 py-3 w-full mx-auto space-y-3">
+    <!-- Header Section -->
+    <div class="flex justify-between items-end mb-2">
       <div>
-        <button @click="$router.back()" class="text-blue-600 flex items-center text-sm font-bold mb-2 hover:underline">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          Back to Dashboard
-        </button>
-        <h1 class="text-3xl font-bold text-gray-900">Account Ledger</h1>
-        <div class="mt-4 flex items-center gap-4">
-           <select v-model="accountHead" @change="updateHead" class="px-4 py-2 border-2 border-blue-500 rounded-xl font-bold text-sm bg-white outline-none focus:ring-4 focus:ring-blue-100">
-              <option v-for="head in chartOfAccounts" :key="head._id" :value="head.account_name">{{ head.account_name }}</option>
-           </select>
-           <div class="bg-gray-100 px-3 py-2 rounded-xl text-xs font-bold text-gray-500 uppercase tracking-widest border border-gray-200">
-              {{ currentBalance.balanceType }} BALANCE: <span :class="currentBalance.balanceType === 'DR' ? 'text-emerald-600' : 'text-rose-600'" class="font-black font-mono">₹{{ currentBalance.balance.toLocaleString() }}</span>
-           </div>
+        <UButton 
+          color="neutral" 
+          variant="link" 
+          icon="i-heroicons-arrow-left" 
+          size="xs" 
+          label="Back to Dashboard" 
+          class="p-0 mb-1 font-bold text-xs" 
+          @click="$router.back()" 
+        />
+        <div class="flex items-center gap-3">
+          <h1 class="text-xl font-black tracking-tight uppercase text-gray-900 dark:text-white leading-none">Account Ledger</h1>
+          <div class="flex items-center gap-2 mt-0.5">
+             <USelect 
+                v-model="accountHead" 
+                :items="accountHeadOptions" 
+                placeholder="Select Account Head"
+                size="sm" 
+                class="w-64"
+                @update:model-value="updateHead" 
+             />
+             <UBadge 
+               v-if="accountHead"
+               size="sm" 
+               variant="subtle" 
+               :color="currentBalance.balanceType === 'DR' ? 'success' : 'error'"
+               class="font-black text-[9px] rounded-md h-8 flex items-center px-2 py-0"
+             >
+               {{ currentBalance.balanceType }} BAL: ₹{{ currentBalance.balance.toLocaleString() }}
+             </UBadge>
+          </div>
         </div>
       </div>
-      <div class="flex space-x-3 items-end pb-1">
-         <div class="flex flex-col">
-            <label class="text-[10px] font-bold text-gray-400 uppercase ml-1 mb-1">From</label>
-            <input type="date" v-model="filters.fromDate" @change="loadLedger" class="px-3 py-2 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+      
+      <div class="flex items-end gap-2">
+         <div class="w-32 flex flex-col gap-0.5">
+            <span class="text-[8px] font-bold text-gray-400 dark:text-zinc-500 uppercase ml-1">From</span>
+            <UInput type="date" v-model="filters.fromDate" size="sm" class="w-full" @change="loadLedger" />
          </div>
-         <div class="flex flex-col">
-            <label class="text-[10px] font-bold text-gray-400 uppercase ml-1 mb-1">To</label>
-            <input type="date" v-model="filters.toDate" @change="loadLedger" class="px-3 py-2 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+         <div class="w-32 flex flex-col gap-0.5">
+            <span class="text-[8px] font-bold text-gray-400 dark:text-zinc-500 uppercase ml-1">To</span>
+            <UInput type="date" v-model="filters.toDate" size="sm" class="w-full" @change="loadLedger" />
          </div>
-         <button 
-           @click="onExportPDF"
-           :disabled="exportLoading || !accountHead"
-           class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm h-[38px] flex items-center gap-1.5 transition-all disabled:opacity-50"
-         >
-           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-             <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-           </svg>
-           Export PDF
-         </button>
-         <button 
-           @click="onExportExcel"
-           :disabled="exportLoading || !accountHead"
-           class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-bold text-sm h-[38px] flex items-center gap-1.5 transition-all disabled:opacity-50"
-         >
-           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-             <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-           </svg>
-           Export Excel
-         </button>
+         <div class="flex gap-1.5 h-8">
+            <UButton 
+              color="success"
+              variant="outline"
+              icon="i-heroicons-arrow-down-tray"
+              label="PDF"
+              size="sm"
+              class="font-bold text-xs h-8"
+              :loading="exportLoading"
+              :disabled="!accountHead"
+              @click="onExportPDF"
+            />
+            <UButton 
+              color="success"
+              variant="outline"
+              icon="i-heroicons-arrow-down-tray"
+              label="Excel"
+              size="sm"
+              class="font-bold text-xs h-8"
+              :loading="exportLoading"
+              :disabled="!accountHead"
+              @click="onExportExcel"
+            />
+         </div>
       </div>
     </div>
 
-    <!-- Ledger Entries -->
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <!-- Ledger Entries Table -->
+    <UCard class="w-full shadow-sm rounded-2xl border border-gray-100 dark:border-zinc-800" :ui="{ body: 'p-0 overflow-hidden' }">
       <!-- Loader -->
-      <div v-if="loading" class="flex flex-col items-center justify-center py-20 gap-4">
-        <UIcon name="i-heroicons-arrow-path" class="w-10 h-10 animate-spin text-blue-600" />
-        <p class="text-xs font-black uppercase tracking-widest text-slate-400">Loading ledger entries...</p>
+      <div v-if="loading" class="flex flex-col items-center justify-center py-20 gap-4 bg-white dark:bg-zinc-900">
+        <UIcon name="i-heroicons-arrow-path" class="w-10 h-10 animate-spin text-primary" />
+        <p class="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-zinc-500">Loading ledger entries...</p>
       </div>
 
       <div v-else class="overflow-x-auto">
-        <table class="w-full text-left border-collapse">
+        <table class="w-full text-left text-xs divide-y divide-gray-100 dark:divide-zinc-800">
           <thead>
-            <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-100">
-              <th class="px-6 py-4 font-semibold">Date</th>
-              <th class="px-6 py-4 font-semibold">Voucher / Ref</th>
-              <th class="px-6 py-4 font-semibold">Narration</th>
-              <th class="px-6 py-4 font-semibold text-right">Debit (Dr)</th>
-              <th class="px-6 py-4 font-semibold text-right">Credit (Cr)</th>
-              <th class="px-6 py-4 font-semibold text-right">Running Bal</th>
+            <tr class="text-[10px] font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider bg-gray-50/80 dark:bg-zinc-800/80">
+              <th class="py-2.5 px-4">Date</th>
+              <th class="py-2.5 px-4">Voucher / Ref</th>
+              <th class="py-2.5 px-4">Narration</th>
+              <th class="py-2.5 px-4 text-right">Debit (Dr)</th>
+              <th class="py-2.5 px-4 text-right">Credit (Cr)</th>
+              <th class="py-2.5 px-4 text-right">Running Bal</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100 text-sm">
-            <tr v-for="(entry, idx) in runningLedger" :key="idx" class="hover:bg-gray-50/50 transition-colors">
-              <td class="px-6 py-4 text-gray-600 whitespace-nowrap">{{ entry.transactionDate }}</td>
-              <td class="px-6 py-4">
-                <div class="font-bold text-gray-900">{{ entry.voucherNo || entry.refType }}</div>
-                <div class="text-[10px] text-gray-400 uppercase tracking-widest">{{ entry.voucherType }}</div>
+          <tbody class="divide-y divide-gray-100 dark:divide-zinc-800">
+            <tr v-for="(entry, idx) in runningLedger" :key="idx" class="hover:bg-gray-50/50 dark:hover:bg-zinc-805/30 transition-colors">
+              <td class="py-2 px-4 text-gray-600 dark:text-zinc-400 whitespace-nowrap">{{ entry.transactionDate }}</td>
+              <td class="py-2 px-4">
+                <div class="font-bold text-gray-900 dark:text-white">{{ entry.voucherNo || entry.refType }}</div>
+                <div class="text-[9px] text-gray-400 dark:text-zinc-500 uppercase font-bold tracking-wider mt-0.5">{{ entry.voucherType }}</div>
               </td>
-              <td class="px-6 py-4">
-                <div class="max-w-xs text-gray-700 leading-relaxed">{{ entry.narration }}</div>
+              <td class="py-2 px-4">
+                <div class="max-w-xs text-gray-700 dark:text-zinc-300 leading-normal">{{ entry.narration }}</div>
               </td>
-              <td class="px-6 py-4 text-right font-medium text-red-600">
-                {{ entry.debitAmount > 0 ? '₹' + entry.debitAmount.toLocaleString() : '' }}
+              <td class="py-2 px-4 text-right font-medium text-rose-600 dark:text-rose-400">
+                {{ entry.debitAmount > 0 ? '₹' + entry.debitAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '' }}
               </td>
-              <td class="px-6 py-4 text-right font-medium text-green-600">
-                {{ entry.creditAmount > 0 ? '₹' + entry.creditAmount.toLocaleString() : '' }}
+              <td class="py-2 px-4 text-right font-medium text-emerald-600 dark:text-emerald-400">
+                {{ entry.creditAmount > 0 ? '₹' + entry.creditAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '' }}
               </td>
-              <td class="px-6 py-4 text-right font-bold bg-gray-50/30">
-                ₹{{ Math.abs(entry.runningBalance).toLocaleString() }} {{ entry.runningBalance >= 0 ? 'Dr' : 'Cr' }}
+              <td class="py-2 px-4 text-right font-bold bg-gray-50/30 dark:bg-zinc-850/20">
+                ₹{{ Math.abs(entry.runningBalance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }} {{ entry.runningBalance >= 0 ? 'Dr' : 'Cr' }}
               </td>
             </tr>
             <tr v-if="ledgerEntries.length === 0">
-              <td colspan="6" class="px-6 py-20 text-center text-gray-400 italic">No transactions found for this account in the selected range.</td>
+              <td colspan="6" class="py-16 text-center text-gray-400 dark:text-zinc-500 italic">No transactions found for this account in the selected range.</td>
             </tr>
           </tbody>
         </table>
       </div>
-    </div>
+    </UCard>
   </div>
 </template>
 
@@ -109,6 +131,14 @@ const route = useRoute();
 const { ledgerEntries, accountBalance, fetchLedger, fetchAccountBalance, fetchCOA, chartOfAccounts, exportLedgerPdf, exportLedgerExcel, loading } = useAccounting();
 
 const exportLoading = ref(false);
+
+const accountHeadOptions = computed(() => {
+  return chartOfAccounts.value.map(head => ({
+    label: head.account_name,
+    value: head.account_name
+  }));
+});
+
 const onExportPDF = async () => {
   if (!accountHead.value) return;
   exportLoading.value = true;
@@ -177,8 +207,6 @@ const currentBalance = computed(() => accountBalance.value);
 
 const runningLedger = computed(() => {
   let bal = 0;
-  // This is a simplification; for a true running balance we need the opening balance
-  // of the account before filters.fromDate.
   return ledgerEntries.value.map(entry => {
     bal += (entry.debitAmount || 0) - (entry.creditAmount || 0);
     return { ...entry, runningBalance: bal };

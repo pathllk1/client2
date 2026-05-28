@@ -1,230 +1,248 @@
 <template>
-  <div class="p-6 w-full mx-auto space-y-8">
+  <div class="p-4 py-3 w-full mx-auto space-y-3">
     <!-- Header Section -->
-    <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
-      <div class="space-y-1">
-        <div class="flex items-center gap-2">
-           <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
-           <span class="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Accounts Live</span>
-        </div>
-        <h1 class="text-3xl font-black text-slate-900 tracking-tight">Ledger & Financials</h1>
-        <p class="text-sm text-slate-500 font-medium">Monitoring {{ trialBalance.length }} account heads</p>
-      </div>
+    <div class="flex justify-between items-center mb-2">
       <div class="flex items-center gap-3">
-        <div class="hidden lg:flex items-center gap-4 mr-4">
-           <div class="text-right">
-              <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Total Debit</p>
-              <p class="text-sm font-black text-emerald-600 font-mono">₹{{ totalDebit.toLocaleString() }}</p>
-           </div>
-           <div class="w-px h-8 bg-slate-200"></div>
-           <div class="text-right">
-              <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Total Credit</p>
-              <p class="text-sm font-black text-rose-600 font-mono">₹{{ totalCredit.toLocaleString() }}</p>
-           </div>
+        <div class="p-2 bg-primary/10 rounded-xl">
+          <UIcon name="i-heroicons-credit-card" class="w-6 h-6 text-primary" />
         </div>
-        <button @click="showVoucherModal = true" class="px-6 py-3 bg-violet-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-violet-100 hover:bg-violet-700 transition-all flex items-center gap-2">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-          New Voucher
-        </button>
-        <button @click="$router.push('/accounting/coa')" class="px-6 py-3 bg-white text-slate-900 border-2 border-slate-200 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-50 transition-all">
-          Account Heads
-        </button>
-        <button @click="refreshData" class="p-3 bg-slate-100 text-slate-600 rounded-2xl hover:bg-slate-200 transition-all">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-        </button>
+        <div>
+          <h1 class="text-xl font-black tracking-tight uppercase text-gray-900 dark:text-white leading-none">Ledger & Financials</h1>
+          <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">Monitoring {{ trialBalance.length }} account heads</p>
+        </div>
       </div>
-    </header>
+      <div class="flex items-center gap-2">
+        <div class="hidden lg:flex items-center gap-3 mr-2">
+          <div class="text-right">
+            <p class="text-[8px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest">Total Debit</p>
+            <p class="text-xs font-black text-emerald-600 font-mono leading-none mt-0.5">₹{{ totalDebit.toLocaleString() }}</p>
+          </div>
+          <div class="w-px h-6 bg-gray-200 dark:bg-zinc-800"></div>
+          <div class="text-right">
+            <p class="text-[8px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest">Total Credit</p>
+            <p class="text-xs font-black text-rose-600 font-mono leading-none mt-0.5">₹{{ totalCredit.toLocaleString() }}</p>
+          </div>
+        </div>
+        <UButton
+          color="neutral"
+          variant="outline"
+          icon="i-heroicons-arrow-path"
+          size="sm"
+          class="h-8 w-8 flex items-center justify-center p-0"
+          @click="refreshData"
+          title="Refresh Data"
+        />
+        <UButton
+          color="neutral"
+          variant="outline"
+          size="sm"
+          label="Account Heads"
+          class="font-semibold text-xs h-8"
+          @click="$router.push('/accounting/coa')"
+        />
+        <UButton
+          color="primary"
+          icon="i-heroicons-plus"
+          size="sm"
+          label="New Voucher"
+          class="font-semibold text-xs h-8"
+          @click="showVoucherModal = true"
+        />
+      </div>
+    </div>
 
     <!-- Loader -->
-    <div v-if="loading" class="flex flex-col items-center justify-center py-32 gap-4 bg-white rounded-[2.5rem] border border-slate-100">
-      <UIcon name="i-heroicons-arrow-path" class="w-12 h-12 animate-spin text-indigo-600" />
-      <p class="text-xs font-black uppercase tracking-widest text-slate-400">Loading ledger summaries...</p>
+    <div v-if="loading" class="flex flex-col items-center justify-center py-24 gap-4 bg-white dark:bg-zinc-900 rounded-2xl border border-gray-100 dark:border-zinc-800 shadow-sm">
+      <UIcon name="i-heroicons-arrow-path" class="w-10 h-10 animate-spin text-primary" />
+      <p class="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-zinc-500">Loading ledger summaries...</p>
     </div>
 
     <template v-else>
       <!-- KPI Ticker Strip -->
-      <div class="flex divide-x divide-slate-100 bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden overflow-x-auto">
-         <div v-for="stat in compactStats" :key="stat.label" class="flex-1 min-w-[200px] p-6 group hover:bg-slate-50 transition-all border-l-4" :class="stat.borderColor">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{{ stat.label }}</p>
-            <div class="text-xl font-black text-slate-900 tracking-tight font-mono" :class="stat.textColor">{{ stat.value }}</div>
-            <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-1">{{ stat.meta }}</p>
+      <div class="flex divide-x divide-gray-100 dark:divide-zinc-800 bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-gray-100 dark:border-zinc-800 overflow-hidden overflow-x-auto">
+         <div v-for="stat in compactStats" :key="stat.label" class="flex-1 min-w-[180px] p-3 py-2.5 hover:bg-gray-50/50 dark:hover:bg-zinc-850/50 transition-all border-l-4" :class="stat.borderColor">
+            <p class="text-[9px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-0.5">{{ stat.label }}</p>
+            <div class="text-lg font-black text-gray-900 dark:text-white tracking-tight font-mono leading-none" :class="stat.textColor">{{ stat.value }}</div>
+            <p class="text-[9px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-widest mt-1 leading-none">{{ stat.meta }}</p>
          </div>
       </div>
 
       <!-- Charts Row -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-         <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
-            <div class="flex items-center justify-between mb-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+         <UCard class="w-full shadow-sm rounded-2xl border border-gray-100 dark:border-zinc-800" :ui="{ body: 'p-4' }">
+            <div class="flex items-center justify-between mb-4">
                <div>
-                  <h2 class="text-xl font-black text-slate-900 tracking-tight">Account Type Mix</h2>
-                  <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Debit & Credit by Type</p>
+                  <h2 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight leading-none">Account Type Mix</h2>
+                  <p class="text-[9px] text-gray-400 dark:text-zinc-500 font-bold uppercase tracking-widest mt-1">Debit & Credit by Type</p>
                </div>
                <div class="flex items-center gap-3">
-                 <span class="flex items-center gap-1.5 text-[10px] font-black text-emerald-600"><span class="h-2 w-2 rounded-full bg-emerald-500"></span> DR</span>
-                 <span class="flex items-center gap-1.5 text-[10px] font-black text-rose-600"><span class="h-2 w-2 rounded-full bg-rose-500"></span> CR</span>
+                 <span class="flex items-center gap-1.5 text-[9px] font-black text-emerald-650"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> DR</span>
+                 <span class="flex items-center gap-1.5 text-[9px] font-black text-rose-650"><span class="h-1.5 w-1.5 rounded-full bg-rose-500"></span> CR</span>
                </div>
             </div>
-            <div class="h-[300px] relative">
+            <div class="h-[240px] relative">
                <canvas id="typeChart"></canvas>
             </div>
-         </div>
+         </UCard>
 
-         <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
-            <div class="mb-6">
-               <h2 class="text-xl font-black text-slate-900 tracking-tight">Top Account Exposure</h2>
-               <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Balance leaders</p>
+         <UCard class="w-full shadow-sm rounded-2xl border border-gray-100 dark:border-zinc-800" :ui="{ body: 'p-4' }">
+            <div class="mb-4">
+               <h2 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight leading-none">Top Account Exposure</h2>
+               <p class="text-[9px] text-gray-400 dark:text-zinc-500 font-bold uppercase tracking-widest mt-1">Balance leaders</p>
             </div>
-            <div class="h-[300px] relative">
+            <div class="h-[240px] relative">
                <canvas id="exposureChart"></canvas>
             </div>
-         </div>
+         </UCard>
       </div>
 
       <!-- Main Content Grid -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
          <!-- Voucher Pulse & Signals -->
-         <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
-            <div class="flex items-center justify-between mb-8">
+         <UCard class="w-full shadow-sm rounded-2xl border border-gray-100 dark:border-zinc-800" :ui="{ body: 'p-4 space-y-4' }">
+            <div class="flex items-center justify-between">
                <div>
-                  <h2 class="text-xl font-black text-slate-900 tracking-tight">Voucher Pulse</h2>
-                  <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Transaction signals</p>
+                  <h2 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight leading-none">Voucher Pulse</h2>
+                  <p class="text-[9px] text-gray-400 dark:text-zinc-500 font-bold uppercase tracking-widest mt-1">Transaction signals</p>
                </div>
-               <div class="px-3 py-1 bg-slate-100 rounded-xl text-right">
-                  <p class="text-[8px] font-black text-slate-400 uppercase">Net</p>
-                  <p class="text-xs font-black font-mono leading-tight">₹{{ (vouchersSummary.net_position || 0).toLocaleString() }}</p>
+               <div class="px-2.5 py-0.5 bg-gray-100 dark:bg-zinc-800 rounded-lg text-right leading-none">
+                  <p class="text-[8px] font-black text-gray-400 dark:text-zinc-500 uppercase leading-none">Net</p>
+                  <p class="text-xs font-black font-mono mt-0.5 leading-tight text-gray-950 dark:text-white">₹{{ (vouchersSummary.net_position || 0).toLocaleString() }}</p>
                </div>
             </div>
-            <div class="grid grid-cols-2 gap-4">
-               <div class="p-4 rounded-3xl bg-emerald-50 border border-emerald-100">
-                  <p class="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-2">Receipts</p>
-                  <p class="text-sm font-black text-emerald-700 font-mono">₹{{ (vouchersSummary.total_receipts || 0).toLocaleString() }}</p>
-                  <p class="text-[9px] font-bold text-emerald-500 mt-1 uppercase">Total In</p>
+            <div class="grid grid-cols-2 gap-2">
+               <div class="p-2.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100/55 dark:border-emerald-900/30">
+                  <p class="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-1 leading-none">Receipts</p>
+                  <p class="text-xs font-black text-emerald-700 dark:text-emerald-300 font-mono leading-none">₹{{ (vouchersSummary.total_receipts || 0).toLocaleString() }}</p>
+                  <p class="text-[8px] font-bold text-emerald-555 dark:text-emerald-500 mt-1 uppercase leading-none">Total In</p>
                </div>
-               <div class="p-4 rounded-3xl bg-rose-50 border border-rose-100">
-                  <p class="text-[9px] font-black text-rose-600 uppercase tracking-widest mb-2">Payments</p>
-                  <p class="text-sm font-black text-rose-700 font-mono">₹{{ (vouchersSummary.total_payments || 0).toLocaleString() }}</p>
-                  <p class="text-[9px] font-bold text-rose-500 mt-1 uppercase">Total Out</p>
+               <div class="p-2.5 rounded-xl bg-rose-50/50 dark:bg-rose-950/20 border border-rose-100/55 dark:border-rose-900/30">
+                  <p class="text-[9px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-wider mb-1 leading-none">Payments</p>
+                  <p class="text-xs font-black text-rose-700 dark:text-rose-300 font-mono leading-none">₹{{ (vouchersSummary.total_payments || 0).toLocaleString() }}</p>
+                  <p class="text-[8px] font-bold text-rose-555 dark:text-rose-500 mt-1 uppercase leading-none">Total Out</p>
                </div>
-               <div class="p-4 rounded-3xl bg-blue-50 border border-blue-100">
-                  <p class="text-[9px] font-black text-blue-600 uppercase tracking-widest mb-2">Vouchers</p>
-                  <p class="text-sm font-black text-blue-700 font-mono">{{ vouchersSummary.recent_transactions_count || 0 }}</p>
-                  <p class="text-[9px] font-bold text-blue-500 mt-1 uppercase">Last 30 Days</p>
+               <div class="p-2.5 rounded-xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100/55 dark:border-blue-900/30">
+                  <p class="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-1 leading-none">Vouchers</p>
+                  <p class="text-xs font-black text-blue-700 dark:text-blue-300 font-mono leading-none">{{ vouchersSummary.recent_transactions_count || 0 }}</p>
+                  <p class="text-[8px] font-bold text-blue-555 dark:text-blue-500 mt-1 uppercase leading-none">Last 30 Days</p>
                </div>
-               <div class="p-4 rounded-3xl bg-amber-50 border border-amber-100">
-                  <p class="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-2">Journals</p>
-                  <p class="text-sm font-black text-amber-700 font-mono">{{ journalSummary.recent_journal_entries_count || 0 }}</p>
-                  <p class="text-[9px] font-bold text-amber-500 mt-1 uppercase">Last 30 Days</p>
+               <div class="p-2.5 rounded-xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-100/55 dark:border-amber-900/30">
+                  <p class="text-[9px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-1 leading-none">Journals</p>
+                  <p class="text-xs font-black text-amber-700 dark:text-amber-300 font-mono leading-none">{{ journalSummary.recent_journal_entries_count || 0 }}</p>
+                  <p class="text-[8px] font-bold text-amber-555 dark:text-amber-500 mt-1 uppercase leading-none">Last 30 Days</p>
                </div>
             </div>
             
-            <div class="mt-8 space-y-4">
-               <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Quick Workflows</h3>
-               <button @click="$router.push('/accounting/coa')" class="w-full p-4 flex items-center gap-4 rounded-3xl bg-slate-50 hover:bg-slate-100 transition-all border border-slate-100 group">
-                  <div class="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+            <div class="space-y-2">
+               <h3 class="text-[9px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest ml-1 leading-none">Quick Workflows</h3>
+               <button @click="$router.push('/accounting/coa')" class="w-full p-2 px-3 flex items-center gap-3 rounded-xl bg-gray-50/60 dark:bg-zinc-800/40 hover:bg-gray-100 dark:hover:bg-zinc-850/60 transition-all border border-gray-100/50 dark:border-zinc-800/50 group">
+                  <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                     <UIcon name="i-heroicons-clipboard-document-list" class="w-4.5 h-4.5" />
                   </div>
-                  <div class="text-left">
-                     <h4 class="text-sm font-black text-slate-900 tracking-tight">Chart of Accounts</h4>
-                     <p class="text-[10px] text-slate-400 font-bold uppercase">Manage Account Heads</p>
-                  </div>
-               </button>
-               <button @click="$router.push('/accounting/parties')" class="w-full p-4 flex items-center gap-4 rounded-3xl bg-slate-50 hover:bg-slate-100 transition-all border border-slate-100 group">
-                  <div class="w-10 h-10 rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/></svg>
-                  </div>
-                  <div class="text-left">
-                     <h4 class="text-sm font-black text-slate-900 tracking-tight">Parties Hub</h4>
-                     <p class="text-[10px] text-slate-400 font-bold uppercase">Customer & Supplier Masters</p>
+                  <div class="text-left min-w-0">
+                     <h4 class="text-xs font-bold text-gray-900 dark:text-white leading-none">Chart of Accounts</h4>
+                     <p class="text-[9px] text-gray-400 dark:text-zinc-500 font-bold uppercase mt-0.5 leading-none">Manage Account Heads</p>
                   </div>
                </button>
-               <button @click="$router.push('/accounting/ledger-view')" class="w-full p-4 flex items-center gap-4 rounded-3xl bg-slate-50 hover:bg-slate-100 transition-all border border-slate-100 group">
-                  <div class="w-10 h-10 rounded-2xl bg-violet-500/10 text-violet-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 2.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+               <button @click="$router.push('/accounting/parties')" class="w-full p-2 px-3 flex items-center gap-3 rounded-xl bg-gray-50/60 dark:bg-zinc-800/40 hover:bg-gray-100 dark:hover:bg-zinc-850/60 transition-all border border-gray-100/50 dark:border-zinc-800/50 group">
+                  <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                     <UIcon name="i-heroicons-user-group" class="w-4.5 h-4.5" />
                   </div>
-                  <div class="text-left">
-                     <h4 class="text-sm font-black text-slate-900 tracking-tight">General Ledger</h4>
-                     <p class="text-[10px] text-slate-400 font-bold uppercase">Full account reporting</p>
-                  </div>
-               </button>
-               <button @click="$router.push('/accounting/banking')" class="w-full p-4 flex items-center gap-4 rounded-3xl bg-slate-50 hover:bg-slate-100 transition-all border border-slate-100 group">
-                  <div class="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                  </div>
-                  <div class="text-left">
-                     <h4 class="text-sm font-black text-slate-900 tracking-tight">Banking Hub</h4>
-                     <p class="text-[10px] text-slate-400 font-bold uppercase">Manage Treasury & Bank A/Cs</p>
+                  <div class="text-left min-w-0">
+                     <h4 class="text-xs font-bold text-gray-900 dark:text-white leading-none">Parties Hub</h4>
+                     <p class="text-[9px] text-gray-400 dark:text-zinc-500 font-bold uppercase mt-0.5 leading-none">Customer & Supplier Masters</p>
                   </div>
                </button>
-               <button @click="$router.push('/accounting/trial-balance')" class="w-full p-4 flex items-center gap-4 rounded-3xl bg-slate-50 hover:bg-slate-100 transition-all border border-slate-100 group">
-                  <div class="w-10 h-10 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 18h12l3-18H3zm3 0h12v-2a2 2 0 00-2-2H8a2 2 0 00-2 2v2z"/></svg>
+               <button @click="$router.push('/accounting/ledger-view')" class="w-full p-2 px-3 flex items-center gap-3 rounded-xl bg-gray-50/60 dark:bg-zinc-800/40 hover:bg-gray-100 dark:hover:bg-zinc-850/60 transition-all border border-gray-100/50 dark:border-zinc-800/50 group">
+                  <div class="w-8 h-8 rounded-lg bg-violet-500/10 text-violet-500 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                     <UIcon name="i-heroicons-document-chart-bar" class="w-4.5 h-4.5" />
                   </div>
-                  <div class="text-left">
-                     <h4 class="text-sm font-black text-slate-900 tracking-tight">Trial Balance</h4>
-                     <p class="text-[10px] text-slate-400 font-bold uppercase">Verify debits & credits balance</p>
+                  <div class="text-left min-w-0">
+                     <h4 class="text-xs font-bold text-gray-900 dark:text-white leading-none">General Ledger</h4>
+                     <p class="text-[9px] text-gray-400 dark:text-zinc-500 font-bold uppercase mt-0.5 leading-none">Full account reporting</p>
                   </div>
                </button>
-               <button @click="$router.push('/accounting/statements')" class="w-full p-4 flex items-center gap-4 rounded-3xl bg-slate-50 hover:bg-slate-100 transition-all border border-slate-100 group">
-                  <div class="w-10 h-10 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 2.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+               <button @click="$router.push('/accounting/banking')" class="w-full p-2 px-3 flex items-center gap-3 rounded-xl bg-gray-50/60 dark:bg-zinc-800/40 hover:bg-gray-100 dark:hover:bg-zinc-850/60 transition-all border border-gray-100/50 dark:border-zinc-800/50 group">
+                  <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                     <UIcon name="i-heroicons-credit-card" class="w-4.5 h-4.5" />
                   </div>
-                  <div class="text-left">
-                     <h4 class="text-sm font-black text-slate-900 tracking-tight">Financial Statements</h4>
-                     <p class="text-[10px] text-slate-400 font-bold uppercase">Profit & Loss and Balance Sheet</p>
+                  <div class="text-left min-w-0">
+                     <h4 class="text-xs font-bold text-gray-900 dark:text-white leading-none">Banking Hub</h4>
+                     <p class="text-[9px] text-gray-400 dark:text-zinc-500 font-bold uppercase mt-0.5 leading-none">Manage Treasury & Bank A/Cs</p>
+                  </div>
+               </button>
+               <button @click="$router.push('/accounting/trial-balance')" class="w-full p-2 px-3 flex items-center gap-3 rounded-xl bg-gray-50/60 dark:bg-zinc-800/40 hover:bg-gray-100 dark:hover:bg-zinc-850/60 transition-all border border-gray-100/50 dark:border-zinc-800/50 group">
+                  <div class="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                     <UIcon name="i-heroicons-calculator" class="w-4.5 h-4.5" />
+                  </div>
+                  <div class="text-left min-w-0">
+                     <h4 class="text-xs font-bold text-gray-900 dark:text-white leading-none">Trial Balance</h4>
+                     <p class="text-[9px] text-gray-400 dark:text-zinc-500 font-bold uppercase mt-0.5 leading-none">Verify debits & credits balance</p>
+                  </div>
+               </button>
+               <button @click="$router.push('/accounting/statements')" class="w-full p-2 px-3 flex items-center gap-3 rounded-xl bg-gray-50/60 dark:bg-zinc-800/40 hover:bg-gray-100 dark:hover:bg-zinc-850/60 transition-all border border-gray-100/50 dark:border-zinc-800/50 group">
+                  <div class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-500 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                     <UIcon name="i-heroicons-document-text" class="w-4.5 h-4.5" />
+                  </div>
+                  <div class="text-left min-w-0">
+                     <h4 class="text-xs font-bold text-gray-900 dark:text-white leading-none">Financial Statements</h4>
+                     <p class="text-[9px] text-gray-400 dark:text-zinc-500 font-bold uppercase mt-0.5 leading-none">Profit & Loss and Balance Sheet</p>
                   </div>
                </button>
             </div>
-         </div>
+         </UCard>
 
          <!-- Table Tabs -->
-         <div class="lg:col-span-2 space-y-8">
-            <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
-               <div class="p-8 border-b border-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+         <div class="lg:col-span-2">
+            <UCard class="w-full shadow-sm rounded-2xl border border-gray-100 dark:border-zinc-800" :ui="{ body: 'p-0 overflow-hidden' }">
+               <div class="p-4 py-3 border-b border-gray-50 dark:border-zinc-800 flex items-center justify-between gap-4">
                   <div>
-                    <h2 class="text-xl font-black text-slate-900 tracking-tight">{{ activeTab === 'heads' ? 'Account Head Register' : 'Account Type Summaries' }}</h2>
-                    <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">{{ activeTab === 'heads' ? 'Trial balance and net exposure' : 'Net balance per category' }}</p>
+                    <h2 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight leading-none">{{ activeTab === 'heads' ? 'Account Head Register' : 'Account Type Summaries' }}</h2>
+                    <p class="text-[9px] text-gray-400 dark:text-zinc-500 font-bold uppercase tracking-widest mt-1">{{ activeTab === 'heads' ? 'Trial balance and net exposure' : 'Net balance per category' }}</p>
                   </div>
                   <div class="flex items-center gap-3">
-                     <div class="inline-flex rounded-2xl bg-slate-100 p-1">
-                        <button @click="activeTab = 'types'" :class="activeTab === 'types' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:text-slate-900'" class="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">Types</button>
-                        <button @click="activeTab = 'heads'" :class="activeTab === 'heads' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:text-slate-900'" class="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">Heads</button>
+                     <div class="inline-flex rounded-xl bg-gray-100 dark:bg-zinc-800 p-0.5">
+                        <button @click="activeTab = 'types'" :class="activeTab === 'types' ? 'bg-zinc-900 text-white dark:bg-zinc-950 shadow-md' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'" class="px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all leading-none">Types</button>
+                        <button @click="activeTab = 'heads'" :class="activeTab === 'heads' ? 'bg-zinc-900 text-white dark:bg-zinc-950 shadow-md' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'" class="px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all leading-none">Heads</button>
                      </div>
-                     <input type="date" v-model="toDate" @change="refreshData" class="px-4 py-2 bg-slate-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-blue-500 outline-none transition-all font-bold text-sm" />
+                     <div class="w-36">
+                        <UInput type="date" v-model="toDate" size="sm" class="w-full" @change="refreshData" />
+                     </div>
                   </div>
                </div>
                
                <!-- Account Heads Table -->
                <div v-if="activeTab === 'heads'" class="overflow-x-auto">
-                  <table class="w-full text-left">
+                  <table class="w-full text-left text-xs divide-y divide-gray-100 dark:divide-zinc-800">
                      <thead>
-                        <tr class="bg-slate-50/50 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                           <th class="px-8 py-5">Account Head</th>
-                           <th class="px-6 py-5">Category</th>
-                           <th class="px-6 py-5 text-right">Debit</th>
-                           <th class="px-6 py-5 text-right">Credit</th>
-                           <th class="px-8 py-5 text-right">Net Balance</th>
+                        <tr class="text-[10px] font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider bg-gray-50/80 dark:bg-zinc-800/80">
+                           <th class="py-2.5 px-4">Account Head</th>
+                           <th class="py-2.5 px-4">Category</th>
+                           <th class="py-2.5 px-4 text-right">Debit</th>
+                           <th class="py-2.5 px-4 text-right">Credit</th>
+                           <th class="py-2.5 px-4 text-right">Net Balance</th>
                         </tr>
                      </thead>
-                     <tbody class="divide-y divide-slate-50">
-                        <tr v-for="row in trialBalance" :key="row.accountHead" class="hover:bg-slate-50/80 transition-all cursor-pointer group" @click="viewLedger(row.accountHead)">
-                           <td class="px-8 py-5">
-                              <div class="font-black text-slate-900 group-hover:text-blue-600 transition-colors">{{ row.accountHead }}</div>
+                     <tbody class="divide-y divide-gray-100 dark:divide-zinc-800">
+                        <tr v-for="row in trialBalance" :key="row.accountHead" class="hover:bg-gray-50/50 dark:hover:bg-zinc-800/30 transition-colors cursor-pointer group" @click="viewLedger(row.accountHead)">
+                           <td class="py-2 px-4">
+                              <div class="font-bold text-gray-900 dark:text-white group-hover:text-blue-600 transition-colors">{{ row.accountHead }}</div>
                            </td>
-                           <td class="px-6 py-5">
-                              <span class="inline-flex px-3 py-1 rounded-xl bg-slate-100 text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                           <td class="py-2 px-4">
+                              <UBadge size="sm" variant="subtle" color="neutral" class="text-[8px] px-1.5 py-0 font-bold uppercase tracking-wider rounded-md">
                                  {{ row.accountType?.replace(/_/g, ' ') || 'GENERAL' }}
-                              </span>
+                              </UBadge>
                            </td>
-                           <td class="px-6 py-5 text-right font-bold text-slate-600 font-mono text-xs">₹{{ row.totalDebit.toLocaleString() }}</td>
-                           <td class="px-6 py-5 text-right font-bold text-slate-600 font-mono text-xs">₹{{ row.totalCredit.toLocaleString() }}</td>
-                           <td class="px-8 py-5 text-right">
-                              <div class="flex flex-col items-end">
-                                 <span :class="row.balanceType === 'DR' ? 'text-emerald-600' : 'text-rose-600'" class="font-black font-mono text-sm">
+                           <td class="py-2 px-4 text-right font-medium text-gray-600 dark:text-zinc-400 font-mono">₹{{ row.totalDebit.toLocaleString() }}</td>
+                           <td class="py-2 px-4 text-right font-medium text-gray-600 dark:text-zinc-400 font-mono">₹{{ row.totalCredit.toLocaleString() }}</td>
+                           <td class="py-2 px-4 text-right">
+                              <div class="flex items-center justify-end gap-1.5">
+                                 <span :class="row.balanceType === 'DR' ? 'text-emerald-605' : 'text-rose-605'" class="font-bold font-mono">
                                     ₹{{ row.balance.toLocaleString() }}
                                  </span>
-                                 <span :class="row.balanceType === 'DR' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'" class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase mt-0.5">
+                                 <UBadge size="sm" variant="subtle" :color="row.balanceType === 'DR' ? 'success' : 'error'" class="text-[8px] px-1.5 py-0 font-bold rounded-md">
                                     {{ row.balanceType }}
-                                 </span>
+                                 </UBadge>
                               </div>
                            </td>
                         </tr>
@@ -234,83 +252,87 @@
 
                <!-- Account Types Table -->
                <div v-else class="overflow-x-auto">
-                  <table class="w-full text-left">
+                  <table class="w-full text-left text-xs divide-y divide-gray-100 dark:divide-zinc-800">
                      <thead>
-                        <tr class="bg-slate-50/50 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                           <th class="px-8 py-5">Account Type</th>
-                           <th class="px-6 py-5 text-right">Accounts</th>
-                           <th class="px-6 py-5 text-right">Total Debit</th>
-                           <th class="px-6 py-5 text-right">Total Credit</th>
-                           <th class="px-8 py-5 text-right">Net Balance</th>
+                        <tr class="text-[10px] font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider bg-gray-50/80 dark:bg-zinc-800/80">
+                           <th class="py-2.5 px-4">Account Type</th>
+                           <th class="py-2.5 px-4 text-right">Accounts</th>
+                           <th class="py-2.5 px-4 text-right">Total Debit</th>
+                           <th class="py-2.5 px-4 text-right">Total Credit</th>
+                           <th class="py-2.5 px-4 text-right">Net Balance</th>
                         </tr>
                      </thead>
-                     <tbody class="divide-y divide-slate-50">
-                        <tr v-for="type in accountTypeSummaries" :key="type.account_type" class="hover:bg-slate-50/80 transition-all cursor-pointer group" @click="drillDownType(type.account_type)">
-                           <td class="px-8 py-5">
-                              <div class="font-black text-slate-900 group-hover:text-violet-600 transition-colors uppercase tracking-tight">{{ type.account_type?.replace(/_/g, ' ') }}</div>
+                     <tbody class="divide-y divide-gray-100 dark:divide-zinc-800">
+                        <tr v-for="type in accountTypeSummaries" :key="type.account_type" class="hover:bg-gray-50/50 dark:hover:bg-zinc-800/30 transition-colors cursor-pointer group" @click="drillDownType(type.account_type)">
+                           <td class="py-2 px-4">
+                              <div class="font-bold text-gray-900 dark:text-white group-hover:text-violet-600 transition-colors uppercase tracking-tight">{{ type.account_type?.replace(/_/g, ' ') }}</div>
                            </td>
-                           <td class="px-6 py-5 text-right font-bold text-slate-500 font-mono">{{ type.account_count }}</td>
-                           <td class="px-6 py-5 text-right font-bold text-slate-600 font-mono text-xs">₹{{ type.total_debit.toLocaleString() }}</td>
-                           <td class="px-6 py-5 text-right font-bold text-slate-600 font-mono text-xs">₹{{ type.total_credit.toLocaleString() }}</td>
-                           <td class="px-8 py-5 text-right">
-                              <div class="flex flex-col items-end">
-                                 <span :class="type.total_balance >= 0 ? 'text-emerald-600' : 'text-rose-600'" class="font-black font-mono text-sm">
+                           <td class="py-2 px-4 text-right font-medium text-gray-500 dark:text-zinc-500 font-mono">{{ type.account_count }}</td>
+                           <td class="py-2 px-4 text-right font-medium text-gray-600 dark:text-zinc-400 font-mono">₹{{ type.total_debit.toLocaleString() }}</td>
+                           <td class="py-2 px-4 text-right font-medium text-gray-600 dark:text-zinc-400 font-mono">₹{{ type.total_credit.toLocaleString() }}</td>
+                           <td class="py-2 px-4 text-right">
+                              <div class="flex items-center justify-end gap-1.5">
+                                 <span :class="type.total_balance >= 0 ? 'text-emerald-605' : 'text-rose-605'" class="font-bold font-mono">
                                     ₹{{ Math.abs(type.total_balance).toLocaleString() }}
                                  </span>
-                                 <span :class="type.total_balance >= 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'" class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase mt-0.5">
+                                 <UBadge size="sm" variant="subtle" :color="type.total_balance >= 0 ? 'success' : 'error'" class="text-[8px] px-1.5 py-0 font-bold rounded-md">
                                     {{ type.total_balance >= 0 ? 'DR' : 'CR' }}
-                                 </span>
+                                 </UBadge>
                               </div>
                            </td>
                         </tr>
                      </tbody>
                   </table>
                </div>
-            </div>
+            </UCard>
          </div>
       </div>
     </template>
 
     <!-- Sub-Ledger Modal -->
-    <div v-if="showDrillModal" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" @click.self="showDrillModal = false">
-       <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-slate-200 flex flex-col animate-scale-in">
-          <header class="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+    <div v-if="showDrillModal" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md" @click.self="showDrillModal = false">
+       <UCard class="w-full max-w-4xl max-h-[90vh] overflow-hidden border border-gray-150 dark:border-zinc-800 shadow-2xl flex flex-col" :ui="{ body: 'p-4 overflow-y-auto flex-1', header: 'p-4 py-3 bg-gray-50 dark:bg-zinc-800/80 border-b border-gray-100 dark:border-zinc-800 flex justify-between items-center' }">
+          <template #header>
              <div>
-                <span class="text-[10px] font-black text-violet-600 uppercase tracking-widest">{{ drillType }}</span>
-                <h2 class="text-2xl font-black text-slate-900 tracking-tight">Drill-Down: {{ drillType?.replace(/_/g, ' ') }}</h2>
+                <span class="text-[9px] font-black text-violet-650 dark:text-violet-400 uppercase tracking-widest leading-none">{{ drillType }}</span>
+                <h2 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight leading-none mt-1">Drill-Down: {{ drillType?.replace(/_/g, ' ') }}</h2>
              </div>
-             <button @click="showDrillModal = false" class="w-10 h-10 flex items-center justify-center rounded-2xl bg-slate-100 text-slate-400 hover:text-slate-900 transition-colors">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-             </button>
-          </header>
-          <div class="flex-1 overflow-y-auto p-8">
-             <table class="w-full text-left">
-                <thead>
-                   <tr class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                      <th class="pb-4">Account Head</th>
-                      <th class="pb-4 text-right">Debits</th>
-                      <th class="pb-4 text-right">Credits</th>
-                      <th class="pb-4 text-right">Balance</th>
-                   </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-50">
-                   <tr v-for="h in drillAccounts" :key="h.accountHead" class="group hover:bg-slate-50 transition-all cursor-pointer" @click="viewLedger(h.accountHead)">
-                      <td class="py-4">
-                         <div class="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{{ h.accountHead }}</div>
-                      </td>
-                      <td class="py-4 text-right font-mono text-xs text-emerald-600 font-bold">₹{{ h.totalDebit.toLocaleString() }}</td>
-                      <td class="py-4 text-right font-mono text-xs text-rose-600 font-bold">₹{{ h.totalCredit.toLocaleString() }}</td>
-                      <td class="py-4 text-right">
-                         <div class="flex items-center justify-end gap-2">
-                            <span class="font-black font-mono text-xs" :class="h.balanceType === 'DR' ? 'text-emerald-700' : 'text-rose-700'">₹{{ h.balance.toLocaleString() }}</span>
-                            <span class="text-[8px] font-black px-1 py-0.5 rounded" :class="h.balanceType === 'DR' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'">{{ h.balanceType }}</span>
-                         </div>
-                      </td>
-                   </tr>
-                </tbody>
-             </table>
-          </div>
-       </div>
+             <UButton 
+               size="xs" 
+               variant="ghost" 
+               color="neutral" 
+               icon="i-heroicons-x-mark" 
+               class="h-7 w-7 flex items-center justify-center p-0"
+               @click="showDrillModal = false" 
+             />
+          </template>
+          
+          <table class="w-full text-left text-xs divide-y divide-gray-100 dark:divide-zinc-800">
+             <thead>
+                <tr class="text-[10px] font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider bg-gray-50/20 dark:bg-zinc-800/20">
+                   <th class="py-2 px-3">Account Head</th>
+                   <th class="py-2 px-3 text-right">Debits</th>
+                   <th class="py-2 px-3 text-right">Credits</th>
+                   <th class="py-2 px-3 text-right">Balance</th>
+                </tr>
+             </thead>
+             <tbody class="divide-y divide-gray-100 dark:divide-zinc-800">
+                <tr v-for="h in drillAccounts" :key="h.accountHead" class="group hover:bg-gray-50/50 dark:hover:bg-zinc-800/30 transition-all cursor-pointer" @click="viewLedger(h.accountHead)">
+                   <td class="py-2 px-3">
+                      <div class="font-bold text-gray-900 dark:text-white group-hover:text-blue-600 transition-colors">{{ h.accountHead }}</div>
+                   </td>
+                   <td class="py-2 px-3 text-right font-mono text-xs text-emerald-600 font-bold">₹{{ h.totalDebit.toLocaleString() }}</td>
+                   <td class="py-2 px-3 text-right font-mono text-xs text-rose-600 font-bold">₹{{ h.totalCredit.toLocaleString() }}</td>
+                   <td class="py-2 px-3 text-right">
+                      <div class="flex items-center justify-end gap-1.5">
+                         <span class="font-black font-mono text-xs" :class="h.balanceType === 'DR' ? 'text-emerald-700' : 'text-rose-700'">₹{{ h.balance.toLocaleString() }}</span>
+                         <UBadge size="sm" variant="subtle" :color="h.balanceType === 'DR' ? 'success' : 'error'" class="text-[8px] px-1.5 py-0 font-bold rounded-md">{{ h.balanceType }}</UBadge>
+                      </div>
+                   </td>
+                </tr>
+             </tbody>
+          </table>
+       </UCard>
     </div>
 
     <VoucherModal v-model="showVoucherModal" @saved="refreshData" />
@@ -369,42 +391,42 @@ const compactStats = computed(() => [
     value: trialBalance.value.length, 
     meta: `${accountTypeSummaries.value.length} account types`, 
     borderColor: 'border-blue-500',
-    textColor: 'text-blue-600'
+    textColor: 'text-blue-600 dark:text-blue-400'
   },
   { 
     label: 'Total Debit', 
     value: `₹${totalDebit.value.toLocaleString()}`, 
     meta: 'Total ledger exposure', 
     borderColor: 'border-emerald-500',
-    textColor: 'text-emerald-600'
+    textColor: 'text-emerald-600 dark:text-emerald-400'
   },
   { 
     label: 'Total Credit', 
     value: `₹${totalCredit.value.toLocaleString()}`, 
     meta: 'Total liability pool', 
     borderColor: 'border-rose-500',
-    textColor: 'text-rose-600'
+    textColor: 'text-rose-600 dark:text-rose-400'
   },
   { 
     label: 'Net Position', 
     value: `₹${Math.abs(totalDebit.value - totalCredit.value).toLocaleString()} ${totalDebit.value >= totalCredit.value ? 'DR' : 'CR'}`, 
     meta: 'Ledger-wide exposure', 
     borderColor: 'border-violet-500',
-    textColor: 'text-violet-600'
+    textColor: 'text-violet-600 dark:text-violet-400'
   },
   { 
     label: 'Receipts', 
     value: `₹${(vouchersSummary.value.total_receipts || 0).toLocaleString()}`, 
     meta: `${vouchersSummary.value.recent_transactions_count || 0} recent transactions`, 
     borderColor: 'border-teal-500',
-    textColor: 'text-teal-600'
+    textColor: 'text-teal-600 dark:text-teal-400'
   },
   { 
     label: 'Journal Entries', 
     value: (journalSummary.value.total_journal_entries || 0).toLocaleString(), 
     meta: `${journalSummary.value.recent_journal_entries_count || 0} in last 30 days`, 
     borderColor: 'border-amber-500',
-    textColor: 'text-amber-600'
+    textColor: 'text-amber-600 dark:text-amber-400'
   }
 ]);
 
@@ -439,7 +461,7 @@ const renderCharts = async () => {
         maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
-          y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { family: 'JetBrains Mono', size: 10 } } },
+          y: { beginAtZero: true, grid: { color: 'rgba(226, 232, 240, 0.3)' }, ticks: { font: { family: 'JetBrains Mono', size: 10 } } },
           x: { grid: { display: false }, ticks: { font: { weight: 'bold', size: 9 } } }
         }
       }
@@ -467,7 +489,7 @@ const renderCharts = async () => {
         maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
-          x: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { family: 'JetBrains Mono', size: 10 } } },
+          x: { beginAtZero: true, grid: { color: 'rgba(226, 232, 240, 0.3)' }, ticks: { font: { family: 'JetBrains Mono', size: 10 } } },
           y: { grid: { display: false }, ticks: { font: { weight: 'bold', size: 10 } } }
         }
       }
@@ -484,14 +506,3 @@ function viewLedger(head: string) {
   router.push({ path: '/accounting/ledger-view', query: { head } });
 }
 </script>
-
-<style scoped>
-.animate-scale-in {
-  animation: scaleIn 0.2s ease-out;
-}
-
-@keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
-}
-</style>
