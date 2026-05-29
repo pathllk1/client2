@@ -31,11 +31,14 @@ const filters = reactive({
   bank: '',
   doj_start: '',
   doj_end: '',
-  limit: 25,
-  skip: 0
+  limit: 10,
+  skip: 0,
+  sortBy: '',
+  sortOrder: ''
 })
 
 const page = ref(1)
+const sorting = ref<any[]>([])
 const selectedRows = ref<any[]>([])
 
 const showFilterPanel = ref(false)
@@ -73,6 +76,16 @@ const handleFilterUpdate = (key: string, value: string) => {
 
 watch(page, (val) => {
   filters.skip = (val - 1) * filters.limit
+})
+
+watch(sorting, (newVal) => {
+  if (newVal && newVal.length > 0) {
+    filters.sortBy = newVal[0].id
+    filters.sortOrder = newVal[0].desc ? 'desc' : 'asc'
+  } else {
+    filters.sortBy = ''
+    filters.sortOrder = ''
+  }
 })
 
 watch([filters, selectedFirmId], () => {
@@ -136,9 +149,9 @@ const columns = computed(() => {
     .filter(col => visibleColumns.value.includes(col.key))
     .map(col => {
       if (col.key === 'select' || col.key === 'actions') {
-        return { id: col.key, header: col.key === 'select' ? '' : col.label }
+        return { id: col.key, header: col.key === 'select' ? '' : col.label, enableSorting: false }
       }
-      return { accessorKey: col.key, header: col.label }
+      return { id: col.key, accessorKey: col.key, header: col.label, enableSorting: true }
     })
 })
 
@@ -412,6 +425,7 @@ const headerActions = [
             :data="employees" 
             :columns="columns" 
             :loading="loading" 
+            v-model:sorting="sorting"
             class="w-full text-xs sticky-header-enterprise"
             :ui="{ 
               td: 'py-2 px-4',
@@ -419,6 +433,31 @@ const headerActions = [
               tr: 'hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors'
             }"
           >
+            <!-- Header Slots -->
+            <template v-for="col in columns.filter(c => c.id !== 'select')" :key="col.id" #[`${col.id}-header`]="{ column }">
+              <div v-if="column.getCanSort()" 
+                   class="flex items-center gap-1 cursor-pointer select-none hover:text-primary transition-colors"
+                   @click="column.getToggleSortingHandler()?.($event)">
+                <span>{{ col.header }}</span>
+                <UIcon 
+                  v-if="column.getIsSorted() === 'asc'" 
+                  name="i-heroicons-bars-arrow-up" 
+                  class="w-4 h-4 text-primary" 
+                />
+                <UIcon 
+                  v-else-if="column.getIsSorted() === 'desc'" 
+                  name="i-heroicons-bars-arrow-down" 
+                  class="w-4 h-4 text-primary" 
+                />
+                <UIcon 
+                  v-else 
+                  name="i-heroicons-arrows-up-down" 
+                  class="w-3.5 h-3.5 text-gray-300 dark:text-gray-600" 
+                />
+              </div>
+              <span v-else>{{ col.header }}</span>
+            </template>
+
             <!-- Select Header Slot -->
             <template #select-header>
               <UCheckbox 
