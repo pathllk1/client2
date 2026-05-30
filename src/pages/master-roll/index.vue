@@ -430,7 +430,7 @@ const headerActions = [
             :ui="{ 
               td: 'py-2 px-4',
               th: 'py-3 px-4 text-gray-500 font-bold uppercase tracking-wider bg-gray-50/80 dark:bg-gray-800/80 backdrop-blur border-b border-gray-100 dark:border-gray-800',
-              tr: 'hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors'
+              tr: 'hover:bg-green-100/80 dark:hover:bg-green-900/30 transition-colors'
             }"
           >
             <!-- Header Slots -->
@@ -529,7 +529,7 @@ const headerActions = [
             <UIcon name="i-heroicons-circle-stack" class="w-16 h-16" />
             <p class="text-sm font-bold uppercase tracking-widest">No Employee Records Found</p>
           </div>
-          <div v-for="emp in employees" :key="emp._id" class="p-4 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
+          <div v-for="emp in employees" :key="emp._id" class="p-4 hover:bg-green-100/80 dark:hover:bg-green-900/30 transition-colors">
             <div class="flex items-start justify-between gap-3">
               <div class="flex items-center gap-3">
                 <UCheckbox 

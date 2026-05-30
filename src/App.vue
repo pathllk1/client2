@@ -3,7 +3,7 @@ import { onMounted } from 'vue'
 import { useAuth } from './composables/useAuth'
 import DefaultLayout from './layouts/Default.vue'
 import GlobalToolsHost from './components/tools/GlobalToolsHost.vue'
-import { isGlobalLoading } from '@/utils/api'
+import { isGlobalLoading, scheduleTokenRefresh } from '@/utils/api'
 
 const { fetchMe, state, selectFirm } = useAuth()
 
@@ -11,6 +11,10 @@ onMounted(async () => {
   const user = await fetchMe()
   if (user && !state.selectedFirmId && user.firms.length > 0) {
     selectFirm(user.firms[0].firm.id)
+  }
+  // Schedule proactive refresh for returning users with a persisted token
+  if (state.accessToken) {
+    scheduleTokenRefresh(state.accessToken)
   }
 })
 </script>

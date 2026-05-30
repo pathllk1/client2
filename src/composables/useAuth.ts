@@ -1,5 +1,5 @@
 import { computed } from 'vue'
-import { useApi } from '@/utils/api'
+import { useApi, scheduleTokenRefresh, cancelTokenRefresh } from '@/utils/api'
 import { authState, setAccessToken, setRefreshToken, clearAuth } from '@/stores/auth'
 
 export const useAuth = () => {
@@ -29,6 +29,7 @@ export const useAuth = () => {
       const response = await api.post('/auth/login', credentials)
       authState.user = response.user
       setTokens(response.accessToken, response.refreshToken)
+      scheduleTokenRefresh(response.accessToken)
       
       // Select first firm by default
       if (response.user.firms && response.user.firms.length > 0) {
@@ -49,6 +50,7 @@ export const useAuth = () => {
       if (response.accessToken) {
         authState.user = response.user
         setTokens(response.accessToken, response.refreshToken)
+        scheduleTokenRefresh(response.accessToken)
 
         // Select first firm by default
         if (response.user.firms && response.user.firms.length > 0) {
@@ -63,6 +65,7 @@ export const useAuth = () => {
   }
 
   const logout = async () => {
+    cancelTokenRefresh()
     try {
       if (authState.refreshToken) {
         await api.post('/auth/logout', { refreshToken: authState.refreshToken })

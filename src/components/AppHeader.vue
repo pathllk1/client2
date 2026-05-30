@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { useAuth } from '@/composables/useAuth'
+import { authState } from '@/stores/auth'
+import { decodeTokenPayload } from '@/utils/api'
 import { useRouter } from 'vue-router'
 import { useToast } from '@nuxt/ui/composables'
 
@@ -43,6 +45,64 @@ const onLogout = async () => {
   toast.add({ title: 'Logged out successfully', color: 'success' })
   router.push('/auth/login')
 }
+
+// Countdown Timer logic for Access Token
+const remainingTime = ref(0)
+let timerInterval: ReturnType<typeof setInterval> | null = null
+
+const formatTime = (seconds: number) => {
+  if (seconds <= 0) return '00:00'
+  const mins = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+}
+
+const updateTimer = (exp: number) => {
+  const now = Math.floor(Date.now() / 1000)
+  remainingTime.value = Math.max(0, exp - now)
+}
+
+const startTimer = () => {
+  stopTimer()
+  
+  const token = authState.accessToken
+  if (!token) {
+    remainingTime.value = 0
+    return
+  }
+
+  const payload = decodeTokenPayload(token)
+  if (!payload || !payload.exp) {
+    remainingTime.value = 0
+    return
+  }
+
+  const exp = payload.exp
+  updateTimer(exp)
+
+  timerInterval = setInterval(() => {
+    updateTimer(exp)
+    if (remainingTime.value <= 0) {
+      stopTimer()
+    }
+  }, 1000)
+}
+
+const stopTimer = () => {
+  if (timerInterval) {
+    clearInterval(timerInterval)
+    timerInterval = null
+  }
+}
+
+// Watch token changes (login, logout, proactive/reactive refreshes)
+watch(() => authState.accessToken, () => {
+  startTimer()
+}, { immediate: true })
+
+onUnmounted(() => {
+  stopTimer()
+})
 </script>
 
 <template>
@@ -76,6 +136,24 @@ const onLogout = async () => {
 
       <div class="flex items-center gap-2">
         <template v-if="isAuthenticated">
+          <!-- Countdown Timer -->
+          <div 
+            class="text-[11px] font-mono px-2.5 py-1 rounded-full flex items-center gap-1.5 transition-all duration-300"
+            :class="[
+              remainingTime <= 120 
+                ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50' 
+                : 'bg-primary-50 dark:bg-primary-950/30 text-primary-600 dark:text-primary-400 border border-primary-100 dark:border-primary-900/50'
+            ]"
+            title="Access Token Expiry Countdown"
+          >
+            <UIcon 
+              name="i-heroicons-clock" 
+              class="w-3.5 h-3.5"
+              :class="{ 'animate-pulse text-amber-500': remainingTime <= 120 }" 
+            />
+            <span>Token: {{ formatTime(remainingTime) }}</span>
+          </div>
+
           <UDropdownMenu :items="[[{ label: user?.name, disabled: true }, { label: 'Logout', icon: 'i-heroicons-arrow-left-on-rectangle', onSelect: onLogout }]]">
             <UButton color="neutral" variant="ghost" icon="i-heroicons-user-circle" />
           </UDropdownMenu>
@@ -130,10 +208,22 @@ const onLogout = async () => {
           </template>
           <template v-else>
             <div class="flex items-center gap-3 px-2 py-3 bg-gray-50 dark:bg-gray-900 rounded-lg mb-2">
-              <UIcon name="i-heroicons-user-circle" class="w-8 h-8 text-gray-400" />
-              <div class="flex flex-col">
-                <span class="text-sm font-semibold">{{ user?.name }}</span>
-                <span class="text-xs text-gray-500">{{ user?.email }}</span>
+              <UIcon name="i-heroicons-user-circle" class="w-8 h-8 text-gray-400 text-primary shrink-0" />
+              <div class="flex flex-col flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-sm font-semibold truncate">{{ user?.name }}</span>
+                  <span 
+                    class="text-[10px] font-mono px-2 py-0.5 rounded-full border shrink-0 transition-colors"
+                    :class="[
+                      remainingTime <= 120 
+                        ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-900/50' 
+                        : 'bg-primary-50 dark:bg-primary-950/30 text-primary-600 dark:text-primary-400 border-primary-100 dark:border-primary-900/50'
+                    ]"
+                  >
+                    {{ formatTime(remainingTime) }}
+                  </span>
+                </div>
+                <span class="text-xs text-gray-500 truncate">{{ user?.email }}</span>
               </div>
             </div>
             <UButton

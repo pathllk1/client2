@@ -1,2 +1,70 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
+
+/* ─── Global Table Header Gradient Styling ───────────────────────────────────── */
+table thead {
+  background: linear-gradient(90deg, #7c3aed 0%, #10b981 100%) !important;
+  position: relative;
+  z-index: 10;
+}
+
+table thead tr {
+  background: transparent !important;
+}
+
+table thead th {
+  background: transparent !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  border-bottom: 2px solid #6d28d9 !important;
+}
+
+/* Ensure all text, icons, buttons, and badges inside headers look clear on the gradient */
+table thead th,
+table thead th *,
+table thead th span,
+table thead th div,
+table thead th button,
+table thead th icon {
+  color: #ffffff !important;
+}
+
+/* Hover effects for sorting headers */
+table thead th .cursor-pointer:hover,
+table thead th .cursor-pointer:hover * {
+  color: #d1fae5 !important;
+}
+
+/* ─── Dark Mode Specific Gradient ───────────────────────────────────────────── */
+.dark table thead {
+  background: linear-gradient(90deg, #5b21b6 0%, #065f46 100%) !important;
+}
+
+.dark table thead th {
+  border-bottom: 2px solid #4c1d95 !important;
+}
+
+.dark table thead th,
+.dark table thead th *,
+.dark table thead th span,
+.dark table thead th div,
+.dark table thead th button,
+.dark table thead th icon {
+  color: #f5f3ff !important;
+}
+
+.dark table thead th .cursor-pointer:hover,
+.dark table thead th .cursor-pointer:hover * {
+  color: #ddd6fe !important;
+}
+
+/* ─── Sticky Table Header Support ───────────────────────────────────────────── */
+.sticky-table thead,
+.sticky-table thead tr,
+.sticky-table thead th {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 10 !important;
+}
+

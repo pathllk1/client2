@@ -16,38 +16,93 @@ const endRequest = () => {
   }
 }
 
-let isRefreshing = false
-let refreshPromise: Promise<any> | null = null
+let refreshPromise: Promise<string | null> | null = null
+let refreshTimer: ReturnType<typeof setTimeout> | null = null
 
 const getBaseUrl = () => import.meta.env.VITE_API_BASE_URL || '/api'
 
-const refreshTokenLogic = async () => {
-  const baseUrl = getBaseUrl()
-  const latestRefreshToken = localStorage.getItem('refresh_token') || authState.refreshToken
-  if (!latestRefreshToken) return null
+// ─── Proactive Token Refresh ────────────────────────────────────────────────
+// Decodes JWT payload client-side (no verification — server does that).
+// Used only to read the `exp` claim for scheduling the refresh timer.
+export const decodeTokenPayload = (token: string): any | null => {
   try {
-    if (!isRefreshing) {
-      isRefreshing = true
-      refreshPromise = fetch(`${baseUrl}/auth/refresh`, {
+    const payload = token.split('.')[1]
+    if (!payload) return null
+    return JSON.parse(atob(payload))
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Schedule a proactive refresh 2 minutes before the access token expires.
+ * If the token has ≤2 min remaining, refresh immediately.
+ * Called after login, after every successful refresh, and on app boot.
+ */
+export const scheduleTokenRefresh = (accessToken: string) => {
+  if (refreshTimer) clearTimeout(refreshTimer)
+
+  const payload = decodeTokenPayload(accessToken)
+  if (!payload?.exp) return
+
+  const expiresAtMs = payload.exp * 1000
+  const now = Date.now()
+  const bufferMs = 2 * 60 * 1000 // 2 minutes before expiry
+  const delayMs = Math.max(0, expiresAtMs - now - bufferMs)
+
+  refreshTimer = setTimeout(async () => {
+    const newToken = await refreshTokenLogic()
+    if (!newToken) {
+      // Don't force logout — let the next API call's 401 handler deal with it
+      console.warn('[Auth] Proactive refresh failed, will retry on next API call')
+    }
+  }, delayMs)
+}
+
+/** Cancel the scheduled refresh timer (called on logout) */
+export const cancelTokenRefresh = () => {
+  if (refreshTimer) {
+    clearTimeout(refreshTimer)
+    refreshTimer = null
+  }
+}
+
+// ─── Token Refresh Logic (race-condition-safe) ──────────────────────────────
+// Uses the promise itself as the concurrency lock. All concurrent 401 callers
+// share the same in-flight promise. No boolean flag needed.
+const refreshTokenLogic = async (): Promise<string | null> => {
+  // If a refresh is already in-flight, all callers share the same promise
+  if (refreshPromise) return refreshPromise
+
+  refreshPromise = (async () => {
+    const baseUrl = getBaseUrl()
+    const latestRefreshToken = localStorage.getItem('refresh_token') || authState.refreshToken
+    if (!latestRefreshToken) return null
+    try {
+      const res = await fetch(`${baseUrl}/auth/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken: latestRefreshToken })
-      }).then(async res => {
-        if (!res.ok) throw new Error('Refresh failed')
-        return res.json()
       })
+      if (!res.ok) throw new Error('Refresh failed')
+      const data = await res.json()
+      if (data?.accessToken) {
+        setAccessToken(data.accessToken)
+        if (data.refreshToken) setRefreshToken(data.refreshToken)
+        scheduleTokenRefresh(data.accessToken)
+        return data.accessToken
+      }
+      return null
+    } catch {
+      return null
     }
-    const data = await refreshPromise
-    if (data && data.accessToken) {
-      setAccessToken(data.accessToken)
-      if (data.refreshToken) setRefreshToken(data.refreshToken)
-      return data.accessToken
-    }
-    return null
-  } catch {
-    return null
+  })()
+
+  try {
+    return await refreshPromise
   } finally {
-    isRefreshing = false
+    // Only clears AFTER the inner IIFE has fully resolved/rejected.
+    // All concurrent callers have already received their result by now.
     refreshPromise = null
   }
 }
@@ -133,7 +188,10 @@ const rawRequest = async (endpoint: string, options: any = {}): Promise<any> => 
     const response = await fetchWithRetry(finalUrl, { ...options, headers })
 
     const newToken = response.headers.get('X-New-Access-Token')
-    if (newToken) setAccessToken(newToken)
+    if (newToken) {
+      setAccessToken(newToken)
+      scheduleTokenRefresh(newToken)
+    }
 
     if (response.status === 401 && !endpoint.includes('/auth/login') && !endpoint.includes('/auth/refresh') && retry) {
       // Check if another tab already refreshed the token

@@ -121,6 +121,45 @@ const deleteAccount = async (id: string) => {
   }
 }
 
+// Client-side Sorting
+const sortKey = ref('account_name')
+const sortDesc = ref(false)
+
+const toggleSort = (key: string) => {
+  if (sortKey.value === key) {
+    sortDesc.value = !sortDesc.value
+  } else {
+    sortKey.value = key
+    sortDesc.value = false
+  }
+}
+
+const sortedCOAData = computed(() => {
+  const data = [...coaData.value]
+  if (!sortKey.value) return data
+
+  return data.sort((a, b) => {
+    let valA: any = a[sortKey.value as keyof COAEntry]
+    let valB: any = b[sortKey.value as keyof COAEntry]
+
+    // Handle number comparisons
+    if (typeof valA === 'number' && typeof valB === 'number') {
+      return sortDesc.value ? valB - valA : valA - valB
+    }
+
+    // Handle string comparisons case-insensitively
+    if (typeof valA === 'string') valA = valA.toLowerCase()
+    if (typeof valB === 'string') valB = valB.toLowerCase()
+
+    if (valA === undefined || valA === null) valA = ''
+    if (valB === undefined || valB === null) valB = ''
+
+    if (valA < valB) return sortDesc.value ? 1 : -1
+    if (valA > valB) return sortDesc.value ? -1 : 1
+    return 0
+  })
+})
+
 onMounted(fetchCOA)
 </script>
 
@@ -169,19 +208,87 @@ onMounted(fetchCOA)
         <UIcon name="i-heroicons-document-text" class="w-12 h-12 text-slate-200 mx-auto" />
         <p class="text-sm font-bold text-slate-500">No account heads found.</p>
       </div>
-      <div v-else class="overflow-x-auto">
-        <table class="w-full text-left border-collapse">
-          <thead>
+      <div v-else class="overflow-auto max-h-[600px] relative custom-scrollbar">
+        <table class="w-full text-left border-collapse sticky-table">
+          <thead class="sticky top-0 z-10 shadow-sm">
             <tr class="bg-slate-50 border-b border-slate-200">
-              <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Account Master</th>
-              <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Type</th>
-              <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Opening Balance</th>
-              <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Current Balance</th>
-              <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Actions</th>
+              <th 
+                class="px-6 py-4 text-[10px] font-black uppercase tracking-widest cursor-pointer select-none group"
+                @click="toggleSort('account_name')"
+              >
+                <div class="flex items-center gap-1.5">
+                  <span>Account Master</span>
+                  <UIcon 
+                    v-if="sortKey === 'account_name'" 
+                    :name="sortDesc ? 'i-heroicons-bars-arrow-down' : 'i-heroicons-bars-arrow-up'" 
+                    class="w-3.5 h-3.5" 
+                  />
+                  <UIcon 
+                    v-else 
+                    name="i-heroicons-arrows-up-down" 
+                    class="w-3 h-3 opacity-40 group-hover:opacity-100 transition-opacity" 
+                  />
+                </div>
+              </th>
+              <th 
+                class="px-6 py-4 text-[10px] font-black uppercase tracking-widest cursor-pointer select-none group"
+                @click="toggleSort('account_type')"
+              >
+                <div class="flex items-center gap-1.5">
+                  <span>Type</span>
+                  <UIcon 
+                    v-if="sortKey === 'account_type'" 
+                    :name="sortDesc ? 'i-heroicons-bars-arrow-down' : 'i-heroicons-bars-arrow-up'" 
+                    class="w-3.5 h-3.5" 
+                  />
+                  <UIcon 
+                    v-else 
+                    name="i-heroicons-arrows-up-down" 
+                    class="w-3 h-3 opacity-40 group-hover:opacity-100 transition-opacity" 
+                  />
+                </div>
+              </th>
+              <th 
+                class="px-6 py-4 text-[10px] font-black uppercase tracking-widest cursor-pointer select-none group text-right"
+                @click="toggleSort('opening_balance')"
+              >
+                <div class="flex items-center justify-end gap-1.5">
+                  <span>Opening Balance</span>
+                  <UIcon 
+                    v-if="sortKey === 'opening_balance'" 
+                    :name="sortDesc ? 'i-heroicons-bars-arrow-down' : 'i-heroicons-bars-arrow-up'" 
+                    class="w-3.5 h-3.5" 
+                  />
+                  <UIcon 
+                    v-else 
+                    name="i-heroicons-arrows-up-down" 
+                    class="w-3 h-3 opacity-40 group-hover:opacity-100 transition-opacity" 
+                  />
+                </div>
+              </th>
+              <th 
+                class="px-6 py-4 text-[10px] font-black uppercase tracking-widest cursor-pointer select-none group text-right"
+                @click="toggleSort('current_balance')"
+              >
+                <div class="flex items-center justify-end gap-1.5">
+                  <span>Current Balance</span>
+                  <UIcon 
+                    v-if="sortKey === 'current_balance'" 
+                    :name="sortDesc ? 'i-heroicons-bars-arrow-down' : 'i-heroicons-bars-arrow-up'" 
+                    class="w-3.5 h-3.5" 
+                  />
+                  <UIcon 
+                    v-else 
+                    name="i-heroicons-arrows-up-down" 
+                    class="w-3 h-3 opacity-40 group-hover:opacity-100 transition-opacity" 
+                  />
+                </div>
+              </th>
+              <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-center">Actions</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
-            <tr v-for="acc in coaData" :key="acc._id" class="hover:bg-slate-50 transition-colors group">
+            <tr v-for="acc in sortedCOAData" :key="acc._id" class="hover:bg-green-100/80 dark:hover:bg-green-900/30 transition-colors group">
               <td class="px-6 py-4">
                 <div class="flex items-center gap-3">
                   <div :class="['w-2 h-10 rounded-full', acc.is_system ? 'bg-indigo-500' : 'bg-emerald-500']"></div>
