@@ -12,7 +12,7 @@ import DataQualityAuditModal from '@/components/master-roll/DataQualityAuditModa
 import WagesSummaryModal from '@/components/master-roll/WagesSummaryModal.vue'
 
 const { 
-  loading, employees, stats, total, 
+  loading, employees, stats, 
   fetchEmployees, fetchStats,
   exportExcel, exportICards, downloadTemplate,
   exportQualityReport, downloadAppointmentLetter,
@@ -31,13 +31,10 @@ const filters = reactive({
   bank: '',
   doj_start: '',
   doj_end: '',
-  limit: 10,
-  skip: 0,
   sortBy: '',
   sortOrder: ''
 })
 
-const page = ref(1)
 const sorting = ref<any[]>([])
 const selectedRows = ref<any[]>([])
 
@@ -74,10 +71,6 @@ const handleFilterUpdate = (key: string, value: string) => {
   }
 }
 
-watch(page, (val) => {
-  filters.skip = (val - 1) * filters.limit
-})
-
 watch(sorting, (newVal) => {
   if (newVal && newVal.length > 0) {
     filters.sortBy = newVal[0].id
@@ -88,17 +81,49 @@ watch(sorting, (newVal) => {
   }
 })
 
-watch([filters, selectedFirmId], () => {
-  if (selectedFirmId.value) fetchData()
-}, { deep: true })
+// Fetch data when filter parameters or selected firm ID changes
+watch(
+  [
+    () => [
+      filters.q,
+      filters.status,
+      filters.project,
+      filters.site,
+      filters.category,
+      filters.bank,
+      filters.doj_start,
+      filters.doj_end,
+      filters.sortBy,
+      filters.sortOrder
+    ],
+    selectedFirmId
+  ],
+  () => {
+    if (selectedFirmId.value) fetchData()
+  }
+)
 
 const fetchData = async () => {
+  const apiParams = {
+    q: filters.q,
+    status: filters.status,
+    project: filters.project,
+    site: filters.site,
+    category: filters.category,
+    bank: filters.bank,
+    doj_start: filters.doj_start,
+    doj_end: filters.doj_end,
+    sortBy: filters.sortBy,
+    sortOrder: filters.sortOrder
+  }
   await Promise.all([
-    fetchEmployees(filters),
+    fetchEmployees(apiParams),
     fetchStats()
   ])
   selectedRows.value = []
 }
+
+
 
 onMounted(() => {
   if (selectedFirmId.value) {
@@ -600,12 +625,11 @@ const headerActions = [
         </div>
       </div>
 
-      <!-- Pagination Container -->
+      <!-- Total Entries Container -->
       <div class="p-3 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0 bg-white dark:bg-gray-950">
         <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-          Showing {{ employees.length }} of {{ total }} entries
+          Total Employees: {{ employees.length }}
         </p>
-        <UPagination v-model="page" :total="total" :page-count="filters.limit" size="sm" class="scale-90 sm:scale-100" />
       </div>
     </UCard>
 
