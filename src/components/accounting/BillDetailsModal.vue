@@ -228,9 +228,14 @@
       <!-- Footer Buttons -->
       <footer class="bg-slate-50 px-8 py-5 border-t border-slate-100 shrink-0 flex items-center justify-between">
         <div>
-          <button v-if="bill && bill.status === 'ACTIVE' && !showCancelSection" @click="showCancelSection = true" class="px-5 py-3 bg-rose-50 text-rose-700 border border-rose-200 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-rose-100 transition-colors">
-            Cancel Bill
-          </button>
+          <div class="flex items-center gap-2">
+            <button v-if="bill && bill.status === 'ACTIVE' && (bill.btype === 'SALES' || bill.btype === 'PURCHASE') && !showCancelSection" @click="editBill" class="px-5 py-3 bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-indigo-100 transition-colors">
+              Edit Bill
+            </button>
+            <button v-if="bill && bill.status === 'ACTIVE' && !showCancelSection" @click="showCancelSection = true" class="px-5 py-3 bg-rose-50 text-rose-700 border border-rose-200 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-rose-100 transition-colors">
+              Cancel Bill
+            </button>
+          </div>
         </div>
         <div class="flex items-center gap-2">
           <button @click="printBill" :disabled="loading" class="px-5 py-3 bg-white border border-slate-200 text-slate-700 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-slate-50 transition-colors flex items-center gap-2">
@@ -252,6 +257,7 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import { api } from '@/utils/api';
 import { useToast } from '@nuxt/ui/composables';
 import { 
@@ -275,8 +281,16 @@ const emit = defineEmits<{
 }>();
 
 const toast = useToast();
+const router = useRouter();
 const loading = ref(false);
 const bill = ref<any>(null);
+
+function editBill() {
+  if (!bill.value) return;
+  const path = bill.value.btype === 'SALES' ? `/accounting/sales/${bill.value._id}/edit` : `/accounting/purchases/${bill.value._id}/edit`;
+  router.push(path);
+  close();
+}
 
 const showCancelSection = ref(false);
 const cancelReason = ref('');

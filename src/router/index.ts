@@ -88,8 +88,20 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/accounting/sales/:id/edit',
+      name: 'sales-invoice-edit',
+      component: () => import('../pages/accounting/SalesInvoice.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/accounting/purchases/new',
       name: 'purchase-invoice',
+      component: () => import('../pages/accounting/PurchaseInvoice.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/accounting/purchases/:id/edit',
+      name: 'purchase-invoice-edit',
       component: () => import('../pages/accounting/PurchaseInvoice.vue'),
       meta: { requiresAuth: true }
     },

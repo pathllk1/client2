@@ -8,7 +8,7 @@
     <header class="page-header">
       <div class="title-block">
         <p>{{ state.currentFirmName }}</p>
-        <h1>{{ state.isReturnMode ? 'Sales Return' : 'Sales Invoice' }}</h1>
+        <h1>{{ state.isReturnMode ? 'Sales Return' : (isEditMode ? 'Edit Sales Invoice' : 'Sales Invoice') }}</h1>
       </div>
 
       <div class="header-fields">
@@ -47,7 +47,7 @@
       <div class="header-actions">
         <button class="ghost-btn" type="button" @click="resetForm">Discard</button>
         <button class="primary-btn" type="button" :disabled="loading || !canSave" @click="saveInvoice">
-          {{ loading ? 'Saving...' : state.isReturnMode ? 'Create Credit Note' : 'Save Invoice' }}
+          {{ loading ? 'Saving...' : state.isReturnMode ? 'Create Credit Note' : (isEditMode ? 'Update Invoice' : 'Save Invoice') }}
           <span>F8</span>
         </button>
       </div>
@@ -143,7 +143,7 @@
               variant="outline" 
               label="Close" 
               class="flex-1 sm:flex-none font-bold"
-              @click="showPrintModal = false" 
+              @click="closePrintModal" 
             />
           </div>
         </div>
@@ -204,6 +204,14 @@ const showPartyModal = ref(false);
 const partySearchQuery = ref('');
 const showPrintModal = ref(false);
 const createdBill = ref<any>(null);
+const isEditMode = ref(false);
+
+function closePrintModal() {
+  showPrintModal.value = false;
+  if (isEditMode.value) {
+    router.push('/accounting/bills');
+  }
+}
 
 function resetFormState() {
   state.cart = [];
@@ -297,7 +305,10 @@ onMounted(async () => {
   state.meta.btype = 'SALES';
   await fetchData();
 
-  if (route.query.returnFrom) {
+  if (route.params.id) {
+    isEditMode.value = true;
+    await loadBillForEditing(route.params.id as string);
+  } else if (route.query.returnFrom) {
     state.isReturnMode = true;
     state.returnFromBillId = route.query.returnFrom as string;
     await loadExistingBill(state.returnFromBillId);
@@ -331,6 +342,69 @@ async function loadExistingBill(id: string) {
     }
   } catch (err) {
     console.error('Failed to load original bill', err);
+  }
+}
+
+async function loadBillForEditing(id: string) {
+  try {
+    const res = await api.get(`/accounting/bills/${id}`);
+    if (res.success) {
+      const bill = res.data;
+      state.currentBill = bill;
+      
+      const party = state.parties.find(p => p._id === bill.partyId);
+      if (party) {
+        state.selectedParty = party;
+        const loc = party.gstLocations?.find((l: any) => l.gstin === bill.partyGstin);
+        state.selectedPartyLocation = loc || null;
+      } else {
+        state.selectedParty = { _id: bill.partyId, name: bill.partyName, address: bill.partyAddress, gstin: bill.partyGstin };
+        state.selectedPartyLocation = null;
+      }
+      state.selectedPartyGstin = bill.partyGstin;
+      
+      if (bill.firmGstin) {
+        const firmLoc = state.firmLocations.find(l => l.gst_number === bill.firmGstin);
+        if (firmLoc) state.activeFirmLocation = firmLoc;
+      }
+      
+      state.meta.billNo = bill.bno;
+      state.meta.billDate = bill.bdate;
+      state.meta.billType = bill.billSubtype?.toLowerCase() === 'inter-state' ? 'inter-state' : 'intra-state';
+      state.meta.reverseCharge = bill.reverseCharge;
+      state.meta.referenceNo = bill.orderNo || '';
+      state.meta.vehicleNo = bill.vehicleNo || '';
+      state.meta.dispatchThrough = bill.dispatchThrough || '';
+      state.meta.narration = bill.narration || '';
+      
+      state.cart = bill.items.map((item: any) => ({
+        stockId: item.stockId,
+        item: item.item,
+        hsn: item.hsn,
+        qty: item.qty,
+        uom: item.uom,
+        rate: item.rate,
+        grate: item.grate,
+        disc: item.disc || 0,
+        itemType: item.itemType || 'GOODS',
+        batch: item.batch || '',
+        mrp: item.mrp || 0
+      }));
+      
+      state.otherCharges = bill.otherCharges || [];
+      
+      state.selectedConsignee = {
+        name: bill.consigneeName,
+        address: bill.consigneeAddress,
+        gstin: bill.consigneeGstin,
+        state: bill.consigneeState,
+        pin: bill.consigneePin
+      };
+      state.consigneeSameAsBillTo = false;
+    }
+  } catch (err) {
+    console.error('Failed to load bill for editing', err);
+    toast.add({ title: 'Error', description: 'Failed to load bill data.', color: 'error' });
   }
 }
 
@@ -434,15 +508,24 @@ async function saveInvoice() {
         };
 
     const endpoint = state.isReturnMode ? '/accounting/credit-notes' : '/accounting/sales';
-    const res = await api.post(endpoint, payload);
+    let res;
+    if (state.isReturnMode) {
+      res = await api.post('/accounting/credit-notes', payload);
+    } else if (isEditMode.value) {
+      res = await api.put(`/accounting/sales/${route.params.id}`, payload);
+    } else {
+      res = await api.post('/accounting/sales', payload);
+    }
 
     if (res.success) {
       toast.add({
         title: 'Success',
-        description: state.isReturnMode ? 'Credit Note created successfully' : 'Sales Invoice created successfully',
+        description: state.isReturnMode 
+          ? 'Credit Note created successfully' 
+          : (isEditMode.value ? 'Sales Invoice updated successfully' : 'Sales Invoice created successfully'),
         color: 'success'
       });
-      createdBill.value = res.data;
+      createdBill.value = res.data || { _id: route.params.id, bno: state.meta.billNo };
       showPrintModal.value = true;
       resetFormState();
     }

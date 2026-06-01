@@ -187,6 +187,15 @@
                   @click="downloadPDF(row.original)" 
                 />
               </UTooltip>
+              <UTooltip v-if="row.original.status === 'ACTIVE' && (row.original.btype === 'SALES' || row.original.btype === 'PURCHASE')" text="Edit Bill">
+                <UButton 
+                  size="xs" 
+                  variant="ghost" 
+                  color="primary" 
+                  icon="i-heroicons-pencil-square" 
+                  @click="handleEdit(row.original)" 
+                />
+              </UTooltip>
               <UTooltip v-if="row.original.status === 'ACTIVE' && (row.original.btype === 'SALES' || row.original.btype === 'PURCHASE')" text="Return / Credit Note">
                 <UButton 
                   size="xs" 
@@ -291,6 +300,11 @@ function getTypeColor(type: string) {
     'DEBIT_NOTE': 'text-orange-600 dark:text-orange-400'
   };
   return map[type] || 'text-gray-600 dark:text-gray-400';
+}
+
+function handleEdit(bill: any) {
+  const path = bill.btype === 'SALES' ? `/accounting/sales/${bill._id}/edit` : `/accounting/purchases/${bill._id}/edit`;
+  router.push(path);
 }
 
 function handleReturn(bill: any) {

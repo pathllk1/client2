@@ -84,6 +84,34 @@ export const useBilling = () => {
     }
   };
 
+  const updateSalesBill = async (id: string, data: any) => {
+    loading.value = true;
+    error.value = null;
+    try {
+      const response = await api.put(`/accounting/sales/${id}`, data);
+      return response.data;
+    } catch (err: any) {
+      error.value = err.response?.data?.message || 'Failed to update sales bill';
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const updatePurchaseBill = async (id: string, data: any) => {
+    loading.value = true;
+    error.value = null;
+    try {
+      const response = await api.put(`/accounting/purchases/${id}`, data);
+      return response.data;
+    } catch (err: any) {
+      error.value = err.response?.data?.message || 'Failed to update purchase bill';
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
   const createCreditNote = async (data: any) => {
     loading.value = true;
     error.value = null;
@@ -155,7 +183,9 @@ export const useBilling = () => {
     fetchBills,
     fetchParties,
     createSalesBill,
+    updateSalesBill,
     createPurchaseBill,
+    updatePurchaseBill,
     createCreditNote,
     createDebitNote,
     calculateTotals,
