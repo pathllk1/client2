@@ -454,6 +454,9 @@ onMounted(() => {
           <select v-model="filters.site" class="px-2 py-1 bg-white dark:bg-gray-900 border border-indigo-100 dark:border-indigo-900 rounded text-[10px] font-bold outline-none min-w-[90px]">
             <option v-for="s in uniqueSites" :key="s" :value="s">{{ s === 'all' ? 'All Sites' : s }}</option>
           </select>
+          <select v-model="filters.bank" class="px-2 py-1 bg-white dark:bg-gray-900 border border-indigo-100 dark:border-indigo-900 rounded text-[10px] font-bold outline-none min-w-[90px]">
+            <option v-for="b in uniqueBanks" :key="b" :value="b">{{ b === 'all' ? 'All Banks' : b }}</option>
+          </select>
         </div>
 
         <div class="flex flex-wrap items-center gap-2">

@@ -189,6 +189,15 @@ const onDownloadLetter = async (emp: any) => {
   }
 }
 
+const onDownloadICard = async (emp: any, format: 'pdf' | 'xlsx' = 'pdf') => {
+  try {
+    await exportICards({ employeeId: emp._id }, format)
+    toast.add({ title: 'Success', description: `I-Card (${format.toUpperCase()}) downloaded for ${emp.employee_name}`, color: 'success' })
+  } catch (err: any) {
+    toast.add({ title: 'Error', description: err.message, color: 'error' })
+  }
+}
+
 const onExportSelected = async () => {
   const ids = selectedRows.value.map(row => row._id)
   try {
@@ -513,6 +522,8 @@ const headerActions = [
                   :items="[[
                     { label: 'View Activity Log', icon: 'i-heroicons-clock', onSelect: () => openActivity(row.original) },
                     { label: 'Download Letter', icon: 'i-heroicons-document-text', onSelect: () => onDownloadLetter(row.original) },
+                    { label: 'Download PDF I-Card', icon: 'i-heroicons-identification', onSelect: () => onDownloadICard(row.original, 'pdf') },
+                    { label: 'Download Excel I-Card', icon: 'i-heroicons-table-cells', onSelect: () => onDownloadICard(row.original, 'xlsx') },
                     { label: 'Wages Summary', icon: 'i-heroicons-document-chart-bar', onSelect: () => openWagesSummary(row.original) }
                   ]]"
                 >
@@ -577,6 +588,8 @@ const headerActions = [
                 :items="[[
                   { label: 'View Activity Log', icon: 'i-heroicons-clock', onSelect: () => openActivity(emp) },
                   { label: 'Download Letter', icon: 'i-heroicons-document-text', onSelect: () => onDownloadLetter(emp) },
+                  { label: 'Download PDF I-Card', icon: 'i-heroicons-identification', onSelect: () => onDownloadICard(emp, 'pdf') },
+                  { label: 'Download Excel I-Card', icon: 'i-heroicons-table-cells', onSelect: () => onDownloadICard(emp, 'xlsx') },
                   { label: 'Wages Summary', icon: 'i-heroicons-document-chart-bar', onSelect: () => openWagesSummary(emp) }
                 ]]"
               >
