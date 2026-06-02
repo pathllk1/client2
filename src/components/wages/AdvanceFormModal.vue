@@ -9,7 +9,7 @@ const props = defineProps<{
 
 const emit = defineEmits(['close', 'saved'])
 
-const { loading, recordAdvance, fetchBankAccounts, fetchEligibleEmployees } = useAdvances()
+const { loading, recordAdvance, fetchBankAccounts, fetchEligibleEmployees, fetchAllEmployeeBalances } = useAdvances()
 const toast = useToast()
 
 const bankAccounts = ref<any[]>([])
@@ -30,6 +30,19 @@ const isDropdownOpen = ref(false)
 const searchTerm = ref('')
 const searchInputRef = ref<HTMLInputElement | null>(null)
 const dropdownRef = ref<HTMLElement | null>(null)
+
+const employeeBalances = ref<any[]>([])
+const balanceSearchTerm = ref('')
+
+const filteredEmployeeBalances = computed(() => {
+  const query = balanceSearchTerm.value.toLowerCase().trim()
+  if (!query) return employeeBalances.value
+  return employeeBalances.value.filter(b => 
+    (b.employee_name && b.employee_name.toLowerCase().includes(query)) ||
+    (b.project && b.project.toLowerCase().includes(query)) ||
+    (b.site && b.site.toLowerCase().includes(query))
+  )
+})
 
 const sortedEmployees = computed(() => {
   return [...employees.value].sort((a, b) => {
@@ -84,12 +97,17 @@ onUnmounted(() => {
 
 const loadInitialData = async () => {
   try {
-    const [bankRes, empRes] = await Promise.all([
+    const [bankRes, empRes, balRes] = await Promise.all([
       fetchBankAccounts(),
-      fetchEligibleEmployees()
+      fetchEligibleEmployees(),
+      fetchAllEmployeeBalances()
     ])
     if (bankRes.success) bankAccounts.value = bankRes.data
     if (empRes.success) employees.value = empRes.data
+    if (balRes.success) {
+      const balanceArray = Array.isArray(balRes.data) ? balRes.data : (balRes.data?.data || [])
+      employeeBalances.value = balanceArray.filter((b: any) => b.balance > 0)
+    }
   } catch (err: any) {
     toast.add({ title: 'Error loading form data', description: err.message, color: 'error' })
   }
@@ -98,6 +116,11 @@ const loadInitialData = async () => {
 const onSubmit = async () => {
   if (!form.master_roll_id || !form.amount || !form.date) {
     toast.add({ title: 'Validation Error', description: 'Please fill all required fields', color: 'error' })
+    return
+  }
+
+  if (form.payment_mode !== 'CASH' && !form.bank_account_id) {
+    toast.add({ title: 'Validation Error', description: 'Please select a bank account', color: 'error' })
     return
   }
 
@@ -120,135 +143,189 @@ onMounted(() => {
 
 <template>
   <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-    <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+    <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 w-full max-w-3xl overflow-hidden animate-in zoom-in-95 duration-200">
       <div class="p-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-gray-50 dark:bg-gray-800/50">
         <h3 class="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white">Record Transaction</h3>
         <UButton variant="ghost" color="neutral" icon="i-heroicons-x-mark" @click="emit('close')" />
       </div>
 
-      <form @submit.prevent="onSubmit" class="p-6 flex flex-col gap-4">
-        <!-- Employee Selection -->
-        <div class="flex flex-col gap-1.5 relative">
-          <label class="text-[10px] font-black uppercase tracking-wider text-gray-500">Employee</label>
-          
-          <!-- Custom Select Trigger -->
-          <div v-if="props.employee" class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-bold text-gray-500 dark:text-gray-400 cursor-not-allowed">
-            {{ props.employee.employee_name }} ({{ props.employee.project || 'No Project' }})
-          </div>
-          
-          <div v-else class="relative" ref="dropdownRef">
-            <button 
-              type="button"
-              @click="isDropdownOpen = !isDropdownOpen"
-              class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none transition-all flex items-center justify-between text-left"
-            >
-              <span v-if="selectedEmployeeName" class="text-gray-900 dark:text-white">{{ selectedEmployeeName }}</span>
-              <span v-else class="text-gray-400">Select Employee</span>
-              <UIcon name="i-heroicons-chevron-down" class="w-4 h-4 text-gray-400 transition-transform duration-200" :class="{ 'transform rotate-180': isDropdownOpen }" />
-            </button>
-
-            <!-- Dropdown Menu -->
-            <div 
-              v-if="isDropdownOpen" 
-              class="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl overflow-hidden flex flex-col animate-in fade-in slide-in-from-top-1 duration-100"
-            >
-              <!-- Search Box -->
-              <div class="p-2 border-b border-gray-100 dark:border-gray-700/50 bg-gray-50 dark:bg-gray-800/50 flex items-center gap-2">
-                <UIcon name="i-heroicons-magnifying-glass" class="w-4 h-4 text-gray-400 shrink-0" />
-                <input 
-                  type="text" 
-                  v-model="searchTerm" 
-                  placeholder="Search name, project, site..." 
-                  class="w-full bg-transparent border-0 outline-none text-xs font-bold text-gray-900 dark:text-white placeholder-gray-400"
-                  ref="searchInputRef"
-                  @keydown.esc="isDropdownOpen = false"
-                />
-                <button v-if="searchTerm" type="button" @click="searchTerm = ''" class="text-gray-400 hover:text-gray-600">
-                  <UIcon name="i-heroicons-x-mark" class="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              <!-- Options List -->
-              <div class="max-h-60 overflow-y-auto custom-scrollbar py-1">
-                <div 
-                  v-if="filteredEmployees.length === 0" 
-                  class="px-4 py-3 text-xs text-center text-gray-400 italic"
-                >
-                  No employees found
-                </div>
-                <button
-                  v-for="emp in filteredEmployees" 
-                  :key="emp._id" 
-                  type="button"
-                  @click="selectEmployee(emp)"
-                  class="w-full px-4 py-2 text-left text-xs font-bold transition-colors flex flex-col gap-0.5 border-b border-gray-100/50 dark:border-gray-700/30 last:border-0"
-                  :class="form.master_roll_id === emp._id ? 'bg-primary/10 text-primary dark:bg-primary/20' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'"
-                >
-                  <span class="text-gray-900 dark:text-white">{{ emp.employee_name }}</span>
-                  <span class="text-[9px] text-gray-400 font-semibold uppercase tracking-wider">
-                    Project: {{ emp.project || 'N/A' }} • Site: {{ emp.site || 'N/A' }}
-                  </span>
-                </button>
-              </div>
+      <div class="flex h-[500px] overflow-hidden">
+        <!-- Left Panel: Employees with Active Advances -->
+        <div class="hidden md:flex w-1/3 border-r border-gray-100 dark:border-gray-800 flex flex-col bg-gray-50/50 dark:bg-gray-900/30">
+          <div class="p-3 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/40">
+            <h4 class="text-[10px] font-black uppercase tracking-wider text-gray-500 mb-2">Active Advance Balances</h4>
+            <div class="relative flex items-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-2 py-1 gap-1">
+              <UIcon name="i-heroicons-magnifying-glass" class="w-3.5 h-3.5 text-gray-400 shrink-0" />
+              <input 
+                type="text" 
+                v-model="balanceSearchTerm" 
+                placeholder="Search balances..." 
+                class="w-full bg-transparent border-0 outline-none text-[11px] font-bold text-gray-900 dark:text-white placeholder-gray-400"
+              />
+              <button v-if="balanceSearchTerm" type="button" @click="balanceSearchTerm = ''" class="text-gray-400 hover:text-gray-600">
+                <UIcon name="i-heroicons-x-mark" class="w-3 h-3" />
+              </button>
             </div>
           </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-          <!-- Type -->
-          <div class="flex flex-col gap-1.5">
-            <label class="text-[10px] font-black uppercase tracking-wider text-gray-500">Type</label>
-            <select v-model="form.type" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none">
-              <option value="ADVANCE">Advance (Debit)</option>
-              <option value="RECOVERY">Recovery (Credit)</option>
-            </select>
-          </div>
-          <!-- Amount -->
-          <div class="flex flex-col gap-1.5">
-            <label class="text-[10px] font-black uppercase tracking-wider text-gray-500">Amount (₹)</label>
-            <input type="number" step="any" v-model.number="form.amount" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none" placeholder="0.00" />
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-          <!-- Date -->
-          <div class="flex flex-col gap-1.5">
-            <label class="text-[10px] font-black uppercase tracking-wider text-gray-500">Date</label>
-            <input type="date" v-model="form.date" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none" />
-          </div>
-          <!-- Mode -->
-          <div class="flex flex-col gap-1.5">
-            <label class="text-[10px] font-black uppercase tracking-wider text-gray-500">Payment Mode</label>
-            <select v-model="form.payment_mode" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none">
-              <option value="CASH">CASH</option>
-              <option value="CHEQUE">CHEQUE</option>
-              <option value="NEFT">NEFT</option>
-              <option value="RTGS">RTGS</option>
-              <option value="UPI">UPI</option>
-            </select>
+          
+          <div class="flex-1 overflow-y-auto custom-scrollbar p-2 flex flex-col gap-1.5">
+            <div v-if="filteredEmployeeBalances.length === 0" class="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest py-8">
+              No active balances
+            </div>
+            
+            <button
+              v-else
+              v-for="bal in filteredEmployeeBalances"
+              :key="bal.master_roll_id"
+              type="button"
+              @click="form.master_roll_id = bal.master_roll_id"
+              :disabled="!!props.employee"
+              class="w-full text-left p-2.5 rounded-lg border text-xs font-bold transition-all flex flex-col gap-1"
+              :class="[
+                form.master_roll_id === bal.master_roll_id 
+                  ? 'bg-primary/10 border-primary/30 text-primary dark:bg-primary/20 dark:border-primary/50' 
+                  : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/80',
+                props.employee ? 'cursor-not-allowed' : 'cursor-pointer'
+              ]"
+            >
+              <div class="flex items-center justify-between gap-2">
+                <span class="truncate text-gray-900 dark:text-white">{{ bal.employee_name }}</span>
+                <span class="text-rose-600 dark:text-rose-400 font-mono font-black shrink-0">₹{{ (bal.balance ?? 0).toLocaleString() }}</span>
+              </div>
+              <span class="text-[8px] text-gray-400 font-semibold uppercase tracking-wider truncate">
+                {{ bal.project || 'No Project' }} • {{ bal.site || 'No Site' }}
+              </span>
+            </button>
           </div>
         </div>
 
-        <!-- Bank Account -->
-        <div v-if="form.payment_mode !== 'CASH'" class="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1">
-          <label class="text-[10px] font-black uppercase tracking-wider text-gray-500">Bank Account</label>
-          <select v-model="form.bank_account_id" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none">
-            <option value="">Select Bank</option>
-            <option v-for="bank in bankAccounts" :key="bank._id" :value="bank._id">{{ bank.bank_name }} - {{ bank.account_number }}</option>
-          </select>
-        </div>
+        <!-- Right Panel: Transaction Form -->
+        <div class="w-full md:w-2/3 flex flex-col">
+          <form @submit.prevent="onSubmit" class="p-6 flex flex-col gap-4 overflow-y-auto custom-scrollbar flex-1">
+            <!-- Employee Selection -->
+            <div class="flex flex-col gap-1.5 relative">
+              <label class="text-[10px] font-black uppercase tracking-wider text-gray-500">Employee</label>
+              
+              <!-- Custom Select Trigger -->
+              <div v-if="props.employee" class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-bold text-gray-500 dark:text-gray-400 cursor-not-allowed">
+                {{ props.employee.employee_name }} ({{ props.employee.project || 'No Project' }})
+              </div>
+              
+              <div v-else class="relative" ref="dropdownRef">
+                <button 
+                  type="button"
+                  @click="isDropdownOpen = !isDropdownOpen"
+                  class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none transition-all flex items-center justify-between text-left"
+                >
+                  <span class="text-gray-900 dark:text-white">{{ selectedEmployeeName }}</span>
+                  <span class="text-gray-400">Select Employee</span>
+                  <UIcon name="i-heroicons-chevron-down" class="w-4 h-4 text-gray-400 transition-transform duration-200" :class="{ 'transform rotate-180': isDropdownOpen }" />
+                </button>
 
-        <!-- Remarks -->
-        <div class="flex flex-col gap-1.5">
-          <label class="text-[10px] font-black uppercase tracking-wider text-gray-500">Remarks</label>
-          <textarea v-model="form.remarks" rows="2" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none resize-none" placeholder="Optional notes..."></textarea>
-        </div>
+                <!-- Dropdown Menu -->
+                <div 
+                  v-if="isDropdownOpen" 
+                  class="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl overflow-hidden flex flex-col animate-in fade-in slide-in-from-top-1 duration-100"
+                >
+                  <!-- Search Box -->
+                  <div class="p-2 border-b border-gray-100 dark:border-gray-700/50 bg-gray-50 dark:bg-gray-800/50 flex items-center gap-2">
+                    <UIcon name="i-heroicons-magnifying-glass" class="w-4 h-4 text-gray-400 shrink-0" />
+                    <input 
+                      type="text" 
+                      v-model="searchTerm" 
+                      placeholder="Search name, project, site..." 
+                      class="w-full bg-transparent border-0 outline-none text-xs font-bold text-gray-900 dark:text-white placeholder-gray-400"
+                      ref="searchInputRef"
+                      @keydown.esc="isDropdownOpen = false"
+                    />
+                    <button v-if="searchTerm" type="button" @click="searchTerm = ''" class="text-gray-400 hover:text-gray-600">
+                      <UIcon name="i-heroicons-x-mark" class="w-3.5 h-3.5" />
+                    </button>
+                  </div>
 
-        <div class="mt-2 flex gap-3">
-          <UButton type="submit" class="flex-1" :loading="loading" label="Save Transaction" />
-          <UButton variant="ghost" color="neutral" class="flex-1" label="Cancel" @click="emit('close')" />
+                  <!-- Options List -->
+                  <div class="max-h-60 overflow-y-auto custom-scrollbar py-1">
+                    <div 
+                      v-if="filteredEmployees.length === 0" 
+                      class="px-4 py-3 text-xs text-center text-gray-400 italic"
+                    >
+                      No employees found
+                    </div>
+                    <button
+                      v-for="emp in filteredEmployees" 
+                      :key="emp._id" 
+                      type="button"
+                      @click="selectEmployee(emp)"
+                      class="w-full px-4 py-2 text-left text-xs font-bold transition-colors flex flex-col gap-0.5 border-b border-gray-100/50 dark:border-gray-700/30 last:border-0"
+                      :class="form.master_roll_id === emp._id ? 'bg-primary/10 text-primary dark:bg-primary/20' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'"
+                    >
+                      <span class="text-gray-900 dark:text-white">{{ emp.employee_name }}</span>
+                      <span class="text-[9px] text-gray-400 font-semibold uppercase tracking-wider">
+                        Project: {{ emp.project || 'N/A' }} • Site: {{ emp.site || 'N/A' }}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <!-- Type -->
+              <div class="flex flex-col gap-1.5">
+                <label class="text-[10px] font-black uppercase tracking-wider text-gray-500">Type</label>
+                <select v-model="form.type" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none">
+                  <option value="ADVANCE">Advance (Debit)</option>
+                  <option value="RECOVERY">Recovery (Credit)</option>
+                </select>
+              </div>
+              <!-- Amount -->
+              <div class="flex flex-col gap-1.5">
+                <label class="text-[10px] font-black uppercase tracking-wider text-gray-500">Amount (₹)</label>
+                <input type="number" step="any" v-model.number="form.amount" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none" placeholder="0.00" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <!-- Date -->
+              <div class="flex flex-col gap-1.5">
+                <label class="text-[10px] font-black uppercase tracking-wider text-gray-500">Date</label>
+                <input type="date" v-model="form.date" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none" />
+              </div>
+              <!-- Mode -->
+              <div class="flex flex-col gap-1.5">
+                <label class="text-[10px] font-black uppercase tracking-wider text-gray-500">Payment Mode</label>
+                <select v-model="form.payment_mode" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none">
+                  <option value="CASH">CASH</option>
+                  <option value="CHEQUE">CHEQUE</option>
+                  <option value="NEFT">NEFT</option>
+                  <option value="RTGS">RTGS</option>
+                  <option value="UPI">UPI</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Bank Account -->
+            <div v-if="form.payment_mode !== 'CASH'" class="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1">
+              <label class="text-[10px] font-black uppercase tracking-wider text-gray-500">Bank Account</label>
+              <select v-model="form.bank_account_id" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none">
+                <option value="">Select Bank</option>
+                <option v-for="bank in bankAccounts" :key="bank._id" :value="bank._id">{{ bank.bank_name }} - {{ bank.account_number }}</option>
+              </select>
+            </div>
+
+            <!-- Remarks -->
+            <div class="flex flex-col gap-1.5">
+              <label class="text-[10px] font-black uppercase tracking-wider text-gray-500">Remarks</label>
+              <textarea v-model="form.remarks" rows="2" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none resize-none" placeholder="Optional notes..."></textarea>
+            </div>
+
+            <div class="mt-2 flex gap-3">
+              <UButton type="submit" class="flex-1" :loading="loading" label="Save Transaction" />
+              <UButton variant="ghost" color="neutral" class="flex-1" label="Cancel" @click="emit('close')" />
+            </div>
+          </form>
         </div>
-      </form>
+      </div>
     </div>
   </div>
 </template>

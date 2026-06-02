@@ -18,7 +18,7 @@ const loadBalances = async () => {
   try {
     const response = await fetchAllEmployeeBalances()
     if (response.success) {
-      balances.value = response.data
+      balances.value = Array.isArray(response.data) ? response.data : (response.data?.data || [])
     }
   } catch (err: any) {
     toast.add({ title: 'Error loading balances', description: err.message, color: 'error' })

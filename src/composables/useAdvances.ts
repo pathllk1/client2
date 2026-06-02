@@ -35,7 +35,17 @@ export const useAdvances = () => {
   }) => {
     loading.value = true
     try {
-      return await api.post('/advances', data)
+      const payload = {
+        masterRollId: data.master_roll_id,
+        amount: data.amount,
+        type: data.type === 'RECOVERY' ? 'REPAYMENT' : 'ADVANCE',
+        date: data.date,
+        paymentMode: data.payment_mode === 'CASH' ? 'CASH' : 'BANK',
+        bankAccountId: data.bank_account_id || undefined,
+        chequeNo: data.cheque_no || undefined,
+        remarks: data.remarks
+      }
+      return await api.post('/advances', payload)
     } finally {
       loading.value = false
     }
