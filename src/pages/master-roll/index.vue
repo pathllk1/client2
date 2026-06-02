@@ -22,6 +22,35 @@ const {
 const { selectedFirmId } = useAuth()
 const toast = useToast()
 
+const currentPage = ref(1)
+const itemsPerPageOptions = ['10', '25', '50', '100']
+const itemsPerPageString = ref('10')
+const itemsPerPage = computed(() => parseInt(itemsPerPageString.value, 10) || 10)
+
+const paginatedEmployees = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value
+  const end = start + itemsPerPage.value
+  return employees.value.slice(start, end)
+})
+
+const displayStart = computed(() => {
+  if (employees.value.length === 0) return 0
+  return (currentPage.value - 1) * itemsPerPage.value + 1
+})
+
+const displayEnd = computed(() => {
+  const end = currentPage.value * itemsPerPage.value
+  return end > employees.value.length ? employees.value.length : end
+})
+
+watch(employees, () => {
+  currentPage.value = 1
+})
+
+watch(itemsPerPage, () => {
+  currentPage.value = 1
+})
+
 const filters = reactive({
   q: '',
   status: '',
@@ -234,19 +263,19 @@ const onExportSelected = async () => {
 }
 
 const isAllSelected = computed(() => {
-  if (employees.value.length === 0) return false
-  return employees.value.every(emp => selectedRows.value.some(r => r._id === emp._id))
+  if (paginatedEmployees.value.length === 0) return false
+  return paginatedEmployees.value.every(emp => selectedRows.value.some(r => r._id === emp._id))
 })
 
 const toggleSelectAll = (checked: boolean) => {
   if (checked) {
-    employees.value.forEach(emp => {
+    paginatedEmployees.value.forEach(emp => {
       if (!selectedRows.value.some(r => r._id === emp._id)) {
         selectedRows.value.push(emp)
       }
     })
   } else {
-    const pageIds = employees.value.map(emp => emp._id)
+    const pageIds = paginatedEmployees.value.map(emp => emp._id)
     selectedRows.value = selectedRows.value.filter(r => !pageIds.includes(r._id))
   }
 }
@@ -456,7 +485,7 @@ const headerActions = [
         <!-- Desktop Table View -->
         <div class="hidden lg:block">
           <UTable 
-            :data="employees" 
+            :data="paginatedEmployees" 
             :columns="columns" 
             :loading="loading" 
             v-model:sorting="sorting"
@@ -565,7 +594,7 @@ const headerActions = [
             <UIcon name="i-heroicons-circle-stack" class="w-16 h-16" />
             <p class="text-sm font-bold uppercase tracking-widest">No Employee Records Found</p>
           </div>
-          <div v-for="emp in employees" :key="emp._id" class="p-4 hover:bg-green-100/80 dark:hover:bg-green-900/30 transition-colors">
+          <div v-for="emp in paginatedEmployees" :key="emp._id" class="p-4 hover:bg-green-100/80 dark:hover:bg-green-900/30 transition-colors">
             <div class="flex items-start justify-between gap-3">
               <div class="flex items-center gap-3">
                 <UCheckbox 
@@ -625,11 +654,32 @@ const headerActions = [
         </div>
       </div>
 
-      <!-- Total Entries Container -->
+      <!-- Total Entries Container / Pagination -->
       <div class="p-3 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0 bg-white dark:bg-gray-950">
-        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-          Total Employees: {{ employees.length }}
-        </p>
+        <div class="flex flex-wrap items-center gap-4">
+          <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
+            Showing {{ displayStart }} - {{ displayEnd }} of {{ employees.length }} Employees
+          </p>
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Per Page:</span>
+            <USelect 
+              v-model="itemsPerPageString" 
+              :items="itemsPerPageOptions" 
+              size="xs" 
+              class="w-16" 
+            />
+          </div>
+        </div>
+        
+        <UPagination 
+          v-slot="{ page, pageCount }"
+          v-if="employees.length > 0"
+          v-model:page="currentPage" 
+          :total="employees.length" 
+          :items-per-page="itemsPerPage" 
+          :show-edges="true" 
+          size="sm"
+        />
       </div>
     </UCard>
 
