@@ -27,26 +27,6 @@ const itemsPerPageOptions = ['10', '25', '50', '100']
 const itemsPerPageString = ref('10')
 const itemsPerPage = computed(() => parseInt(itemsPerPageString.value, 10) || 10)
 
-const paginatedEmployees = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage.value
-  const end = start + itemsPerPage.value
-  return employees.value.slice(start, end)
-})
-
-const displayStart = computed(() => {
-  if (employees.value.length === 0) return 0
-  return (currentPage.value - 1) * itemsPerPage.value + 1
-})
-
-const displayEnd = computed(() => {
-  const end = currentPage.value * itemsPerPage.value
-  return end > employees.value.length ? employees.value.length : end
-})
-
-watch(employees, () => {
-  currentPage.value = 1
-})
-
 watch(itemsPerPage, () => {
   currentPage.value = 1
 })
@@ -62,6 +42,45 @@ const filters = reactive({
   doj_end: '',
   sortBy: '',
   sortOrder: ''
+})
+
+const filteredEmployees = computed(() => {
+  const query = (filters.q || '').trim().toLowerCase()
+  if (!query) return employees.value
+
+  return employees.value.filter(emp => {
+    return (
+      (emp.employee_name && emp.employee_name.toLowerCase().includes(query)) ||
+      (emp.aadhar && emp.aadhar.toLowerCase().includes(query)) ||
+      (emp.phone_no && emp.phone_no.toLowerCase().includes(query)) ||
+      (emp.project && emp.project.toLowerCase().includes(query)) ||
+      (emp.site && emp.site.toLowerCase().includes(query))
+    )
+  })
+})
+
+const paginatedEmployees = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value
+  const end = start + itemsPerPage.value
+  return filteredEmployees.value.slice(start, end)
+})
+
+const displayStart = computed(() => {
+  if (filteredEmployees.value.length === 0) return 0
+  return (currentPage.value - 1) * itemsPerPage.value + 1
+})
+
+const displayEnd = computed(() => {
+  const end = currentPage.value * itemsPerPage.value
+  return end > filteredEmployees.value.length ? filteredEmployees.value.length : end
+})
+
+watch(employees, () => {
+  currentPage.value = 1
+})
+
+watch(() => filters.q, () => {
+  currentPage.value = 1
 })
 
 const sorting = ref<any[]>([])
@@ -114,7 +133,6 @@ watch(sorting, (newVal) => {
 watch(
   [
     () => [
-      filters.q,
       filters.status,
       filters.project,
       filters.site,
@@ -134,7 +152,6 @@ watch(
 
 const fetchData = async () => {
   const apiParams = {
-    q: filters.q,
     status: filters.status,
     project: filters.project,
     site: filters.site,
@@ -590,7 +607,7 @@ const headerActions = [
 
         <!-- Mobile/Tablet Card View -->
         <div class="lg:hidden flex flex-col divide-y divide-gray-100 dark:divide-gray-800">
-          <div v-if="employees.length === 0 && !loading" class="flex flex-col items-center justify-center py-24 gap-4 opacity-40">
+          <div v-if="filteredEmployees.length === 0 && !loading" class="flex flex-col items-center justify-center py-24 gap-4 opacity-40">
             <UIcon name="i-heroicons-circle-stack" class="w-16 h-16" />
             <p class="text-sm font-bold uppercase tracking-widest">No Employee Records Found</p>
           </div>
@@ -658,7 +675,7 @@ const headerActions = [
       <div class="p-3 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0 bg-white dark:bg-gray-950">
         <div class="flex flex-wrap items-center gap-4">
           <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
-            Showing {{ displayStart }} - {{ displayEnd }} of {{ employees.length }} Employees
+            Showing {{ displayStart }} - {{ displayEnd }} of {{ filteredEmployees.length }} Employees
           </p>
           <div class="flex items-center gap-2">
             <span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Per Page:</span>
@@ -673,9 +690,9 @@ const headerActions = [
         
         <UPagination 
           v-slot="{ page, pageCount }"
-          v-if="employees.length > 0"
+          v-if="filteredEmployees.length > 0"
           v-model:page="currentPage" 
-          :total="employees.length" 
+          :total="filteredEmployees.length" 
           :items-per-page="itemsPerPage" 
           :show-edges="true" 
           size="sm"
