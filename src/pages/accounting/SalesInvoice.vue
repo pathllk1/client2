@@ -8,7 +8,7 @@
     <header class="page-header">
       <div class="title-block">
         <p>{{ state.currentFirmName }}</p>
-        <h1>{{ state.isReturnMode ? 'Sales Return' : (isEditMode ? (state.meta.btype === 'PROFORMA' ? 'Edit Proforma Invoice' : 'Edit Sales Invoice') : (state.meta.btype === 'PROFORMA' ? 'Proforma Invoice' : 'Sales Invoice')) }}</h1>
+        <h1>{{ state.isReturnMode ? 'Sales Return' : (isEditMode ? (state.meta.btype === 'PROFORMA' ? 'Edit Proforma Invoice' : (state.meta.btype === 'DELIVERY_NOTE' ? 'Edit Delivery Note' : 'Edit Sales Invoice')) : (state.meta.btype === 'PROFORMA' ? 'Proforma Invoice' : (state.meta.btype === 'DELIVERY_NOTE' ? 'Delivery Note' : 'Sales Invoice'))) }}</h1>
       </div>
 
       <div class="header-fields">
@@ -17,11 +17,12 @@
           <select v-model="state.meta.btype" @change="onDocTypeChange">
             <option value="SALES">Sales Invoice</option>
             <option value="PROFORMA">Proforma Invoice</option>
+            <option value="DELIVERY_NOTE">Delivery Note</option>
           </select>
         </label>
         <label v-else-if="isEditMode">
           <span>Document Type</span>
-          <input :value="state.meta.btype === 'PROFORMA' ? 'Proforma Invoice' : 'Sales Invoice'" type="text" readonly class="readonly-input" style="width: 140px" />
+          <input :value="state.meta.btype === 'PROFORMA' ? 'Proforma Invoice' : (state.meta.btype === 'DELIVERY_NOTE' ? 'Delivery Note' : 'Sales Invoice')" type="text" readonly class="readonly-input" style="width: 140px" />
         </label>
         <label>
           <span>Bill No</span>
@@ -58,7 +59,7 @@
       <div class="header-actions">
         <button class="ghost-btn" type="button" @click="resetForm">Discard</button>
         <button class="primary-btn" type="button" :disabled="loading || !canSave" @click="saveInvoice">
-          {{ loading ? 'Saving...' : state.isReturnMode ? 'Create Credit Note' : (isEditMode ? (state.meta.btype === 'PROFORMA' ? 'Update Proforma' : 'Update Invoice') : (state.meta.btype === 'PROFORMA' ? 'Save Proforma' : 'Save Invoice')) }}
+          {{ state.currentBill?.status === 'CONVERTED' ? 'Converted (Read-Only)' : (loading ? 'Saving...' : state.isReturnMode ? 'Create Credit Note' : (isEditMode ? (state.meta.btype === 'PROFORMA' ? 'Update Proforma' : (state.meta.btype === 'DELIVERY_NOTE' ? 'Update Delivery Note' : 'Update Invoice')) : (state.meta.btype === 'PROFORMA' ? 'Save Proforma' : (state.meta.btype === 'DELIVERY_NOTE' ? 'Save Delivery Note' : 'Save Invoice')))) }}
           <span>F8</span>
         </button>
       </div>
@@ -124,14 +125,14 @@
     <PartyModal v-model="showCreatePartyModal" @saved="(p: any) => { fetchData(); onPartySelect(p); }" />
     <OtherChargesModal v-model="showOtherChargesModal" :other-charges="state.otherCharges" />
 
-    <UModal v-model:open="showPrintModal" :title="createdBill?.btype === 'PROFORMA' ? 'Proforma Invoice Saved Successfully' : 'Invoice Created Successfully'" :ui="{ content: 'sm:max-w-md' }">
+    <UModal v-model:open="showPrintModal" :title="createdBill?.btype === 'PROFORMA' ? 'Proforma Invoice Saved Successfully' : (createdBill?.btype === 'DELIVERY_NOTE' ? 'Delivery Challan Saved Successfully' : 'Invoice Created Successfully')" :ui="{ content: 'sm:max-w-md' }">
       <template #body>
         <div class="p-4 flex flex-col items-center text-center gap-4 bg-white dark:bg-zinc-900 rounded-2xl">
           <div class="p-3 bg-green-500/10 dark:bg-green-500/20 rounded-full">
             <UIcon name="i-heroicons-check-circle" class="w-12 h-12 text-green-600 dark:text-green-400" />
           </div>
           <div>
-            <h3 class="text-lg font-bold text-gray-900 dark:text-white">{{ createdBill?.btype === 'PROFORMA' ? 'Proforma' : 'Invoice' }} #{{ createdBill?.bno }} Saved</h3>
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white">{{ createdBill?.btype === 'PROFORMA' ? 'Proforma' : (createdBill?.btype === 'DELIVERY_NOTE' ? 'Delivery Challan' : 'Invoice') }} #{{ createdBill?.bno }} Saved</h3>
             <p class="text-sm text-gray-500 dark:text-zinc-400 mt-1">Would you like to print or download the document now?</p>
           </div>
           <div class="flex gap-3 mt-4 w-full justify-center">
@@ -337,6 +338,7 @@ onUnmounted(() => {
 });
 
 const canSave = computed(() => {
+  if (state.currentBill?.status === 'CONVERTED') return false;
   return state.selectedParty && state.cart.length > 0 && state.cart.every(item => {
     const qty = state.isReturnMode ? item.returnQty : item.qty;
     return item.item && (parseFloat(qty) || 0) > 0 && (parseFloat(item.rate) || 0) >= 0;
@@ -527,10 +529,14 @@ async function saveInvoice() {
     if (state.isReturnMode) {
       res = await api.post('/accounting/credit-notes', payload);
     } else if (isEditMode.value) {
-      const endpoint = state.meta.btype === 'PROFORMA' ? `/accounting/proforma/${route.params.id}` : `/accounting/sales/${route.params.id}`;
+      const endpoint = state.meta.btype === 'PROFORMA' 
+        ? `/accounting/proforma/${route.params.id}` 
+        : (state.meta.btype === 'DELIVERY_NOTE' ? `/accounting/delivery-note/${route.params.id}` : `/accounting/sales/${route.params.id}`);
       res = await api.put(endpoint, payload);
     } else {
-      const endpoint = state.meta.btype === 'PROFORMA' ? '/accounting/proforma' : '/accounting/sales';
+      const endpoint = state.meta.btype === 'PROFORMA' 
+        ? '/accounting/proforma' 
+        : (state.meta.btype === 'DELIVERY_NOTE' ? '/accounting/delivery-note' : '/accounting/sales');
       res = await api.post(endpoint, payload);
     }
 

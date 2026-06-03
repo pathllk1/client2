@@ -228,10 +228,10 @@
       <!-- Footer Buttons -->
       <footer class="bg-slate-50 px-8 py-5 border-t border-slate-100 shrink-0 flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
         <div class="flex flex-wrap items-center gap-2">
-          <button v-if="bill && bill.status === 'ACTIVE' && (bill.btype === 'SALES' || bill.btype === 'PURCHASE' || bill.btype === 'PROFORMA') && !showCancelSection" @click="editBill" class="px-5 py-3 bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-indigo-100 transition-colors whitespace-nowrap shrink-0">
+          <button v-if="bill && bill.status === 'ACTIVE' && ['SALES', 'PURCHASE', 'PROFORMA', 'DELIVERY_NOTE'].includes(String(bill.btype).toUpperCase()) && !showCancelSection" @click="editBill" class="px-5 py-3 bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-indigo-100 transition-colors whitespace-nowrap shrink-0">
             Edit Bill
           </button>
-          <button v-if="bill && bill.status === 'ACTIVE' && bill.btype === 'PROFORMA' && !showCancelSection" @click="convertToSales" :disabled="converting" class="px-5 py-3 bg-teal-600 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-teal-700 disabled:opacity-50 transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0">
+          <button v-if="bill && bill.status === 'ACTIVE' && ['PROFORMA', 'DELIVERY_NOTE'].includes(String(bill.btype).toUpperCase()) && !showCancelSection" @click="convertToSales" :disabled="converting" class="px-5 py-3 bg-teal-600 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-teal-700 disabled:opacity-50 transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0">
             <ArrowPathIcon v-if="converting" class="w-3.5 h-3.5 animate-spin" />
             Convert to Sales Invoice
           </button>
@@ -289,8 +289,9 @@ const bill = ref<any>(null);
 
 function editBill() {
   if (!bill.value) return;
-  const path = (bill.value.btype === 'SALES' || bill.value.btype === 'PROFORMA') 
-    ? `/accounting/sales/${bill.value._id}/edit` 
+  const btypeUpper = String(bill.value.btype).toUpperCase();
+  const path = ['SALES', 'PROFORMA', 'DELIVERY_NOTE'].includes(btypeUpper)
+    ? `/accounting/sales/${bill.value._id}/edit`
     : `/accounting/purchases/${bill.value._id}/edit`;
   router.push(path);
   close();
@@ -353,11 +354,12 @@ function getTypeBadgeClass(type: string) {
   const map: any = {
     'SALES': 'bg-blue-100 text-blue-700',
     'PROFORMA': 'bg-teal-100 text-teal-700',
+    'DELIVERY_NOTE': 'bg-amber-100 text-amber-700',
     'PURCHASE': 'bg-green-100 text-green-700',
     'CREDIT_NOTE': 'bg-purple-100 text-purple-700',
     'DEBIT_NOTE': 'bg-orange-100 text-orange-700'
   };
-  return map[type] || 'bg-slate-100 text-slate-700';
+  return map[String(type).toUpperCase()] || 'bg-slate-100 text-slate-700';
 }
 
 async function confirmCancellation() {
@@ -385,13 +387,27 @@ const converting = ref(false);
 
 async function convertToSales() {
   if (!bill.value || converting.value) return;
-  if (!confirm('Are you sure you want to convert this Proforma Invoice to a standard Sales Invoice? This will generate a new Sales Invoice number, adjust inventory, and post to ledger.')) return;
+  const isChallan = bill.value.btype === 'DELIVERY_NOTE';
+  const confirmMsg = isChallan
+    ? 'Are you sure you want to convert this Delivery Challan to a standard Sales Invoice? This will generate a new Sales Invoice number and post ledger transactions.'
+    : 'Are you sure you want to convert this Proforma Invoice to a standard Sales Invoice? This will generate a new Sales Invoice number, adjust inventory, and post to ledger.';
+
+  if (!confirm(confirmMsg)) return;
 
   converting.value = true;
   try {
-    const res = await api.post(`/accounting/proforma/${bill.value._id}/convert`, {});
+    const endpoint = isChallan
+      ? `/accounting/delivery-note/${bill.value._id}/convert`
+      : `/accounting/proforma/${bill.value._id}/convert`;
+    const res = await api.post(endpoint, {});
     if (res.success) {
-      toast.add({ title: 'Success', description: 'Proforma Invoice converted to Sales Invoice successfully', color: 'green' });
+      toast.add({
+        title: 'Success',
+        description: isChallan
+          ? 'Delivery Challan converted to Sales Invoice successfully'
+          : 'Proforma Invoice converted to Sales Invoice successfully',
+        color: 'green'
+      });
       emit('cancelled');
       if (res.data?._id) {
         emit('view-bill', res.data._id);
