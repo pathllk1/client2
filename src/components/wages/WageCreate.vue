@@ -7,7 +7,16 @@ import { wagePersistence } from '@/utils/wagePersistence'
 const { loading, fetchEligibleEmployees, createWagesBulk, fetchBankAccounts, downloadBankReport, downloadEPFESICReport, exportWages, getJobStatus } = useWages()
 const toast = useToast()
 
-const month = ref(new Date().toISOString().slice(0, 7))
+const getInitialMonth = () => {
+  const d = new Date()
+  d.setDate(1)
+  d.setMonth(d.getMonth() - 1)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  return `${year}-${month}`
+}
+
+const month = ref(getInitialMonth())
 const employees = ref<any[]>([])
 const bankAccounts = ref<any[]>([])
 const selectedEmployeeIds = ref<Set<string>>(new Set())
@@ -529,7 +538,12 @@ onMounted(() => {
             <div class="flex-1 min-w-0">
               <div class="flex justify-between items-start">
                 <div class="truncate">
-                  <h4 class="text-xs font-black text-gray-900 dark:text-gray-100 leading-none">{{ emp.employee_name }}</h4>
+                  <h4 class="text-xs font-black text-gray-900 dark:text-gray-100 leading-none flex items-center gap-1.5 flex-wrap">
+                    {{ emp.employee_name }}
+                    <span v-if="emp.advance_balance > 0" class="inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-[8px] font-black bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 border border-rose-100 dark:border-rose-900/50 shrink-0">
+                      Adv: ₹{{ emp.advance_balance }}
+                    </span>
+                  </h4>
                   <p class="text-[10px] text-gray-500 font-bold uppercase mt-1">{{ emp.project }} • {{ emp.site }}</p>
                 </div>
                 <div class="text-right">
@@ -566,9 +580,9 @@ onMounted(() => {
                   <span class="text-[8px] text-amber-500 uppercase font-bold">ESIC</span>
                   <input type="number" v-model.number="wageData[emp.master_roll_id].esic_deduction" @input="updateNetSalary(emp.master_roll_id)" class="w-12 bg-transparent border-none text-[10px] font-black text-amber-600 p-0 focus:ring-0" />
                 </div>
-                <div class="flex flex-col gap-0.5">
+                <div class="flex flex-col gap-0.5" :class="{'bg-rose-50/20 dark:bg-rose-950/10 px-1 rounded': emp.advance_balance > 0}">
                   <span class="text-[8px] text-rose-500 uppercase font-bold">Adv.</span>
-                  <input type="number" v-model.number="wageData[emp.master_roll_id].advance_deduction" @input="updateNetSalary(emp.master_roll_id)" class="w-12 bg-transparent border-none text-[10px] font-black text-rose-600 p-0 focus:ring-0" />
+                  <input type="number" v-model.number="wageData[emp.master_roll_id].advance_deduction" @input="updateNetSalary(emp.master_roll_id)" class="w-12 bg-transparent border-none text-[10px] font-black text-rose-600 p-0 focus:ring-0" :placeholder="emp.advance_balance ? 'Bal: ' + emp.advance_balance : '0'" />
                 </div>
                 <div class="ml-auto flex flex-col items-end gap-0.5">
                   <span class="text-[8px] text-gray-400 uppercase font-bold">Gross</span>
@@ -609,7 +623,12 @@ onMounted(() => {
                 <input type="checkbox" :value="emp.master_roll_id" :checked="selectedEmployeeIds.has(emp.master_roll_id)" @change="toggleEmployeeSelection(emp.master_roll_id, $event)" class="rounded accent-primary" />
               </td>
               <td class="p-2 border-r border-gray-50 dark:border-gray-800">
-                <div class="text-[11px] font-black text-gray-900 dark:text-gray-100 truncate">{{ emp.employee_name }}</div>
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <div class="text-[11px] font-black text-gray-900 dark:text-gray-100 truncate">{{ emp.employee_name }}</div>
+                  <span v-if="emp.advance_balance > 0" class="inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-[8px] font-black bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 border border-rose-100 dark:border-rose-900/50 shrink-0" :title="'Outstanding Advance: ' + formatCurrency(emp.advance_balance)">
+                    Adv: ₹{{ emp.advance_balance }}
+                  </span>
+                </div>
                 <div class="text-[9px] text-gray-500 uppercase font-black truncate opacity-60">{{ emp.project }} • {{ emp.site }}</div>
               </td>
               <td class="p-2 border-r border-gray-50 dark:border-gray-800">
@@ -637,8 +656,8 @@ onMounted(() => {
               <td class="p-1 border-r border-gray-50 dark:border-gray-800">
                 <input type="number" v-model.number="wageData[emp.master_roll_id].other_benefit" @input="updateNetSalary(emp.master_roll_id)" class="w-full bg-transparent border-none text-center text-[10px] font-black text-emerald-600 focus:ring-0" />
               </td>
-              <td class="p-1 border-r border-gray-50 dark:border-gray-800">
-                <input type="number" v-model.number="wageData[emp.master_roll_id].advance_deduction" @input="updateNetSalary(emp.master_roll_id)" class="w-full bg-transparent border-none text-center text-[10px] font-black text-rose-600 focus:ring-0" />
+              <td class="p-1 border-r border-gray-50 dark:border-gray-800" :class="{'bg-rose-50/20 dark:bg-rose-950/10': emp.advance_balance > 0}">
+                <input type="number" v-model.number="wageData[emp.master_roll_id].advance_deduction" @input="updateNetSalary(emp.master_roll_id)" class="w-full bg-transparent border-none text-center text-[10px] font-black text-rose-600 focus:ring-0" :placeholder="emp.advance_balance ? 'Bal: ' + emp.advance_balance : '0'" />
               </td>
               <td class="p-2 text-right bg-primary/5 font-black text-primary-600 dark:text-primary-400 font-mono text-[12px] italic">
                 {{ Math.round(wageData[emp.master_roll_id].net_salary) }}

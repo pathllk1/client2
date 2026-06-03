@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import WageDashboard from '@/components/wages/WageDashboard.vue'
 import WageCreate from '@/components/wages/WageCreate.vue'
 import WageEdit from '@/components/wages/WageEdit.vue'
 import WageReport from '@/components/wages/WageReport.vue'
 import AdvanceManagement from '@/components/wages/AdvanceManagement.vue'
 
-const activeTab = ref('create')
+const activeTab = ref('dashboard')
 
 const tabs = [
+  { id: 'dashboard', label: 'Dashboard', icon: 'i-heroicons-chart-bar' },
   { id: 'create', label: 'Create New Wages', icon: 'i-heroicons-plus-circle' },
   { id: 'edit', label: 'Manage & Edit', icon: 'i-heroicons-pencil-square' },
   { id: 'advance', label: 'Advances', icon: 'i-heroicons-banknotes' },
@@ -45,6 +47,7 @@ const tabs = [
         leave-to-class="opacity-0 translate-y-1"
       >
         <div :key="activeTab" class="h-full">
+          <WageDashboard v-if="activeTab === 'dashboard'" />
           <WageCreate v-if="activeTab === 'create'" />
           <WageEdit v-if="activeTab === 'edit'" />
           <AdvanceManagement v-if="activeTab === 'advance'" />
@@ -58,3 +61,4 @@ const tabs = [
 <style scoped>
 /* Ensure the container takes full height minus header */
 </style>
+

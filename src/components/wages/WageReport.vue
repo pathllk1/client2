@@ -6,7 +6,16 @@ import { useToast } from '@nuxt/ui/composables'
 const { loading, fetchWagesByMonth, downloadBankReport, downloadEPFESICReport, downloadBulkWageSlips, downloadWageSlip } = useWages()
 const toast = useToast()
 
-const month = ref(new Date().toISOString().slice(0, 7))
+const getInitialMonth = () => {
+  const d = new Date()
+  d.setDate(1)
+  d.setMonth(d.getMonth() - 1)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  return `${year}-${month}`
+}
+
+const month = ref(getInitialMonth())
 const reportWages = ref<any[]>([])
 const paymentModeFilter = ref('all')
 const chequeNoFilter = ref('')
