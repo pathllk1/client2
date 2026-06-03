@@ -38,7 +38,7 @@ export interface BillingState {
     dispatchThrough: string;
     narration: string;
     supplierBillNo?: string;
-    btype: 'SALES' | 'PURCHASE' | 'CREDIT_NOTE' | 'DEBIT_NOTE';
+    btype: 'SALES' | 'PURCHASE' | 'CREDIT_NOTE' | 'DEBIT_NOTE' | 'PROFORMA';
   };
   otherCharges: any[];
   currentFirmName: string;

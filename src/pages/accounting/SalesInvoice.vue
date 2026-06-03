@@ -8,10 +8,21 @@
     <header class="page-header">
       <div class="title-block">
         <p>{{ state.currentFirmName }}</p>
-        <h1>{{ state.isReturnMode ? 'Sales Return' : (isEditMode ? 'Edit Sales Invoice' : 'Sales Invoice') }}</h1>
+        <h1>{{ state.isReturnMode ? 'Sales Return' : (isEditMode ? (state.meta.btype === 'PROFORMA' ? 'Edit Proforma Invoice' : 'Edit Sales Invoice') : (state.meta.btype === 'PROFORMA' ? 'Proforma Invoice' : 'Sales Invoice')) }}</h1>
       </div>
 
       <div class="header-fields">
+        <label v-if="!state.isReturnMode && !isEditMode">
+          <span>Document Type</span>
+          <select v-model="state.meta.btype" @change="onDocTypeChange">
+            <option value="SALES">Sales Invoice</option>
+            <option value="PROFORMA">Proforma Invoice</option>
+          </select>
+        </label>
+        <label v-else-if="isEditMode">
+          <span>Document Type</span>
+          <input :value="state.meta.btype === 'PROFORMA' ? 'Proforma Invoice' : 'Sales Invoice'" type="text" readonly class="readonly-input" style="width: 140px" />
+        </label>
         <label>
           <span>Bill No</span>
           <input :value="state.isReturnMode ? 'CN-AUTO' : (state.meta.billNo || 'AUTO')" type="text" readonly class="readonly-input" />
@@ -47,7 +58,7 @@
       <div class="header-actions">
         <button class="ghost-btn" type="button" @click="resetForm">Discard</button>
         <button class="primary-btn" type="button" :disabled="loading || !canSave" @click="saveInvoice">
-          {{ loading ? 'Saving...' : state.isReturnMode ? 'Create Credit Note' : (isEditMode ? 'Update Invoice' : 'Save Invoice') }}
+          {{ loading ? 'Saving...' : state.isReturnMode ? 'Create Credit Note' : (isEditMode ? (state.meta.btype === 'PROFORMA' ? 'Update Proforma' : 'Update Invoice') : (state.meta.btype === 'PROFORMA' ? 'Save Proforma' : 'Save Invoice')) }}
           <span>F8</span>
         </button>
       </div>
@@ -113,15 +124,15 @@
     <PartyModal v-model="showCreatePartyModal" @saved="(p: any) => { fetchData(); onPartySelect(p); }" />
     <OtherChargesModal v-model="showOtherChargesModal" :other-charges="state.otherCharges" />
 
-    <UModal v-model:open="showPrintModal" title="Invoice Created Successfully" :ui="{ content: 'sm:max-w-md' }">
+    <UModal v-model:open="showPrintModal" :title="createdBill?.btype === 'PROFORMA' ? 'Proforma Invoice Saved Successfully' : 'Invoice Created Successfully'" :ui="{ content: 'sm:max-w-md' }">
       <template #body>
         <div class="p-4 flex flex-col items-center text-center gap-4 bg-white dark:bg-zinc-900 rounded-2xl">
           <div class="p-3 bg-green-500/10 dark:bg-green-500/20 rounded-full">
             <UIcon name="i-heroicons-check-circle" class="w-12 h-12 text-green-600 dark:text-green-400" />
           </div>
           <div>
-            <h3 class="text-lg font-bold text-gray-900 dark:text-white">Invoice #{{ createdBill?.bno }} Saved</h3>
-            <p class="text-sm text-gray-500 dark:text-zinc-400 mt-1">Would you like to print or download the invoice now?</p>
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white">{{ createdBill?.btype === 'PROFORMA' ? 'Proforma' : 'Invoice' }} #{{ createdBill?.bno }} Saved</h3>
+            <p class="text-sm text-gray-500 dark:text-zinc-400 mt-1">Would you like to print or download the document now?</p>
           </div>
           <div class="flex gap-3 mt-4 w-full justify-center">
             <UButton 
@@ -317,6 +328,10 @@ onMounted(async () => {
   }
 });
 
+async function onDocTypeChange() {
+  await fetchNextBillNo(state.meta.btype);
+}
+
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown);
 });
@@ -368,6 +383,7 @@ async function loadBillForEditing(id: string) {
         if (firmLoc) state.activeFirmLocation = firmLoc;
       }
       
+      state.meta.btype = bill.btype || 'SALES';
       state.meta.billNo = bill.bno;
       state.meta.billDate = bill.bdate;
       state.meta.billType = bill.billSubtype?.toLowerCase() === 'inter-state' ? 'inter-state' : 'intra-state';
@@ -497,7 +513,7 @@ async function saveInvoice() {
       : {
           meta: {
             ...state.meta,
-            btype: 'SALES',
+            btype: state.meta.btype || 'SALES',
             firmGstin: state.activeFirmLocation?.gst_number || null,
             partyGstin: state.selectedPartyGstin || null
           },
@@ -507,14 +523,15 @@ async function saveInvoice() {
           consignee: state.selectedConsignee
         };
 
-    const endpoint = state.isReturnMode ? '/accounting/credit-notes' : '/accounting/sales';
     let res;
     if (state.isReturnMode) {
       res = await api.post('/accounting/credit-notes', payload);
     } else if (isEditMode.value) {
-      res = await api.put(`/accounting/sales/${route.params.id}`, payload);
+      const endpoint = state.meta.btype === 'PROFORMA' ? `/accounting/proforma/${route.params.id}` : `/accounting/sales/${route.params.id}`;
+      res = await api.put(endpoint, payload);
     } else {
-      res = await api.post('/accounting/sales', payload);
+      const endpoint = state.meta.btype === 'PROFORMA' ? '/accounting/proforma' : '/accounting/sales';
+      res = await api.post(endpoint, payload);
     }
 
     if (res.success) {

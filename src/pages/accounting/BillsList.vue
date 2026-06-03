@@ -124,7 +124,7 @@
           <!-- Status Column -->
           <template #status-cell="{ row }">
             <UBadge 
-              :color="row.original.status === 'ACTIVE' ? 'success' : 'error'" 
+              :color="row.original.status === 'ACTIVE' ? 'success' : (row.original.status === 'CONVERTED' ? 'neutral' : 'error')" 
               size="sm" 
               variant="subtle" 
               class="px-2 py-0.5 font-black uppercase tracking-widest text-[9px] rounded-md"
@@ -187,7 +187,7 @@
                   @click="downloadPDF(row.original)" 
                 />
               </UTooltip>
-              <UTooltip v-if="row.original.status === 'ACTIVE' && (row.original.btype === 'SALES' || row.original.btype === 'PURCHASE')" text="Edit Bill">
+              <UTooltip v-if="row.original.status === 'ACTIVE' && (row.original.btype === 'SALES' || row.original.btype === 'PURCHASE' || row.original.btype === 'PROFORMA')" text="Edit Bill">
                 <UButton 
                   size="xs" 
                   variant="ghost" 
@@ -255,6 +255,7 @@ const columns = [
 const typeOptions = [
   { label: 'All Transactions', value: 'ALL' },
   { label: 'Sales Invoices', value: 'SALES' },
+  { label: 'Proforma Invoices', value: 'PROFORMA' },
   { label: 'Purchase Bills', value: 'PURCHASE' },
   { label: 'Credit Notes (Returns)', value: 'CREDIT_NOTE' },
   { label: 'Debit Notes (Returns)', value: 'DEBIT_NOTE' }
@@ -295,6 +296,7 @@ function formatDate(iso: string) {
 function getTypeColor(type: string) {
   const map: any = {
     'SALES': 'text-blue-600 dark:text-blue-400',
+    'PROFORMA': 'text-teal-600 dark:text-teal-400',
     'PURCHASE': 'text-green-600 dark:text-green-400',
     'CREDIT_NOTE': 'text-purple-600 dark:text-purple-400',
     'DEBIT_NOTE': 'text-orange-600 dark:text-orange-400'
@@ -303,7 +305,9 @@ function getTypeColor(type: string) {
 }
 
 function handleEdit(bill: any) {
-  const path = bill.btype === 'SALES' ? `/accounting/sales/${bill._id}/edit` : `/accounting/purchases/${bill._id}/edit`;
+  const path = (bill.btype === 'SALES' || bill.btype === 'PROFORMA') 
+    ? `/accounting/sales/${bill._id}/edit` 
+    : `/accounting/purchases/${bill._id}/edit`;
   router.push(path);
 }
 

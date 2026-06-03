@@ -49,7 +49,7 @@
             <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
               <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Status</span>
               <div class="mt-1">
-                <span :class="bill.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'" class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest">
+                <span :class="bill.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : (bill.status === 'CONVERTED' ? 'bg-slate-100 text-slate-700' : 'bg-red-100 text-red-700')" class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest">
                   {{ bill.status }}
                 </span>
               </div>
@@ -173,7 +173,7 @@
               </div>
               <div v-if="bill.roundOff" class="flex justify-between items-center text-slate-400">
                 <span class="text-[10px] font-bold uppercase tracking-wider">Round Off</span>
-                <span class="text-xs font-mono font-medium">{{ bill.roundOff > 0 ? '+' : '' }}{{ bill.roundOff }}</span>
+                <span class="text-xs font-mono font-medium">{{ bill.roundOff > 0 ? '+' : '' }}{{ Number(bill.roundOff).toFixed(2) }}</span>
               </div>
               <div class="border-t border-slate-100 pt-3 flex justify-between items-center">
                 <span class="text-xs font-black text-slate-900 uppercase tracking-wider">Grand Total</span>
@@ -226,27 +226,29 @@
       </div>
 
       <!-- Footer Buttons -->
-      <footer class="bg-slate-50 px-8 py-5 border-t border-slate-100 shrink-0 flex items-center justify-between">
-        <div>
-          <div class="flex items-center gap-2">
-            <button v-if="bill && bill.status === 'ACTIVE' && (bill.btype === 'SALES' || bill.btype === 'PURCHASE') && !showCancelSection" @click="editBill" class="px-5 py-3 bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-indigo-100 transition-colors">
-              Edit Bill
-            </button>
-            <button v-if="bill && bill.status === 'ACTIVE' && !showCancelSection" @click="showCancelSection = true" class="px-5 py-3 bg-rose-50 text-rose-700 border border-rose-200 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-rose-100 transition-colors">
-              Cancel Bill
-            </button>
-          </div>
+      <footer class="bg-slate-50 px-8 py-5 border-t border-slate-100 shrink-0 flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
+        <div class="flex flex-wrap items-center gap-2">
+          <button v-if="bill && bill.status === 'ACTIVE' && (bill.btype === 'SALES' || bill.btype === 'PURCHASE' || bill.btype === 'PROFORMA') && !showCancelSection" @click="editBill" class="px-5 py-3 bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-indigo-100 transition-colors whitespace-nowrap shrink-0">
+            Edit Bill
+          </button>
+          <button v-if="bill && bill.status === 'ACTIVE' && bill.btype === 'PROFORMA' && !showCancelSection" @click="convertToSales" :disabled="converting" class="px-5 py-3 bg-teal-600 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-teal-700 disabled:opacity-50 transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0">
+            <ArrowPathIcon v-if="converting" class="w-3.5 h-3.5 animate-spin" />
+            Convert to Sales Invoice
+          </button>
+          <button v-if="bill && bill.status === 'ACTIVE' && !showCancelSection" @click="showCancelSection = true" class="px-5 py-3 bg-rose-50 text-rose-700 border border-rose-200 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-rose-100 transition-colors whitespace-nowrap shrink-0">
+            Cancel Bill
+          </button>
         </div>
-        <div class="flex items-center gap-2">
-          <button @click="printBill" :disabled="loading" class="px-5 py-3 bg-white border border-slate-200 text-slate-700 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-slate-50 transition-colors flex items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2 md:justify-end">
+          <button @click="printBill" :disabled="loading" class="px-5 py-3 bg-white border border-slate-200 text-slate-700 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-slate-50 transition-colors flex items-center gap-2 whitespace-nowrap shrink-0">
             <PrinterIcon class="w-4 h-4" />
             Print
           </button>
-          <button @click="downloadPDF" :disabled="loading" class="px-5 py-3 bg-indigo-600 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-indigo-700 transition-colors flex items-center gap-2">
+          <button @click="downloadPDF" :disabled="loading" class="px-5 py-3 bg-indigo-600 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-indigo-700 transition-colors flex items-center gap-2 whitespace-nowrap shrink-0">
             <ArrowDownTrayIcon class="w-4 h-4" />
             Download PDF
           </button>
-          <button @click="close" class="px-5 py-3 bg-slate-200 text-slate-700 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-slate-300 transition-colors">
+          <button @click="close" class="px-5 py-3 bg-slate-200 text-slate-700 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-slate-300 transition-colors whitespace-nowrap shrink-0">
             Close
           </button>
         </div>
@@ -287,7 +289,9 @@ const bill = ref<any>(null);
 
 function editBill() {
   if (!bill.value) return;
-  const path = bill.value.btype === 'SALES' ? `/accounting/sales/${bill.value._id}/edit` : `/accounting/purchases/${bill.value._id}/edit`;
+  const path = (bill.value.btype === 'SALES' || bill.value.btype === 'PROFORMA') 
+    ? `/accounting/sales/${bill.value._id}/edit` 
+    : `/accounting/purchases/${bill.value._id}/edit`;
   router.push(path);
   close();
 }
@@ -348,6 +352,7 @@ function formatDate(iso: string) {
 function getTypeBadgeClass(type: string) {
   const map: any = {
     'SALES': 'bg-blue-100 text-blue-700',
+    'PROFORMA': 'bg-teal-100 text-teal-700',
     'PURCHASE': 'bg-green-100 text-green-700',
     'CREDIT_NOTE': 'bg-purple-100 text-purple-700',
     'DEBIT_NOTE': 'bg-orange-100 text-orange-700'
@@ -373,6 +378,33 @@ async function confirmCancellation() {
     toast.add({ title: 'Error', description: err.message || 'Cancellation failed', color: 'red' });
   } finally {
     cancelling.value = false;
+  }
+}
+
+const converting = ref(false);
+
+async function convertToSales() {
+  if (!bill.value || converting.value) return;
+  if (!confirm('Are you sure you want to convert this Proforma Invoice to a standard Sales Invoice? This will generate a new Sales Invoice number, adjust inventory, and post to ledger.')) return;
+
+  converting.value = true;
+  try {
+    const res = await api.post(`/accounting/proforma/${bill.value._id}/convert`, {});
+    if (res.success) {
+      toast.add({ title: 'Success', description: 'Proforma Invoice converted to Sales Invoice successfully', color: 'green' });
+      emit('cancelled');
+      if (res.data?._id) {
+        emit('view-bill', res.data._id);
+      } else {
+        close();
+      }
+    } else {
+      toast.add({ title: 'Error', description: res.message || 'Conversion failed', color: 'red' });
+    }
+  } catch (err: any) {
+    toast.add({ title: 'Error', description: err.message || 'Conversion failed', color: 'red' });
+  } finally {
+    converting.value = false;
   }
 }
 
