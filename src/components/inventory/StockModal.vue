@@ -1,62 +1,62 @@
 <template>
   <div v-if="modelValue" class="fixed inset-0 z-40 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
-    <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-5xl max-h-[85vh] flex flex-col overflow-hidden animate-scale-in border border-slate-200">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[85vh] flex flex-col overflow-hidden animate-scale-in border border-slate-200">
       <!-- Header -->
-      <div class="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/80">
-        <div class="flex items-center gap-5">
-           <div class="w-14 h-14 bg-gradient-to-br from-indigo-600 to-blue-700 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-blue-200 ring-4 ring-white">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div class="p-4 px-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/80">
+        <div class="flex items-center gap-3">
+           <div class="w-10 h-10 bg-gradient-to-br from-indigo-600 to-blue-700 rounded-xl flex items-center justify-center text-white shadow-md shadow-blue-200 ring-2 ring-white">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
               </svg>
            </div>
            <div>
-              <h2 class="text-3xl font-black text-slate-900 uppercase tracking-tighter leading-none">Stock Browser</h2>
-              <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mt-2">Inventory Management Hub</p>
+              <h2 class="text-lg font-black text-slate-900 uppercase tracking-tight leading-none">Stock Browser</h2>
+              <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Inventory Management Hub</p>
            </div>
         </div>
-        <button @click="$emit('update:modelValue', false)" class="w-12 h-12 flex items-center justify-center rounded-2xl bg-white border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-100 transition-all shadow-sm group">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 transform group-hover:rotate-90 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <button @click="$emit('update:modelValue', false)" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-100 transition-all shadow-sm group">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transform group-hover:rotate-90 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
       </div>
 
       <!-- Search & Filters -->
-      <div class="px-8 pt-8 pb-4">
+      <div class="px-6 pt-4 pb-2">
          <div class="relative group">
             <input 
               type="text" 
               v-model="search" 
               placeholder="Filter by Name, HSN, Part No or OEM..." 
-              class="w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-transparent rounded-[1.25rem] focus:bg-white focus:border-blue-600 focus:ring-8 focus:ring-blue-50 outline-none transition-all font-bold text-slate-800 placeholder-slate-300 shadow-inner"
+              class="w-full pl-10 pr-6 py-2.5 bg-slate-50 border-2 border-transparent rounded-xl focus:bg-white focus:border-blue-600 focus:ring-4 focus:ring-blue-50/50 outline-none transition-all font-bold text-xs text-slate-800 placeholder-slate-400 shadow-inner"
               ref="searchInput"
             />
-            <div class="absolute left-5 top-5 text-slate-300 group-focus-within:text-blue-600 transition-colors">
-               <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div class="absolute left-3.5 top-3 text-slate-400 group-focus-within:text-blue-600 transition-colors">
+               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                </svg>
             </div>
-            <div class="absolute right-5 top-5 flex gap-2">
-               <span class="px-2 py-1 bg-slate-200 text-slate-500 rounded font-mono text-[10px] font-bold">ESC to close</span>
+            <div class="absolute right-3.5 top-3 flex gap-2">
+               <span class="px-1.5 py-0.5 bg-slate-200 text-slate-500 rounded font-mono text-[9px] font-bold">ESC to close</span>
             </div>
          </div>
       </div>
 
       <!-- Advanced Stock Table (Compact) -->
-      <div class="flex-1 overflow-y-auto px-8 pb-8 custom-scrollbar bg-slate-50/50">
-         <div class="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm">
+      <div class="flex-1 overflow-y-auto px-6 pb-4 custom-scrollbar bg-slate-50/50">
+         <div class="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
             <table class="w-full text-left border-collapse">
                <thead>
-                  <tr class="bg-slate-100 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-200">
-                     <th class="px-5 py-3.5">Item Description</th>
-                     <th class="px-4 py-3.5">HSN</th>
-                     <th class="px-4 py-3.5">Batch</th>
-                     <th class="px-4 py-3.5">Expiry</th>
-                     <th class="px-4 py-3.5 text-right">Available</th>
-                     <th class="px-4 py-3.5 text-right">Rate</th>
-                     <th class="px-4 py-3.5 text-right">GST %</th>
-                     <th class="px-4 py-3.5 text-right">MRP</th>
-                     <th class="px-5 py-3.5 text-center">Action</th>
+                  <tr class="bg-slate-100 text-[9px] font-black text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                     <th class="px-4 py-2">Item Description</th>
+                     <th class="px-3 py-2">HSN</th>
+                     <th class="px-3 py-2">Batch</th>
+                     <th class="px-3 py-2">Expiry</th>
+                     <th class="px-3 py-2 text-right">Available</th>
+                     <th class="px-3 py-2 text-right">Rate</th>
+                     <th class="px-3 py-2 text-right">GST %</th>
+                     <th class="px-3 py-2 text-right">MRP</th>
+                     <th class="px-4 py-2 text-center">Action</th>
                   </tr>
                </thead>
                <tbody class="divide-y divide-slate-100">
@@ -66,47 +66,47 @@
                        class="hover:bg-blue-50/20 transition-colors cursor-pointer group text-xs font-bold text-slate-700"
                        @click="toggleStock(stock)"
                      >
-                        <td class="px-5 py-3.5">
-                           <div class="font-black text-slate-900 text-sm leading-tight">{{ stock.item }}</div>
-                           <div class="flex items-center gap-2 mt-1 text-[10px] text-slate-400 font-semibold">
+                        <td class="px-4 py-1.5">
+                           <div class="font-black text-slate-900 text-xs leading-tight">{{ stock.item }}</div>
+                           <div class="flex items-center gap-1.5 mt-0.5 text-[9px] text-slate-400 font-semibold">
                               <span v-if="stock.pno">P/N: {{ stock.pno }}</span>
-                              <span v-if="stock.pno && stock.oem" class="w-1 h-1 bg-slate-300 rounded-full"></span>
+                              <span v-if="stock.pno && stock.oem" class="w-0.5 h-0.5 bg-slate-300 rounded-full"></span>
                               <span v-if="stock.oem">OEM: {{ stock.oem }}</span>
                            </div>
                         </td>
-                        <td class="px-4 py-3.5 font-mono text-[10px] uppercase tracking-wider text-slate-500">{{ stock.hsn }}</td>
-                        <td class="px-4 py-3.5">
-                           <div v-if="stock.batches && stock.batches.length > 1" class="flex items-center gap-1.5">
-                              <span class="bg-indigo-50 text-indigo-700 border-indigo-100 px-2 py-0.5 border rounded-md text-[10px] font-black uppercase">
+                        <td class="px-3 py-1.5 font-mono text-[9px] uppercase tracking-wider text-slate-500">{{ stock.hsn }}</td>
+                        <td class="px-3 py-1.5">
+                           <div v-if="stock.batches && stock.batches.length > 1" class="flex items-center gap-1">
+                              <span class="bg-indigo-50 text-indigo-700 border-indigo-100 px-1.5 py-0.5 border rounded-md text-[9px] font-black uppercase">
                                  {{ stock.batches.length }} Batches
                               </span>
                               <svg 
-                                class="w-3.5 h-3.5 text-indigo-500 transition-transform duration-200"
+                                class="w-3 h-3 text-indigo-500 transition-transform duration-200"
                                 :class="expandedStockId === stock._id ? 'rotate-180' : ''"
                                 fill="none" viewBox="0 0 24 24" stroke="currentColor"
                               >
                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
                               </svg>
                            </div>
-                           <span v-else-if="stock.batches && stock.batches.length === 1" class="bg-slate-50 text-slate-700 border-slate-100 px-2 py-0.5 border rounded-md text-[10px] font-black uppercase">
-                              {{ stock.batches[0].batch || '-' }}
+                           <span v-else-if="stock.batches && stock.batches.length === 1" class="bg-slate-50 text-slate-700 border-slate-100 px-1.5 py-0.5 border rounded-md text-[9px] font-black uppercase">
+                               {{ stock.batches[0].batch || '-' }}
                            </span>
                            <span v-else class="text-slate-400">-</span>
                         </td>
-                        <td class="px-4 py-3.5 text-slate-500 font-medium">
+                        <td class="px-3 py-1.5 text-slate-500 font-medium text-[11px]">
                            <span v-if="stock.batches && stock.batches.length > 1" class="text-slate-400 italic">Various</span>
                            <span v-else-if="stock.batches && stock.batches.length === 1">
                               {{ stock.batches[0].expiry ? formatDate(stock.batches[0].expiry) : '-' }}
                            </span>
                            <span v-else>-</span>
                         </td>
-                        <td class="px-4 py-3.5 text-right">
-                           <span class="text-sm font-black text-slate-900" :class="stock.qty <= 0 ? 'text-red-500 animate-pulse' : ''">{{ stock.qty.toLocaleString() }}</span>
-                           <span class="text-[9px] font-black text-slate-400 uppercase ml-1">{{ stock.uom }}</span>
+                        <td class="px-3 py-1.5 text-right">
+                           <span class="text-xs font-black text-slate-900" :class="stock.qty <= 0 ? 'text-red-500 animate-pulse' : ''">{{ stock.qty.toLocaleString() }}</span>
+                           <span class="text-[9px] font-black text-slate-400 uppercase ml-0.5">{{ stock.uom }}</span>
                         </td>
-                        <td class="px-4 py-3.5 text-right font-mono text-slate-900">₹{{ stock.rate.toFixed(2) }}</td>
-                        <td class="px-4 py-3.5 text-right text-slate-500 font-medium">{{ stock.grate }}%</td>
-                        <td class="px-4 py-3.5 text-right font-mono text-slate-900">
+                        <td class="px-3 py-1.5 text-right font-mono text-slate-900 text-[11px]">₹{{ stock.rate.toFixed(2) }}</td>
+                        <td class="px-3 py-1.5 text-right text-slate-500 font-medium text-[11px]">{{ stock.grate }}%</td>
+                        <td class="px-3 py-1.5 text-right font-mono text-slate-900 text-[11px]">
                            <span v-if="stock.batches && stock.batches.length > 1" class="text-slate-400 italic">Various</span>
                            <span v-else-if="stock.batches && stock.batches.length === 1">
                               {{ stock.batches[0].mrp ? '₹' + stock.batches[0].mrp.toFixed(2) : '-' }}
@@ -114,10 +114,10 @@
                            <span v-else-if="stock.mrp">₹{{ stock.mrp.toFixed(2) }}</span>
                            <span v-else>-</span>
                         </td>
-                        <td class="px-5 py-3.5 text-center">
-                           <div class="flex items-center justify-center gap-2">
+                        <td class="px-4 py-1.5 text-center">
+                           <div class="flex items-center justify-center gap-1.5">
                               <button 
-                                class="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-colors"
+                                class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider transition-colors"
                                 :class="stock.batches && stock.batches.length > 1 
                                   ? (expandedStockId === stock._id ? 'bg-indigo-600 text-white' : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white') 
                                   : 'bg-slate-100 text-slate-700 hover:bg-blue-600 hover:text-white'"
@@ -127,7 +127,7 @@
                               <button 
                                 type="button"
                                 @click.stop="$emit('edit-stock', stock)"
-                                class="px-3 py-1 bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-600 hover:text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-colors"
+                                class="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-600 hover:text-white rounded-md text-[9px] font-black uppercase tracking-wider transition-colors"
                               >
                                  Edit
                               </button>
@@ -137,47 +137,47 @@
 
                      <!-- Nested Batches Sub-Table Row -->
                      <tr v-if="expandedStockId === stock._id && stock.batches && stock.batches.length > 1" class="bg-slate-50/50">
-                        <td colspan="9" class="px-8 py-4">
-                           <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm max-w-4xl animate-scale-in">
-                              <div class="bg-slate-50 px-4 py-2.5 border-b border-slate-100 flex items-center justify-between">
+                        <td colspan="9" class="px-4 py-2">
+                           <div class="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm max-w-4xl animate-scale-in">
+                              <div class="bg-slate-50 px-3 py-1.5 border-b border-slate-100 flex items-center justify-between">
                                  <span class="text-[9px] font-black text-indigo-700 uppercase tracking-widest">Select Batch for {{ stock.item }}</span>
                                  <span class="text-[9px] text-slate-400 font-bold uppercase">{{ stock.batches.length }} Batches Available</span>
                               </div>
                               <table class="w-full text-left text-xs border-collapse">
                                  <thead>
                                     <tr class="bg-slate-50/50 text-[9px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100">
-                                       <th class="px-4 py-2.5">Batch No</th>
-                                       <th class="px-4 py-2.5">Expiry</th>
-                                       <th class="px-4 py-2.5 text-right">Available Qty</th>
-                                       <th class="px-4 py-2.5 text-right">Rate</th>
-                                       <th class="px-4 py-2.5 text-right">GST %</th>
-                                       <th class="px-4 py-2.5 text-right">MRP</th>
-                                       <th class="px-4 py-2.5 text-center">Action</th>
+                                       <th class="px-3 py-1.5">Batch No</th>
+                                       <th class="px-3 py-1.5">Expiry</th>
+                                       <th class="px-3 py-1.5 text-right">Available Qty</th>
+                                       <th class="px-3 py-1.5 text-right">Rate</th>
+                                       <th class="px-3 py-1.5 text-right">GST %</th>
+                                       <th class="px-3 py-1.5 text-right">MRP</th>
+                                       <th class="px-3 py-1.5 text-center">Action</th>
                                     </tr>
                                  </thead>
-                                 <tbody class="divide-y divide-slate-100 font-bold text-slate-600">
+                                 <tbody class="divide-y divide-slate-100 font-bold text-slate-600 text-[11px]">
                                     <tr 
                                       v-for="batch in stock.batches" 
                                       :key="batch._id || batch.batch"
                                       class="hover:bg-blue-50/20 transition-colors cursor-pointer"
                                       @click.stop="selectRow(stock, batch)"
                                     >
-                                       <td class="px-4 py-2">
-                                          <span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-[10px] font-black uppercase">
+                                       <td class="px-3 py-1">
+                                          <span class="px-1.5 py-0.5 bg-indigo-50 text-indigo-700 rounded text-[9px] font-black uppercase">
                                              {{ batch.batch || '-' }}
                                           </span>
                                        </td>
-                                       <td class="px-4 py-2 text-slate-500 font-medium">
+                                       <td class="px-3 py-1 text-slate-500 font-medium">
                                           {{ batch.expiry ? formatDate(batch.expiry) : '-' }}
                                        </td>
-                                       <td class="px-4 py-2 text-right text-slate-900">
+                                       <td class="px-3 py-1 text-right text-slate-900">
                                           {{ batch.qty.toLocaleString() }} <span class="text-[9px] text-slate-400 uppercase ml-0.5">{{ batch.uom }}</span>
                                        </td>
-                                       <td class="px-4 py-2 text-right text-slate-900 font-mono">₹{{ batch.rate.toFixed(2) }}</td>
-                                       <td class="px-4 py-2 text-right text-slate-500 font-medium">{{ batch.grate }}%</td>
-                                       <td class="px-4 py-2 text-right text-slate-900 font-mono">{{ batch.mrp ? '₹' + batch.mrp.toFixed(2) : '-' }}</td>
-                                       <td class="px-4 py-2 text-center">
-                                          <button class="px-3 py-1 bg-indigo-600 text-white rounded-lg text-[9px] font-black uppercase tracking-wider hover:bg-indigo-700 transition-colors">
+                                       <td class="px-3 py-1 text-right text-slate-900 font-mono">₹{{ batch.rate.toFixed(2) }}</td>
+                                       <td class="px-3 py-1 text-right text-slate-500 font-medium">{{ batch.grate }}%</td>
+                                       <td class="px-3 py-1 text-right text-slate-900 font-mono">{{ batch.mrp ? '₹' + batch.mrp.toFixed(2) : '-' }}</td>
+                                       <td class="px-3 py-1 text-center">
+                                          <button class="px-2 py-0.5 bg-indigo-600 text-white rounded-md text-[9px] font-black uppercase tracking-wider hover:bg-indigo-700 transition-colors">
                                              Select
                                           </button>
                                        </td>
@@ -189,7 +189,7 @@
                      </tr>
                   </template>
                   <tr v-if="filteredStocks.length === 0">
-                     <td colspan="9" class="px-5 py-12 text-center text-slate-400 font-black uppercase text-xs tracking-widest">
+                     <td colspan="9" class="px-5 py-8 text-center text-slate-400 font-black uppercase text-xs tracking-widest">
                         No stock items match your search
                      </td>
                   </tr>
@@ -199,24 +199,16 @@
       </div>
 
       <!-- High-Fidelity Footer -->
-      <div class="p-8 border-t border-slate-100 bg-white flex justify-between items-center">
-         <button @click="$emit('create-stock')" class="group flex items-center gap-3 bg-emerald-50 hover:bg-emerald-600 text-emerald-600 hover:text-white px-6 py-3 rounded-2xl transition-all duration-300">
-            <div class="w-8 h-8 bg-white/50 rounded-xl flex items-center justify-center group-hover:bg-white/20 transition-colors shadow-sm">
-               <span class="text-xl font-light">+</span>
+      <div class="p-4 px-6 border-t border-slate-100 bg-slate-50/50 flex justify-between items-center">
+         <button @click="$emit('create-stock')" class="group flex items-center gap-2 bg-emerald-50 hover:bg-emerald-600 text-emerald-600 hover:text-white px-4 py-1.5 rounded-xl transition-all duration-300">
+            <div class="w-6 h-6 bg-white/50 rounded-lg flex items-center justify-center group-hover:bg-white/20 transition-colors shadow-sm">
+               <span class="text-base font-light">+</span>
             </div>
-            <span class="text-xs font-black uppercase tracking-widest">Register New stock Item</span>
+            <span class="text-[10px] font-black uppercase tracking-widest">Register New stock Item</span>
          </button>
-         <div class="flex items-center gap-4 text-slate-400">
-            <div class="text-right">
-               <p class="text-[9px] font-black uppercase tracking-widest">Selected Warehouse</p>
-               <p class="text-xs font-bold text-slate-600">Main Storage Unit — Mumbai</p>
-            </div>
-            <div class="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center">
-               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-               </svg>
-            </div>
-         </div>
+         <button @click="$emit('update:modelValue', false)" class="px-4 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 hover:text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm">
+            Close Browser
+         </button>
       </div>
     </div>
   </div>
