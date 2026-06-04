@@ -48,11 +48,15 @@
        <div class="w-64 flex flex-col gap-1">
           <label class="text-[10px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest px-1">Search Party</label>
           <UInput 
+             ref="searchInput"
              v-model="partySearch" 
              placeholder="Search by name..." 
              icon="i-heroicons-magnifying-glass"
              size="sm"
              class="w-full" 
+             @keydown.down.prevent="moveActiveRow(1)"
+             @keydown.up.prevent="moveActiveRow(-1)"
+             @keydown.enter.prevent="selectActiveRow"
           />
        </div>
        <div class="flex gap-2">
@@ -97,7 +101,7 @@
           :ui="{ 
             td: 'py-2 px-4 text-gray-700 dark:text-zinc-300',
             th: 'py-2.5 px-4 text-gray-500 font-bold uppercase tracking-wider bg-gray-50/80 dark:bg-zinc-800/80 border-b border-gray-100 dark:border-zinc-800',
-            tr: 'hover:bg-gray-50/50 dark:hover:bg-zinc-800/30 transition-colors'
+            tr: 'hover:bg-green-100/80 dark:hover:bg-green-900/30 transition-colors cursor-pointer'
           }"
         >
           <!-- Bill Info Column -->
@@ -230,7 +234,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue';
+import { ref, reactive, onMounted, computed, watch, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useBilling } from '@/composables/useBilling';
 import { api } from '@/utils/api';
@@ -241,6 +245,9 @@ const { bills, fetchBills, loading } = useBilling();
 
 const selectedBillId = ref<string | null>(null);
 const showDetailsModal = ref(false);
+
+const searchInput = ref<any>(null);
+const activeRowIndex = ref(0);
 
 const columns = [
   { accessorKey: 'bno', header: 'Bill Info' },
@@ -272,6 +279,12 @@ const filters = reactive({
 });
 const partySearch = ref('');
 
+const filteredBills = computed(() => {
+  if (!partySearch.value) return bills.value;
+  const q = partySearch.value.toLowerCase();
+  return bills.value.filter(b => b.partyName.toLowerCase().includes(q));
+});
+
 function handleFilterChange() {
   const params: any = {};
   if (filters.btype && filters.btype !== 'ALL') {
@@ -280,15 +293,75 @@ function handleFilterChange() {
   fetchBills(params);
 }
 
-onMounted(() => {
-  handleFilterChange();
+// --- Keyboard Navigation Helpers ---
+
+function getTableRows(): NodeListOf<HTMLElement> | null {
+  const table = document.querySelector('table');
+  if (!table) return null;
+  return table.querySelectorAll('tbody tr');
+}
+
+function highlightActiveRow() {
+  const rows = getTableRows();
+  if (!rows) return;
+  // Remove highlight from all rows
+  rows.forEach((row) => {
+    row.classList.remove('kb-active-row');
+  });
+  // Add highlight to the active row
+  const activeRow = rows[activeRowIndex.value] as HTMLElement;
+  if (activeRow) {
+    activeRow.classList.add('kb-active-row');
+  }
+}
+
+function moveActiveRow(direction: number) {
+  const len = filteredBills.value.length;
+  if (len === 0) return;
+  activeRowIndex.value = (activeRowIndex.value + direction + len) % len;
+  nextTick(() => {
+    highlightActiveRow();
+    scrollToActiveRow();
+  });
+}
+
+function scrollToActiveRow() {
+  const rows = getTableRows();
+  if (!rows) return;
+  const activeRow = rows[activeRowIndex.value] as HTMLElement;
+  if (!activeRow) return;
+  activeRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+
+function selectActiveRow() {
+  const activeBill = filteredBills.value[activeRowIndex.value];
+  if (activeBill) {
+    viewBillDetails(activeBill._id);
+  }
+}
+
+watch(filteredBills, () => {
+  activeRowIndex.value = 0;
+  nextTick(() => {
+    highlightActiveRow();
+  });
 });
 
-const filteredBills = computed(() => {
-  if (!partySearch.value) return bills.value;
-  const q = partySearch.value.toLowerCase();
-  return bills.value.filter(b => b.partyName.toLowerCase().includes(q));
+onMounted(() => {
+  handleFilterChange();
+  setTimeout(() => {
+    const inputEl = searchInput.value?.$el?.querySelector('input') || searchInput.value;
+    inputEl?.focus();
+    // Initial highlight after data loads
+    nextTick(() => highlightActiveRow());
+  }, 100);
 });
+
+// Re-highlight after data loads (bills watch)
+watch(bills, () => {
+  nextTick(() => highlightActiveRow());
+});
+
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
@@ -384,3 +457,15 @@ async function exportExcel() {
   }
 }
 </script>
+
+<style scoped>
+:deep(tbody tr.kb-active-row) {
+  background-color: rgba(220, 252, 231, 0.8) !important;
+}
+.dark :deep(tbody tr.kb-active-row) {
+  background-color: rgba(20, 83, 45, 0.4) !important;
+}
+:deep(tbody tr.kb-active-row td:first-child) {
+  border-left: 4px solid #22c55e !important;
+}
+</style>
