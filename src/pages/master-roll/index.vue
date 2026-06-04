@@ -309,6 +309,47 @@ const toggleRowSelection = (emp: any, checked: boolean) => {
 
 
 
+const statCards = computed(() => {
+  const s = stats.value || {}
+  return [
+    {
+      label: 'Total Employees',
+      value: s.total_employees || 0,
+      colorClass: 'text-indigo-500',
+      bgGradient: 'bg-indigo-500/5',
+      icon: 'i-heroicons-users'
+    },
+    {
+      label: 'Active Employees',
+      value: s.total_active || 0,
+      colorClass: 'text-emerald-500',
+      bgGradient: 'bg-emerald-500/5',
+      icon: 'i-heroicons-user-plus'
+    },
+    {
+      label: 'Left Employees',
+      value: s.left_employees || 0,
+      colorClass: 'text-rose-500',
+      bgGradient: 'bg-rose-500/5',
+      icon: 'i-heroicons-user-minus'
+    },
+    {
+      label: 'Total Projects',
+      value: s.total_projects || 0,
+      colorClass: 'text-amber-500',
+      bgGradient: 'bg-amber-500/5',
+      icon: 'i-heroicons-briefcase'
+    },
+    {
+      label: 'Active Sites',
+      value: s.total_sites || 0,
+      colorClass: 'text-violet-500',
+      bgGradient: 'bg-violet-500/5',
+      icon: 'i-heroicons-map-pin'
+    }
+  ]
+})
+
 const headerActions = [
   [
     { label: 'Template', icon: 'i-heroicons-arrow-down-tray', onSelect: downloadTemplate },
@@ -359,13 +400,29 @@ const headerActions = [
     </div>
 
     <!-- Stats Summary - Scrollable on mobile -->
-    <div class="flex overflow-x-auto pb-2 sm:pb-0 sm:grid sm:grid-cols-3 md:grid-cols-5 gap-3 shrink-0 px-1 no-scrollbar">
-      <div v-for="(val, key) in stats" :key="key" 
-           class="min-w-[140px] sm:min-w-0 p-3 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl flex flex-col items-center justify-center shadow-sm hover:border-primary/30 transition-colors group">
-        <p class="text-[9px] text-gray-400 uppercase font-black tracking-widest truncate w-full text-center group-hover:text-primary transition-colors">
-          {{ String(key).replace(/_/g, ' ') }}
+    <div class="flex overflow-x-auto pb-2 sm:pb-0 sm:grid sm:grid-cols-3 lg:grid-cols-5 gap-3 shrink-0 px-1 no-scrollbar">
+      <div v-for="card in statCards" :key="card.label" 
+           class="min-w-[140px] sm:min-w-0 relative overflow-hidden bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-3 shadow-sm group hover:shadow-md transition-shadow">
+        <!-- Accent corner overlay -->
+        <div class="absolute top-0 right-0 w-16 h-16 rounded-bl-full transition-all duration-300" :class="card.bgGradient"></div>
+        
+        <!-- Corner floating icon -->
+        <div class="absolute top-3 right-3 opacity-10 group-hover:opacity-20 transition-opacity">
+          <UIcon :name="card.icon" class="w-5 h-5" :class="card.colorClass" />
+        </div>
+
+        <p class="text-[9px] font-black uppercase tracking-widest leading-none" :class="card.colorClass">
+          {{ card.label }}
         </p>
-        <p class="text-xl font-black text-gray-900 dark:text-white truncate leading-none mt-1">{{ val }}</p>
+        <p class="text-xl font-black text-gray-900 dark:text-white leading-none mt-1.5 font-mono">
+          {{ card.value }}
+        </p>
+        
+        <!-- Record detail indicator -->
+        <div class="flex items-center gap-1 mt-1 text-[8px] font-bold text-gray-400 uppercase tracking-wider">
+          <span class="w-1.5 h-1.5 rounded-full bg-current" :class="card.colorClass"></span>
+          <span>Record Count</span>
+        </div>
       </div>
     </div>
 
