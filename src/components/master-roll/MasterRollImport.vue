@@ -67,7 +67,8 @@ const parseFile = (file: File) => {
       project: row['Project'] || row.project,
       site: row['Site'] || row.site,
       date_of_exit: formatDate(row['Date of Exit'] || row.date_of_exit),
-      doe_rem: row['Remarks'] || row.doe_rem
+      doe_rem: row['Remarks'] || row.doe_rem,
+      resignation_notice_period: (row['Notice Period (Days)'] !== undefined && row['Notice Period (Days)'] !== '') ? Number(row['Notice Period (Days)']) : (row.resignation_notice_period ? Number(row.resignation_notice_period) : undefined)
     }))
   }
   reader.readAsBinaryString(file)

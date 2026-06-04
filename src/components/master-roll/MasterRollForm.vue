@@ -35,14 +35,44 @@ const form = reactive({
   date_of_joining: new Date().toISOString().split('T')[0],
   date_of_exit: '',
   doe_rem: '',
+  resignation_notice_period: 30,
   status: 'Active'
 })
 
-onMounted(() => {
-  if (props.employee) {
-    Object.assign(form, props.employee)
+watch(() => props.employee, (newVal) => {
+  if (newVal) {
+    Object.assign(form, {
+      resignation_notice_period: 30, // default if missing on older records
+      ...newVal
+    })
+  } else {
+    Object.assign(form, {
+      employee_name: '',
+      father_husband_name: '',
+      date_of_birth: '',
+      aadhar: '',
+      pan: '',
+      phone_no: '',
+      address: '',
+      bank: '',
+      account_no: '',
+      ifsc: '',
+      branch: '',
+      uan: '',
+      esic_no: '',
+      s_kalyan_no: '',
+      category: 'UNSKILLED',
+      p_day_wage: 0,
+      project: '',
+      site: '',
+      date_of_joining: new Date().toISOString().split('T')[0],
+      date_of_exit: '',
+      doe_rem: '',
+      resignation_notice_period: 30,
+      status: 'Active'
+    })
   }
-})
+}, { immediate: true })
 
 const loading = ref(false)
 const fetchingIfsc = ref(false)
@@ -137,7 +167,24 @@ const onSubmit = async () => {
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
         <UFormField label="Category">
-          <USelect v-model="form.category" :items="['UNSKILLED', 'SEMI-SKILLED', 'SKILLED', 'HIGHLY-SKILLED']" class="w-full" />
+          <UInput 
+            v-model="form.category" 
+            list="category-list" 
+            placeholder="Select or type Category..." 
+            class="w-full" 
+            icon="i-heroicons-chevron-down" 
+            trailing 
+          />
+          <datalist id="category-list">
+            <option value="UNSKILLED" />
+            <option value="SEMI-SKILLED" />
+            <option value="SKILLED" />
+            <option value="HIGHLY-SKILLED" />
+            <option value="Engineer" />
+            <option value="Technician" />
+            <option value="Helper" />
+            <option value="Supervisor" />
+          </datalist>
         </UFormField>
 
         <UFormField label="Daily Wage">
@@ -176,8 +223,12 @@ const onSubmit = async () => {
           <UInput v-model="form.date_of_exit" type="date" class="w-full" />
         </UFormField>
 
-        <UFormField label="Exit Remarks" class="sm:col-span-2 lg:col-span-2">
+        <UFormField label="Exit Remarks">
           <UInput v-model="form.doe_rem" placeholder="Reason for leaving..." class="w-full" />
+        </UFormField>
+
+        <UFormField label="Notice Period (Days)">
+          <UInput v-model="form.resignation_notice_period" type="number" placeholder="30" class="w-full" icon="i-heroicons-clock" />
         </UFormField>
       </div>
     </div>
