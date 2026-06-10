@@ -176,7 +176,10 @@ const rawRequest = async (endpoint: string, options: any = {}): Promise<any> => 
   }
 
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    // Only set Content-Type when there's actually a body to send.
+    // DELETE/GET requests without a body must NOT send this header —
+    // Fastify's JSON parser rejects an empty body when Content-Type is application/json.
+    ...(options.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
     ...(options.headers || {}),
   }
 

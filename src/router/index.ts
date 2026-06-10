@@ -76,6 +76,12 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/expenses',
+      name: 'expenses-dashboard',
+      component: () => import('../pages/expenses/ExpensesMobileShell.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/accounting/bills',
       name: 'bills-list',
       component: () => import('../pages/accounting/BillsList.vue'),
