@@ -17,6 +17,7 @@ defineProps<{
         <ULink to="/privacy" class="text-[10px] hover:text-primary transition-colors">Privacy Policy</ULink>
         <ULink to="/terms" class="text-[10px] hover:text-primary transition-colors">Terms of Service</ULink>
       </div>
+      
     </div>
   </footer>
 </template>
