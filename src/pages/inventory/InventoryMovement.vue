@@ -33,7 +33,7 @@
           <USelect
             v-model="filters.type"
             :items="[
-              { label: 'All Movements', value: '' },
+              { label: 'All Movements', value: 'ALL' },
               { label: 'Sales', value: 'SALE' },
               { label: 'Purchases', value: 'PURCHASE' },
               { label: 'Sales Returns', value: 'CREDIT_NOTE' },
@@ -42,7 +42,7 @@
             ]"
             class="w-full"
             size="sm"
-            @change="fetchMovements(filters)"
+            @update:model-value="handleFilterChange"
           />
        </div>
        <div class="w-64">
@@ -120,13 +120,24 @@ import { api } from '@/utils/api';
 const { movements, fetchMovements, loading } = useInventory();
 
 const filters = reactive({
-  type: '',
+  type: 'ALL',
   stockId: ''
 });
 const itemSearch = ref('');
 
+function handleFilterChange() {
+  const params: any = {};
+  if (filters.type && filters.type !== 'ALL') {
+    params.type = filters.type;
+  }
+  if (filters.stockId) {
+    params.stockId = filters.stockId;
+  }
+  fetchMovements(params);
+}
+
 onMounted(() => {
-  fetchMovements(filters);
+  handleFilterChange();
 });
 
 const filteredMovements = computed(() => {

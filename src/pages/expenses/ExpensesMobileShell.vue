@@ -2,12 +2,13 @@
 import { ref, computed } from 'vue'
 import DashboardTab from '@/components/expenses/DashboardTab.vue'
 import ListTab from '@/components/expenses/ListTab.vue'
+import CostCentersTab from '@/components/expenses/CostCentersTab.vue'
 import CashTab from '@/components/expenses/CashTab.vue'
 import SettingsTab from '@/components/expenses/SettingsTab.vue'
 import ExpenseSheet from '@/components/expenses/ExpenseSheet.vue'
 
 // Tab switching
-const activeTab = ref<'dashboard' | 'expenses' | 'cash' | 'settings'>('dashboard')
+const activeTab = ref<'dashboard' | 'expenses' | 'costcenters' | 'cash' | 'settings'>('dashboard')
 
 // Expense Sheet Modal Trigger
 const showExpenseSheet = ref(false)
@@ -38,6 +39,7 @@ const tabTitle = computed(() => {
   const map = {
     dashboard: 'My Cash Flow',
     expenses: 'Expenses Register',
+    costcenters: 'Cost Center Breakups',
     cash: 'Cash Registers',
     settings: 'Settings'
   }
@@ -46,9 +48,9 @@ const tabTitle = computed(() => {
 </script>
 
 <template>
-  <div class="w-full min-h-screen py-2 px-1 flex justify-center bg-slate-100 dark:bg-slate-950">
+  <div class="w-full min-h-[calc(100vh-170px)] py-2 px-1 flex justify-center items-center bg-slate-100 dark:bg-slate-950">
     <!-- Simulating a premium smartphone screen shell on desktop screens, fullscreen on mobile -->
-    <div class="w-full max-w-md bg-slate-50 dark:bg-slate-950 shadow-xl border border-slate-200/50 dark:border-slate-800 rounded-3xl min-h-[92vh] flex flex-col relative overflow-hidden">
+    <div class="w-full max-w-md bg-slate-50 dark:bg-slate-950 shadow-xl border border-slate-200/50 dark:border-slate-800 rounded-3xl h-[calc(100vh-200px)] max-h-[820px] min-h-[480px] flex flex-col relative overflow-hidden">
       <!-- Phone Status Bar Emulation -->
       <div class="h-6 px-5 flex justify-between items-center text-[10px] font-bold text-slate-400 dark:text-slate-600 bg-white/70 dark:bg-slate-950/70 backdrop-blur-md sticky top-0 z-20">
         <span>Gemini Expenses</span>
@@ -79,12 +81,13 @@ const tabTitle = computed(() => {
       </header>
 
       <!-- Dynamic Tab Viewports -->
-      <main class="flex-1 px-5 py-4 overflow-y-auto max-h-[calc(92vh-120px)] scrollbar-hide">
+      <main class="flex-1 px-5 py-4 overflow-y-auto scrollbar-hide">
         <KeepAlive>
           <component
             :is="
               activeTab === 'dashboard' ? DashboardTab :
               activeTab === 'expenses' ? ListTab :
+              activeTab === 'costcenters' ? CostCentersTab :
               activeTab === 'cash' ? CashTab : SettingsTab
             "
             :key="activeTab + '_' + refreshKey"
@@ -104,7 +107,7 @@ const tabTitle = computed(() => {
       </button>
 
       <!-- Bottom Navigation Bar Tabs -->
-      <nav class="h-16 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-t border-slate-100 dark:border-slate-850 grid grid-cols-4 items-center sticky bottom-0 z-20 shadow-lg">
+      <nav class="h-16 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-t border-slate-100 dark:border-slate-850 grid grid-cols-5 items-center sticky bottom-0 z-20 shadow-lg">
         <!-- Dashboard Tab -->
         <button
           @click="activeTab = 'dashboard'"
@@ -123,6 +126,16 @@ const tabTitle = computed(() => {
         >
           <UIcon :name="activeTab === 'expenses' ? 'i-heroicons-list-bullet-solid' : 'i-heroicons-list-bullet'" class="w-5 h-5" />
           <span class="text-[8px] font-black uppercase tracking-wider">List</span>
+        </button>
+
+        <!-- Cost Centers Tab -->
+        <button
+          @click="activeTab = 'costcenters'"
+          class="flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer"
+          :class="activeTab === 'costcenters' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 hover:text-slate-600'"
+        >
+          <UIcon :name="activeTab === 'costcenters' ? 'i-heroicons-building-office-2-solid' : 'i-heroicons-building-office-2'" class="w-5 h-5" />
+          <span class="text-[8px] font-black uppercase tracking-wider">Centers</span>
         </button>
 
         <!-- Cash Accounts Tab -->

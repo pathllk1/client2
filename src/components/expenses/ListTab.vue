@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, watch } from 'vue'
 import { useExpenses } from '@/composables/useExpenses'
-import * as XLSX from 'xlsx'
 
 const emit = defineEmits(['edit', 'refresh-dashboard'])
 
@@ -61,28 +60,41 @@ const handleDelete = async (id: string) => {
   }
 }
 
-const exportToExcel = () => {
+const exportToExcel = async () => {
   if (expenses.value.length === 0) {
     alert('No expenses to export')
     return
   }
 
-  const data = expenses.value.map((exp: any) => ({
-    'Date': exp.expense_date.split('T')[0],
-    'Category': exp.category_name,
-    'Cost Center': exp.cost_center_name,
-    'Paid To/Received From': exp.paid_to_received_from || '',
-    'Amount (₹)': parseFloat(exp.amount),
-    'Payment Mode': exp.payment_mode,
-    'Cash Drawer': exp.cash_register_name || '',
-    'Project': exp.project || '',
-    'Description': exp.description || ''
-  }))
+  const dateStr = new Date().toISOString().split('T')[0]
+  const selectedCostCenter = filters.costCenterId
+    ? costCenters.value.find(c => c.id === filters.costCenterId)
+    : null
 
-  const ws = XLSX.utils.json_to_sheet(data)
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, "Expenses")
-  XLSX.writeFile(wb, `Expenses_Report_${new Date().toISOString().split('T')[0]}.xlsx`)
+  let filename = `Expenses_Report_${dateStr}.xlsx`
+  if (selectedCostCenter) {
+    filename = `Expenses_Report_${selectedCostCenter.name.replace(/\s+/g, '_')}_${dateStr}.xlsx`
+  }
+
+  try {
+    const { useApi } = await import('@/utils/api')
+    const apiInstance = useApi()
+    const queryParams: any = {}
+    if (filters.categoryId) queryParams.categoryId = filters.categoryId
+    if (filters.costCenterId) queryParams.costCenterId = filters.costCenterId
+    if (filters.project) queryParams.project = filters.project
+    if (filters.search) queryParams.search = filters.search
+
+    const blob = await apiInstance.get('/expenses/export', { params: queryParams, responseType: 'blob' })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    link.click()
+    window.URL.revokeObjectURL(url)
+  } catch (err: any) {
+    alert('Export failed: ' + err.message)
+  }
 }
 
 const formatCurrency = (val: string | number) => {
