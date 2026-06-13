@@ -22,7 +22,7 @@ interface COAEntry {
 const coaData = ref<COAEntry[]>([])
 const loading = ref(true)
 const search = ref('')
-const typeFilter = ref('')
+const typeFilter = ref('all')
 const isModalOpen = ref(false)
 const saving = ref(false)
 
@@ -42,7 +42,7 @@ const accountTypes = [
 ]
 
 const filterOptions = computed(() => [
-  { label: 'All Types', value: '' },
+  { label: 'All Types', value: 'all' },
   ...accountTypes
 ])
 
@@ -59,7 +59,7 @@ const fetchCOA = async () => {
   try {
     const params = new URLSearchParams()
     if (search.value) params.append('search', search.value)
-    if (typeFilter.value) params.append('type', typeFilter.value)
+    if (typeFilter.value && typeFilter.value !== 'all') params.append('type', typeFilter.value)
     
     const response = await api.get(`/accounting/coa?${params.toString()}`)
     coaData.value = response.data

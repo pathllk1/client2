@@ -17,9 +17,9 @@ const {
 } = useExpenses()
 
 const filters = reactive({
-  categoryId: '',
-  costCenterId: '',
-  project: '',
+  categoryId: 'all',
+  costCenterId: 'all',
+  project: 'all',
   search: ''
 })
 
@@ -31,9 +31,17 @@ const blurActiveInput = () => {
   }
 }
 
+const getApiFilters = () => {
+  const apiFilters = { ...filters }
+  if (apiFilters.categoryId === 'all') apiFilters.categoryId = ''
+  if (apiFilters.costCenterId === 'all') apiFilters.costCenterId = ''
+  if (apiFilters.project === 'all') apiFilters.project = ''
+  return apiFilters
+}
+
 const loadData = async () => {
   await Promise.all([
-    fetchExpenses(filters),
+    fetchExpenses(getApiFilters()),
     fetchCategories(),
     fetchCostCenters(),
     fetchRecentProjects()
@@ -46,7 +54,7 @@ onMounted(() => {
 
 // Trigger reload on filter updates
 watch(filters, () => {
-  fetchExpenses(filters)
+  fetchExpenses(getApiFilters())
 })
 
 const handleDelete = async (id: string) => {
@@ -67,7 +75,7 @@ const exportToExcel = async () => {
   }
 
   const dateStr = new Date().toISOString().split('T')[0]
-  const selectedCostCenter = filters.costCenterId
+  const selectedCostCenter = filters.costCenterId && filters.costCenterId !== 'all'
     ? costCenters.value.find(c => c.id === filters.costCenterId)
     : null
 
@@ -80,9 +88,9 @@ const exportToExcel = async () => {
     const { useApi } = await import('@/utils/api')
     const apiInstance = useApi()
     const queryParams: any = {}
-    if (filters.categoryId) queryParams.categoryId = filters.categoryId
-    if (filters.costCenterId) queryParams.costCenterId = filters.costCenterId
-    if (filters.project) queryParams.project = filters.project
+    if (filters.categoryId && filters.categoryId !== 'all') queryParams.categoryId = filters.categoryId
+    if (filters.costCenterId && filters.costCenterId !== 'all') queryParams.costCenterId = filters.costCenterId
+    if (filters.project && filters.project !== 'all') queryParams.project = filters.project
     if (filters.search) queryParams.search = filters.search
 
     const blob = await apiInstance.get('/expenses/export', { params: queryParams, responseType: 'blob' })
@@ -170,7 +178,7 @@ const getCategoryColor = (name: string) => {
         <USelect
           v-model="filters.categoryId"
           :items="[
-            { label: 'All Categories', value: '' },
+            { label: 'All Categories', value: 'all' },
             ...categories.map(c => ({ label: c.name, value: c.id }))
           ]"
           size="sm"
@@ -184,7 +192,7 @@ const getCategoryColor = (name: string) => {
         <USelect
           v-model="filters.costCenterId"
           :items="[
-            { label: 'All Cost Centers', value: '' },
+            { label: 'All Cost Centers', value: 'all' },
             ...costCenters.map(cc => ({ label: cc.name, value: cc.id }))
           ]"
           size="sm"
@@ -198,7 +206,7 @@ const getCategoryColor = (name: string) => {
         <USelect
           v-model="filters.project"
           :items="[
-            { label: 'All Projects', value: '' },
+            { label: 'All Projects', value: 'all' },
             ...projects.map(p => ({ label: p, value: p }))
           ]"
           size="sm"
