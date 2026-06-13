@@ -4,7 +4,7 @@ import { useExpenses } from '@/composables/useExpenses'
 
 const props = defineProps<{
   modelValue: boolean
-  registerId: string | null
+  register: any | null
 }>()
 
 const emit = defineEmits(['update:modelValue', 'saved'])
@@ -36,11 +36,11 @@ const handleSubmit = async () => {
     alert('Please enter a valid deposit amount')
     return
   }
-  if (!props.registerId) return
+  if (!props.register?.id) return
 
   saving.value = true
   try {
-    const res = await depositCash(props.registerId, amt, state.description.trim() || 'Manual Deposit')
+    const res = await depositCash(props.register.id, amt, state.description.trim() || 'Manual Deposit')
     if (res.success) {
       emit('saved')
       isOpen.value = false
@@ -99,6 +99,25 @@ const handleSubmit = async () => {
               class="rounded-full"
               @click="isOpen = false"
             />
+          </div>
+
+          <!-- Target Drawer & Cost Center Info Banner -->
+          <div v-if="props.register" class="bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100/50 dark:border-indigo-900/30 p-3 rounded-xl">
+            <div class="flex flex-col gap-1">
+              <span class="text-[8px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Depositing Into</span>
+              <span class="text-xs font-black text-slate-800 dark:text-slate-100 leading-tight">
+                {{ props.register.name }}
+              </span>
+              <div class="flex items-center gap-1.5 mt-0.5">
+                <span class="text-[9px] font-bold text-indigo-600 dark:text-indigo-400">
+                  {{ props.register.cost_center_name || '⚠ Unlinked (General)' }}
+                </span>
+                <span class="text-[9px] text-slate-400">•</span>
+                <span class="text-[9px] font-bold text-slate-500">
+                  Bal: ₹{{ parseFloat(props.register.balance).toFixed(2) }}
+                </span>
+              </div>
+            </div>
           </div>
 
           <div class="space-y-4">

@@ -96,6 +96,11 @@ const filteredRegisters = computed(() => {
     return registers.value.filter(r => r.cost_center_id === resolvedCostCenter.value!.id)
   }
 
+  // If cost center name is entered but NOT resolved, show nothing (or only unlinked registers)
+  if (formState.costCenterName.trim()) {
+    return registers.value.filter(r => !r.cost_center_id)
+  }
+
   // No cost center typed yet — show all so the user can see their accounts
   return registers.value
 })
@@ -112,8 +117,8 @@ const onRegisterChange = (registerId: string) => {
 // If the cost center changes and the currently selected register no longer
 // belongs to it, auto-switch to the first valid register.
 watch(filteredRegisters, (newRegs) => {
-  if (formState.paymentMode === 'CASH' && resolvedCostCenter.value) {
-    // Only enforce when a cost center IS resolved
+  if (formState.paymentMode === 'CASH') {
+    // Enforce valid register selection whenever payment mode is CASH
     const stillValid = newRegs.some(r => r.id === formState.cashRegisterId)
     if (!stillValid) {
       formState.cashRegisterId = newRegs[0]?.id || ''

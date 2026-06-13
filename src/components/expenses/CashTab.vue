@@ -333,7 +333,7 @@ const formatDate = (iso: string) => {
     <!-- Modals -->
     <CashInModal
       v-model="showCashIn"
-      :registerId="activeRegisterId"
+      :register="activeRegister"
       @saved="handleDepositComplete"
     />
   </div>

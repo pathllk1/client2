@@ -247,7 +247,7 @@ const getCategoryColor = (name: string) => {
                 -{{ formatCurrency(exp.amount) }}
               </span>
               <span class="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                {{ exp.payment_mode }}
+                {{ exp.payment_mode === 'CASH' && exp.cash_register_name ? `CASH (${exp.cash_register_name})` : exp.payment_mode }}
               </span>
             </div>
 

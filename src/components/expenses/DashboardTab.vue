@@ -43,10 +43,17 @@ const costCenterCashBreakdown = computed(() => {
         breakdown[r.cost_center_id] = { id: r.cost_center_id, name: r.cost_center_name || 'General', total: 0 }
       }
       breakdown[r.cost_center_id]!.total += parseFloat(r.balance)
+    } else {
+      // Group unlinked registers under 'unlinked' key
+      if (!breakdown['unlinked']) {
+        breakdown['unlinked'] = { id: 'unlinked', name: 'Unlinked Drawers', total: 0 }
+      }
+      breakdown['unlinked']!.total += parseFloat(r.balance)
     }
   })
   
-  return Object.values(breakdown)
+  // Only return items that are defined cost centers, or the unlinked item if it has a non-zero balance
+  return Object.values(breakdown).filter(item => item.id !== 'unlinked' || item.total !== 0)
 })
 
 const formatCurrency = (val: number | string) => {
