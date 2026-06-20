@@ -89,6 +89,12 @@ const navItems = computed(() => [
     path: '/expenses',
     icon: 'M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z',
     show: hasFirm.value
+  },
+  {
+    name: 'Mutual Funds',
+    path: '/mutual-funds',
+    icon: 'M2.25 18 9 11.25l4.306 4.306a.75.75 0 0 0 1.08 0L21.75 8.25m0-3h-5.25m5.25 0v5.25',
+    show: !!user.value
   }
 ])
 </script>

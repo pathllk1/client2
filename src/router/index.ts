@@ -160,6 +160,12 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/mutual-funds',
+      name: 'mutual-funds',
+      component: () => import('../pages/mutual-funds/index.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/auth/login',
       name: 'login',
       component: () => import('../pages/auth/Login.vue'),
