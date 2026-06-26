@@ -41,9 +41,35 @@ const REQUIRED_FIELDS = [
   { key: 'site', label: 'Site' }
 ]
 
+const isFieldValMissing = (key: string, value: any): boolean => {
+  if (value === undefined || value === null) return true
+  const str = value.toString().trim()
+  if (str === '') return true
+
+  const lower = str.toLowerCase()
+  if (lower === 'n/a' || lower === 'none' || lower === 'null' || lower === 'undefined') return true
+
+  if (key === 'phone_no') {
+    if (str === '0' || /^0+$/.test(str)) return true
+    if (/^(\d)\1{9}$/.test(str)) return true
+    if ('0123456789876543210'.includes(str)) return true
+  }
+
+  if (key === 'aadhar') {
+    if (str === '0' || /^0+$/.test(str)) return true
+    if (/^(\d)\1{11}$/.test(str)) return true
+  }
+
+  if (key === 'uan') {
+    if (str === '0' || /^0+$/.test(str)) return true
+  }
+
+  return false
+}
+
 const missingDataReport = computed(() => {
   return allActiveEmployees.value.map(emp => {
-    const missing = REQUIRED_FIELDS.filter(f => !emp[f.key] || emp[f.key].toString().trim() === '')
+    const missing = REQUIRED_FIELDS.filter(f => isFieldValMissing(f.key, emp[f.key]))
     return missing.length > 0 ? {
       ...emp,
       missingFields: missing
@@ -55,7 +81,7 @@ const invalidDataReport = computed(() => {
   const report: any[] = []
   allActiveEmployees.value.forEach(emp => {
     // Phone Validation
-    if (emp.phone_no) {
+    if (emp.phone_no && !isFieldValMissing('phone_no', emp.phone_no)) {
       const val = emp.phone_no.toString().trim()
       if (!/^\d{10}$/.test(val)) {
         report.push({ ...emp, targetField: 'Phone', value: val, issue: 'Must be 10 digits' })
@@ -69,7 +95,7 @@ const invalidDataReport = computed(() => {
     }
 
     // Aadhar Validation
-    if (emp.aadhar) {
+    if (emp.aadhar && !isFieldValMissing('aadhar', emp.aadhar)) {
       const val = emp.aadhar.toString().trim()
       if (!/^\d{12}$/.test(val)) {
         report.push({ ...emp, targetField: 'Aadhar', value: val, issue: 'Must be 12 digits' })
@@ -79,7 +105,7 @@ const invalidDataReport = computed(() => {
     }
 
     // PAN Validation
-    if (emp.pan) {
+    if (emp.pan && !isFieldValMissing('pan', emp.pan)) {
       const val = emp.pan.toString().trim().toUpperCase()
       if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(val)) {
         report.push({ ...emp, targetField: 'PAN', value: val, issue: 'Invalid Format (ABCDE1234F)' })

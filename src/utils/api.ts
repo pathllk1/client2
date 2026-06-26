@@ -176,10 +176,10 @@ const rawRequest = async (endpoint: string, options: any = {}): Promise<any> => 
   }
 
   const headers: Record<string, string> = {
-    // Only set Content-Type when there's actually a body to send.
+    // Only set Content-Type when there's actually a body to send and it's not FormData.
     // DELETE/GET requests without a body must NOT send this header —
     // Fastify's JSON parser rejects an empty body when Content-Type is application/json.
-    ...(options.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+    ...(options.body !== undefined && !(options.body instanceof FormData) ? { 'Content-Type': 'application/json' } : {}),
     ...(options.headers || {}),
   }
 
@@ -250,6 +250,8 @@ export const api = {
   put: (url: string, data: any, options?: any) => rawRequest(url, { ...options, method: 'PUT', body: JSON.stringify(data) }),
   patch: (url: string, data: any, options?: any) => rawRequest(url, { ...options, method: 'PATCH', body: JSON.stringify(data) }),
   delete: (url: string, options?: any) => rawRequest(url, { ...options, method: 'DELETE' }),
+  upload: (url: string, formData: FormData, options?: any) => rawRequest(url, { ...options, method: 'POST', body: formData }),
+  uploadPut: (url: string, formData: FormData, options?: any) => rawRequest(url, { ...options, method: 'PUT', body: formData }),
 }
 
 // Keep useApi for compatibility

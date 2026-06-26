@@ -82,6 +82,13 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/documents',
+      name: 'documents-dashboard',
+      component: () => import('../pages/documents/index.vue'),
+      meta: { requiresAuth: true }
+    },
+
+    {
       path: '/accounting/bills',
       name: 'bills-list',
       component: () => import('../pages/accounting/BillsList.vue'),
