@@ -101,6 +101,12 @@ const navItems = computed(() => [
     path: '/mutual-funds',
     icon: 'M2.25 18 9 11.25l4.306 4.306a.75.75 0 0 0 1.08 0L21.75 8.25m0-3h-5.25m5.25 0v5.25',
     show: !!user.value
+  },
+  {
+    name: 'Weather Analytics',
+    path: '/weather',
+    icon: 'M2.25 15a2.25 2.25 0 1 1 3 0V18a2.25 2.25 0 1 1-3 0v-3Zm6-3A2.25 2.25 0 1 1 11.25 12v6A2.25 2.25 0 1 1 8.25 18v-6Zm6-6a2.25 2.25 0 1 1 3 0V18a2.25 2.25 0 1 1-3 0V6Z',
+    show: true
   }
 
 ])

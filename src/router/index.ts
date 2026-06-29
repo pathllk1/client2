@@ -192,6 +192,28 @@ const router = createRouter({
       name: 'terms',
       component: () => import('../pages/About.vue'), // Placeholder
     },
+    {
+      path: '/weather',
+      component: () => import('../pages/weather/WeatherLayout.vue'),
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: '',
+          name: 'weather-overview',
+          component: () => import('../pages/weather/Overview.vue'),
+        },
+        {
+          path: 'city/:city',
+          name: 'weather-city-detail',
+          component: () => import('../pages/weather/CityDetail.vue'),
+        },
+        {
+          path: 'compare',
+          name: 'weather-comparison',
+          component: () => import('../pages/weather/Comparison.vue'),
+        }
+      ]
+    },
   ],
 })
 
