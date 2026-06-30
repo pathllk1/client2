@@ -1,8 +1,16 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed, nextTick } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { useApi } from '@/utils/api'
 import { useToast } from '@nuxt/ui/composables'
+import * as ExcelJS from 'exceljs'
+import { Chart, BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend, ArcElement, DoughnutController } from 'chart.js'
+import DocHeader from '@/components/documents/DocHeader.vue'
+import DocFilters from '@/components/documents/DocFilters.vue'
+import DocTable from '@/components/documents/DocTable.vue'
+import DocPagination from '@/components/documents/DocPagination.vue'
+
+Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend, ArcElement, DoughnutController)
 
 const { selectedFirmId } = useAuth()
 const api = useApi()
@@ -30,13 +38,21 @@ interface DocumentItem {
 }
 
 // State
-const documents = ref<DocumentItem[]>([])
+const rawDocuments = ref<DocumentItem[]>([])
+const activeTab = ref('dashboard')
+
+// Chart references
+let barChart: Chart | null = null
+let doughnutChart: Chart | null = null
+const barChartRef = ref<HTMLCanvasElement | null>(null)
+const doughnutChartRef = ref<HTMLCanvasElement | null>(null)
+
 const loading = ref(false)
 const searchQuery = ref('')
 const sortBy = ref('expiry_date')
 const sortOrder = ref('asc')
-const showNotificationSuccess = ref(false)
-const notificationSummary = ref({ total: 0, expired: 0, expiringSoon: 0 })
+const currentPage = ref(1)
+const pageSize = ref(10)
 
 // Modal Controls
 const isModalOpen = ref(false)
@@ -58,43 +74,17 @@ const form = ref({
 const fileToUpload = ref<File | null>(null)
 const uploadInputKey = ref(0) // Used to force-reset file input
 
-// Formatting Utilities
-const formatCurrency = (val: number | string) => {
-  const num = parseFloat(String(val)) || 0;
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 2
-  }).format(num);
-}
-
-const formatDate = (dateStr: string | null) => {
-  if (!dateStr) return '-';
-  // Avoid time-zone offset issue by taking date parts directly
-  const firstPart = dateStr.split('T')[0];
-  if (!firstPart) return dateStr;
-  const parts = firstPart.split('-');
-  if (parts.length < 3) return dateStr;
-  const [year, month, day] = parts;
-  if (!year || !month || !day) return dateStr;
-  const dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-  return dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-}
-
-// Fetch list of documents
+// Fetch all documents once
 const fetchDocuments = async () => {
   if (!selectedFirmId.value) return;
   loading.value = true;
   try {
-    const res = await api.get('/documents', {
-      params: {
-        search: searchQuery.value,
-        sort: sortBy.value,
-        order: sortOrder.value
-      }
-    });
+    const res = await api.get('/documents');
     if (res.success) {
-      documents.value = res.data;
+      rawDocuments.value = res.data;
+      if (activeTab.value === 'dashboard') {
+        renderCharts();
+      }
     }
   } catch (err: any) {
     toast.add({ title: 'Error fetching documents', description: err.message, color: 'error' });
@@ -103,57 +93,305 @@ const fetchDocuments = async () => {
   }
 }
 
-// Trigger Notifications
-const sendNotifications = async () => {
-  try {
-    const res = await api.post('/documents/send-notifications', {});
-    if (res.success) {
-      notificationSummary.value = {
-        total: res.summary.total_alerts,
-        expired: res.summary.expired,
-        expiringSoon: res.summary.expiring_soon
-      };
-      showNotificationSuccess.value = true;
-      setTimeout(() => {
-        showNotificationSuccess.value = false;
-      }, 7000);
-      toast.add({ title: 'Success', description: 'Alert notifications sent successfully', color: 'success' });
-    }
-  } catch (err: any) {
-    toast.add({ title: 'Error sending notifications', description: err.message, color: 'error' });
-  }
-}
-
-// Export list as CSV
-const downloadCSV = () => {
-  if (documents.value.length === 0) {
+// Export filtered/sorted list as Excel
+const downloadExcel = async () => {
+  const list = sortedDocuments.value;
+  if (list.length === 0) {
     toast.add({ title: 'No documents', description: 'Nothing to download', color: 'warning' });
     return;
   }
-  const headers = ['Document Name', 'Reference Number', 'Description', 'Start Date', 'Original Expiry Date', 'Closed Date', 'Extended Expiry Date', 'Value', 'Status', 'File URL'];
-  const rows = documents.value.map(doc => [
-    doc.name,
-    doc.reference_number,
-    doc.description || '',
-    doc.start_date ? doc.start_date.split('T')[0] : '',
-    doc.original_expiry_date ? doc.original_expiry_date.split('T')[0] : '',
-    doc.closed_date ? doc.closed_date.split('T')[0] : '',
-    doc.extended_expiry_date ? doc.extended_expiry_date.split('T')[0] : '',
-    doc.value,
-    doc.computed_status || doc.status,
-    doc.file_url || ''
-  ]);
-  
-  const csvContent = "data:text/csv;charset=utf-8," 
-    + [headers.join(','), ...rows.map(e => e.map(val => `"${String(val).replace(/"/g, '""')}"`).join(','))].join('\n');
-    
-  const encodedUri = encodeURI(csvContent);
-  const link = document.createElement("a");
-  link.setAttribute("href", encodedUri);
-  link.setAttribute("download", `Documents_List_${new Date().toISOString().split('T')[0]}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+
+  try {
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'BizSuite Document Manager';
+    workbook.created = new Date();
+    workbook.modified = new Date();
+
+    const ws = workbook.addWorksheet('Document Registry', {
+      views: [{ state: 'frozen', xSplit: 0, ySplit: 7, showGridLines: true }]
+    });
+
+    // Title Banner
+    ws.mergeCells('A1:J1');
+    const titleCell = ws.getCell('A1');
+    titleCell.value = '📂 BIZSUITE DOCUMENT DIRECTORY & COMPLIANCE SUMMARY';
+    titleCell.font = { name: 'Segoe UI', size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
+    titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F766E' } }; // Teal
+    titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
+    ws.getRow(1).height = 40;
+
+    // Metadata Info
+    ws.mergeCells('A2:J2');
+    const infoCell = ws.getCell('A2');
+    infoCell.value = `Report Generated: ${new Date().toLocaleString()} | Active Multi-Firm Tenant Directory`;
+    infoCell.font = { name: 'Segoe UI', size: 9, italic: true, color: { argb: 'FF64748B' } };
+    infoCell.alignment = { vertical: 'middle', horizontal: 'center' };
+    ws.getRow(2).height = 20;
+
+    // Summary Card calculations
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayPlus30Days = new Date();
+    todayPlus30Days.setDate(today.getDate() + 30);
+    todayPlus30Days.setHours(0, 0, 0, 0);
+
+    const totalCount = list.length;
+    let expiredCount = 0;
+    let expiringSoonCount = 0;
+    let activeCount = 0;
+    let totalValue = 0;
+
+    list.forEach(doc => {
+      const val = Number(doc.value) || 0;
+      totalValue += val;
+
+      const status = (doc.computed_status || doc.status || '').toLowerCase();
+      if (status === 'closed') {
+        return;
+      }
+
+      const expiryStr = doc.extended_expiry_date || doc.original_expiry_date;
+      if (!expiryStr) {
+        activeCount++;
+        return;
+      }
+
+      const expiry = new Date(expiryStr);
+      expiry.setHours(0, 0, 0, 0);
+
+      if (expiry < today) {
+        expiredCount++;
+      } else if (expiry < todayPlus30Days) {
+        expiringSoonCount++;
+      } else {
+        activeCount++;
+      }
+    });
+
+    // Write Summary Cards
+    ws.getRow(3).height = 10; // Spacer row
+
+    const summaries = [
+      { label: 'TOTAL DOCUMENTS', value: totalCount, col: 'A', fmt: '#,##0', color: 'FF1E293B' },
+      { label: 'ACTIVE / PENDING', value: activeCount, col: 'C', fmt: '#,##0', color: 'FF059669' },
+      { label: 'EXPIRING SOON (<30D)', value: expiringSoonCount, col: 'E', fmt: '#,##0', color: 'FFD97706' },
+      { label: 'EXPIRED', value: expiredCount, col: 'G', fmt: '#,##0', color: 'FFDC2626' },
+      { label: 'TOTAL PORTFOLIO VALUE', value: totalValue, col: 'I', fmt: '₹#,##0.00', color: 'FF0D9488' }
+    ];
+
+    summaries.forEach(s => {
+      // Label
+      const lblCell = ws.getCell(`${s.col}4`);
+      lblCell.value = s.label;
+      lblCell.font = { name: 'Segoe UI', size: 9, bold: true, color: { argb: 'FF64748B' } };
+      lblCell.alignment = { horizontal: 'center', vertical: 'middle' };
+      ws.mergeCells(`${s.col}4:${String.fromCharCode(s.col.charCodeAt(0) + 1)}4`);
+
+      // Value
+      const valCell = ws.getCell(`${s.col}5`);
+      valCell.value = s.value;
+      valCell.numFmt = s.fmt;
+      valCell.font = { name: 'Segoe UI', size: 14, bold: true, color: { argb: s.color } };
+      valCell.alignment = { horizontal: 'center', vertical: 'middle' };
+      valCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
+      ws.mergeCells(`${s.col}5:${String.fromCharCode(s.col.charCodeAt(0) + 1)}5`);
+
+      // Add subtle borders to the summary box
+      const borderStyle = { style: 'thin' as const, color: { argb: 'FFE2E8F0' } };
+      for (let r = 4; r <= 5; r++) {
+        for (let cOff = 0; cOff <= 1; cOff++) {
+          const colLetter = String.fromCharCode(s.col.charCodeAt(0) + cOff);
+          const cell = ws.getCell(`${colLetter}${r}`);
+          cell.border = {
+            top: r === 4 ? borderStyle : undefined,
+            bottom: r === 5 ? borderStyle : undefined,
+            left: cOff === 0 ? borderStyle : undefined,
+            right: cOff === 1 ? borderStyle : undefined
+          };
+        }
+      }
+    });
+
+    ws.getRow(4).height = 18;
+    ws.getRow(5).height = 24;
+    ws.getRow(6).height = 12; // Spacer row
+
+    // Columns configuration
+    ws.columns = [
+      { key: 'name', width: 28 },
+      { key: 'reference_number', width: 22 },
+      { key: 'description', width: 35 },
+      { key: 'start_date', width: 15 },
+      { key: 'original_expiry_date', width: 22 },
+      { key: 'extended_expiry_date', width: 22 },
+      { key: 'closed_date', width: 15 },
+      { key: 'value', width: 18 },
+      { key: 'status', width: 16 },
+      { key: 'file_url', width: 32 }
+    ];
+
+    // Table Headers
+    const headers = [
+      'Document Name',
+      'Reference Number',
+      'Description',
+      'Start Date',
+      'Original Expiry Date',
+      'Extended Expiry Date',
+      'Closed Date',
+      'Total Value',
+      'Status',
+      'File Link'
+    ];
+
+    const headerRow = ws.getRow(7);
+    headerRow.height = 28;
+    headers.forEach((h, i) => {
+      const cell = headerRow.getCell(i + 1);
+      cell.value = h;
+      cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E293B' } }; // Dark Slate
+      cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+      cell.border = {
+        top: { style: 'medium', color: { argb: 'FF0F172A' } },
+        bottom: { style: 'medium', color: { argb: 'FF0F172A' } },
+        left: { style: 'thin', color: { argb: 'FF475569' } },
+        right: { style: 'thin', color: { argb: 'FF475569' } }
+      };
+    });
+
+    // Populate Data Rows
+    list.forEach((doc, idx) => {
+      const rowNum = 8 + idx;
+      const row = ws.getRow(rowNum);
+      row.height = 24;
+
+      // Populate values
+      row.getCell(1).value = doc.name;
+      row.getCell(2).value = doc.reference_number;
+      row.getCell(3).value = doc.description || '';
+
+      // Dates
+      row.getCell(4).value = doc.start_date ? new Date(doc.start_date) : '';
+      row.getCell(5).value = doc.original_expiry_date ? new Date(doc.original_expiry_date) : '';
+      row.getCell(6).value = doc.extended_expiry_date ? new Date(doc.extended_expiry_date) : '';
+      row.getCell(7).value = doc.closed_date ? new Date(doc.closed_date) : '';
+
+      // Value
+      row.getCell(8).value = doc.value ? Number(doc.value) : 0;
+
+      // Status
+      const computedStatus = doc.computed_status || doc.status;
+      row.getCell(9).value = computedStatus;
+
+      // File URL as Hyperlink
+      if (doc.file_url) {
+        row.getCell(10).value = {
+          text: doc.file_name || 'Download',
+          hyperlink: doc.file_url
+        };
+      } else {
+        row.getCell(10).value = '';
+      }
+
+      // Formatting & Styling loop
+      const isEven = idx % 2 === 0;
+      const rowFill = { type: 'pattern' as const, pattern: 'solid' as const, fgColor: { argb: isEven ? 'FFFFFFFF' : 'FFF8FAFC' } };
+      const borderStyle = { style: 'thin' as const, color: { argb: 'FFE2E8F0' } };
+
+      for (let col = 1; col <= 10; col++) {
+        const cell = row.getCell(col);
+        cell.font = { name: 'Segoe UI', size: 10, color: { argb: 'FF1E293B' } };
+        cell.fill = rowFill;
+        cell.border = {
+          top: borderStyle,
+          bottom: borderStyle,
+          left: borderStyle,
+          right: borderStyle
+        };
+
+        // Alignments & Number formats
+        if ([1, 3].includes(col)) {
+          cell.alignment = { vertical: 'middle', horizontal: 'left' };
+        } else if ([2, 4, 5, 6, 7].includes(col)) {
+          cell.alignment = { vertical: 'middle', horizontal: 'center' };
+          if (col >= 4 && col <= 7 && cell.value) {
+            cell.numFmt = 'yyyy-mm-dd';
+          }
+        } else if (col === 8) {
+          cell.alignment = { vertical: 'middle', horizontal: 'right' };
+          cell.numFmt = '₹#,##0.00';
+        } else if (col === 9) {
+          cell.alignment = { vertical: 'middle', horizontal: 'center' };
+          // Highlight based on status
+          const statusLower = String(computedStatus).toLowerCase();
+          if (statusLower === 'expired') {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } }; // Light Red
+            cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF991B1B' } }; // Dark Red
+          } else if (statusLower === 'expiring soon') {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } }; // Light Amber
+            cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF92400E' } }; // Dark Amber
+          } else if (['active', 'pending'].includes(statusLower)) {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1FAE5' } }; // Light Green
+            cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF065F46' } }; // Dark Green
+          } else if (statusLower === 'closed') {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F4F6' } }; // Light Gray
+            cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF374151' } }; // Dark Gray
+          }
+        } else if (col === 10) {
+          cell.alignment = { vertical: 'middle', horizontal: 'center' };
+          if (cell.value && typeof cell.value === 'object') {
+            cell.font = { name: 'Segoe UI', size: 10, color: { argb: 'FF0F766E' }, underline: true }; // Teal, underlined
+          }
+        }
+      }
+    });
+
+    // Total Bottom Row
+    const totalRowIndex = 8 + list.length;
+    const totalRow = ws.getRow(totalRowIndex);
+    totalRow.height = 26;
+
+    // Label "TOTALS"
+    totalRow.getCell(1).value = 'TOTALS';
+    totalRow.getCell(1).font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF1E293B' } };
+    totalRow.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
+
+    // Total Value Formula
+    const valCell = totalRow.getCell(8);
+    valCell.value = { formula: `SUM(H8:H${totalRowIndex - 1})` };
+    valCell.numFmt = '₹#,##0.00';
+    valCell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF1E293B' } };
+    valCell.alignment = { vertical: 'middle', horizontal: 'right' };
+
+    // Formatting borders for Total Row
+    const borderTop = { style: 'thin' as const, color: { argb: 'FF1E293B' } };
+    const borderBottom = { style: 'double' as const, color: { argb: 'FF1E293B' } };
+    for (let col = 1; col <= 10; col++) {
+      const cell = totalRow.getCell(col);
+      cell.border = {
+        top: borderTop,
+        bottom: borderBottom
+      };
+    }
+
+    // Write buffer and download
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Documents_Directory_${new Date().toISOString().split('T')[0]}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+
+    toast.add({ title: 'Excel report downloaded successfully!', color: 'success' });
+  } catch (err: any) {
+    console.error('Excel export error:', err);
+    toast.add({ title: 'Failed to export Excel report: ' + err.message, color: 'error' });
+  }
 }
 
 // File Selection Handler
@@ -274,342 +512,717 @@ const deleteDoc = async (id: string) => {
   }
 }
 
-// Query listeners
-let searchTimeout: ReturnType<typeof setTimeout> | null = null;
-watch(searchQuery, () => {
-  if (searchTimeout) clearTimeout(searchTimeout);
-  searchTimeout = setTimeout(() => {
-    fetchDocuments();
-  }, 400);
+// Client-Side Searching/Filtering
+const filteredDocuments = computed(() => {
+  if (!searchQuery.value.trim()) {
+    return rawDocuments.value;
+  }
+  const query = searchQuery.value.toLowerCase().trim();
+  return rawDocuments.value.filter(doc => {
+    return (
+      (doc.name && doc.name.toLowerCase().includes(query)) ||
+      (doc.reference_number && doc.reference_number.toLowerCase().includes(query)) ||
+      (doc.description && doc.description.toLowerCase().includes(query))
+    );
+  });
 });
 
-watch([sortBy, sortOrder], () => {
-  fetchDocuments();
+// Client-Side Sorting
+const sortedDocuments = computed(() => {
+  const list = [...filteredDocuments.value];
+  const field = sortBy.value;
+  const order = sortOrder.value === 'asc' ? 1 : -1;
+  
+  list.sort((a, b) => {
+    if (field === 'expiry_date') {
+      const dateA = a.extended_expiry_date || a.original_expiry_date || '';
+      const dateB = b.extended_expiry_date || b.original_expiry_date || '';
+      return dateA.localeCompare(dateB) * order;
+    } else if (field === 'start_date') {
+      const dateA = a.start_date || '';
+      const dateB = b.start_date || '';
+      return dateA.localeCompare(dateB) * order;
+    } else if (field === 'name') {
+      const valA = a.name || '';
+      const valB = b.name || '';
+      return valA.localeCompare(valB) * order;
+    } else if (field === 'reference_number') {
+      const valA = a.reference_number || '';
+      const valB = b.reference_number || '';
+      return valA.localeCompare(valB) * order;
+    } else if (field === 'description') {
+      const valA = a.description || '';
+      const valB = b.description || '';
+      return valA.localeCompare(valB) * order;
+    } else if (field === 'status') {
+      const valA = a.computed_status || a.status || '';
+      const valB = b.computed_status || b.status || '';
+      return valA.localeCompare(valB) * order;
+    } else if (field === 'value') {
+      const valA = parseFloat(String(a.value)) || 0;
+      const valB = parseFloat(String(b.value)) || 0;
+      return (valA - valB) * order;
+    }
+    return 0;
+  });
+  return list;
+});
+
+// Three-state sorting handler
+const handleSort = (field: string) => {
+  if (sortBy.value === field) {
+    if (sortOrder.value === 'asc') {
+      sortOrder.value = 'desc';
+    } else {
+      // Third click: reset to default sorting
+      sortBy.value = 'expiry_date';
+      sortOrder.value = 'asc';
+    }
+  } else {
+    sortBy.value = field;
+    sortOrder.value = 'asc';
+  }
+}
+
+// Client-Side Pagination
+const paginatedDocuments = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  const end = start + pageSize.value;
+  return sortedDocuments.value.slice(start, end);
+});
+
+// Reset to first page when filtering or sorting changes
+watch([searchQuery, sortBy, sortOrder], () => {
+  currentPage.value = 1;
 });
 
 watch(selectedFirmId, () => {
   fetchDocuments();
 });
 
+// Dashboard Computed Statistics
+const totalDocsCount = computed(() => rawDocuments.value.length)
+
+const expiredDocsCount = computed(() => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return rawDocuments.value.filter(doc => {
+    if (doc.status === 'Closed') return false
+    const expiryStr = doc.extended_expiry_date || doc.original_expiry_date
+    if (!expiryStr) return false
+    const expiry = new Date(expiryStr)
+    expiry.setHours(0, 0, 0, 0)
+    return expiry < today
+  }).length
+})
+
+const expiringSoonDocsCount = computed(() => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const thirtyDaysLater = new Date()
+  thirtyDaysLater.setDate(today.getDate() + 30)
+  thirtyDaysLater.setHours(0, 0, 0, 0)
+  return rawDocuments.value.filter(doc => {
+    if (doc.status === 'Closed') return false
+    const expiryStr = doc.extended_expiry_date || doc.original_expiry_date
+    if (!expiryStr) return false
+    const expiry = new Date(expiryStr)
+    expiry.setHours(0, 0, 0, 0)
+    return expiry >= today && expiry <= thirtyDaysLater
+  }).length
+})
+
+const activeDocsCount = computed(() => {
+  return rawDocuments.value.filter(doc => doc.status !== 'Closed').length
+})
+
+const activePortfolioValue = computed(() => {
+  return rawDocuments.value
+    .filter(doc => doc.status !== 'Closed')
+    .reduce((sum, doc) => sum + (parseFloat(String(doc.value)) || 0), 0)
+})
+
+const upcomingExpiries = computed(() => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return [...rawDocuments.value]
+    .filter(doc => doc.status !== 'Closed')
+    .map(doc => {
+      const expiryStr = doc.extended_expiry_date || doc.original_expiry_date
+      let daysRemaining = null
+      if (expiryStr) {
+        const expiry = new Date(expiryStr)
+        expiry.setHours(0, 0, 0, 0)
+        daysRemaining = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+      }
+      return {
+        ...doc,
+        expiry_date: expiryStr,
+        daysRemaining
+      }
+    })
+    .sort((a, b) => {
+      if (a.daysRemaining === null) return 1
+      if (b.daysRemaining === null) return -1
+      return a.daysRemaining - b.daysRemaining
+    })
+    .slice(0, 5)
+})
+
+const highestValueContracts = computed(() => {
+  return [...rawDocuments.value]
+    .filter(doc => doc.status !== 'Closed')
+    .sort((a, b) => (parseFloat(String(b.value)) || 0) - (parseFloat(String(a.value)) || 0))
+    .slice(0, 5)
+})
+
+const expiryForecastData = computed(() => {
+  const map: Record<string, number> = {}
+  rawDocuments.value.forEach(doc => {
+    if (doc.status === 'Closed') return
+    const expiryStr = doc.extended_expiry_date || doc.original_expiry_date
+    const val = parseFloat(String(doc.value)) || 0
+    const firstPart = expiryStr ? expiryStr.split('-')[0] : null
+    const year = firstPart || 'No Expiry'
+    if (!map[year]) map[year] = 0
+    map[year] += val
+  })
+  return Object.entries(map)
+    .map(([year, val]) => ({ year, val }))
+    .sort((a, b) => {
+      if (a.year === 'No Expiry') return 1
+      if (b.year === 'No Expiry') return -1
+      return a.year.localeCompare(b.year)
+    })
+})
+
+const statusDistributionData = computed(() => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const thirtyDaysLater = new Date()
+  thirtyDaysLater.setDate(today.getDate() + 30)
+  thirtyDaysLater.setHours(0, 0, 0, 0)
+
+  let expired = 0
+  let expiringSoon = 0
+  let activePending = 0
+  let closed = 0
+
+  rawDocuments.value.forEach(doc => {
+    const status = (doc.status || '').toLowerCase()
+    if (status === 'closed') {
+      closed++
+      return
+    }
+
+    const expiryStr = doc.extended_expiry_date || doc.original_expiry_date
+    if (!expiryStr) {
+      activePending++
+      return
+    }
+
+    const expiry = new Date(expiryStr)
+    expiry.setHours(0, 0, 0, 0)
+
+    if (expiry < today) {
+      expired++
+    } else if (expiry < thirtyDaysLater) {
+      expiringSoon++
+    } else {
+      activePending++
+    }
+  })
+
+  return {
+    expired,
+    expiringSoon,
+    activePending,
+    closed
+  }
+})
+
+// Format helpers needed by template lists & KPIs
+const formatCurrency = (val: number | string) => {
+  const num = parseFloat(String(val)) || 0;
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 2
+  }).format(num);
+}
+
+const formatDate = (dateStr: string | null) => {
+  if (!dateStr) return '-';
+  const firstPart = dateStr.split('T')[0];
+  if (!firstPart) return dateStr;
+  const parts = firstPart.split('-');
+  if (parts.length < 3) return dateStr;
+  const [year, month, day] = parts;
+  if (!year || !month || !day) return dateStr;
+  const dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+  return dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+// Chart Rendering Logic
+const formatCompact = (val: number) => {
+  if (val >= 10000000) return `₹${(val / 10000000).toFixed(1)}Cr`
+  if (val >= 100000) return `₹${(val / 100000).toFixed(1)}L`
+  if (val >= 1000) return `₹${(val / 1000).toFixed(1)}K`
+  return `₹${val}`
+}
+
+const renderCharts = () => {
+  nextTick(() => {
+    renderBarChart()
+    renderDoughnutChart()
+  })
+}
+
+const renderBarChart = () => {
+  if (!barChartRef.value) return
+  if (barChart) barChart.destroy()
+
+  const ctx = barChartRef.value.getContext('2d')
+  if (!ctx) return
+
+  barChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: expiryForecastData.value.map(d => d.year),
+      datasets: [
+        {
+          label: 'Expiring Contract Value',
+          data: expiryForecastData.value.map(d => d.val),
+          backgroundColor: 'rgba(20, 184, 166, 0.75)', // Teal 500
+          borderColor: 'rgba(20, 184, 166, 1)',
+          borderWidth: 1.5,
+          borderRadius: 6,
+          barPercentage: 0.5,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(15, 23, 42, 0.95)',
+          titleFont: { size: 11, weight: 'bold' },
+          bodyFont: { size: 10 },
+          padding: 10,
+          cornerRadius: 8,
+          callbacks: {
+            label: (ctx: any) => ` Value: ${formatCurrency(ctx.raw)}`
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { font: { size: 10, weight: 'bold' } }
+        },
+        y: {
+          grid: { color: 'rgba(148, 163, 184, 0.08)' },
+          ticks: {
+            font: { size: 9 },
+            callback: (val: any) => formatCompact(val)
+          }
+        }
+      }
+    }
+  })
+}
+
+const renderDoughnutChart = () => {
+  if (!doughnutChartRef.value) return
+  if (doughnutChart) doughnutChart.destroy()
+
+  const ctx = doughnutChartRef.value.getContext('2d')
+  if (!ctx) return
+
+  const dist = statusDistributionData.value
+
+  doughnutChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Expired', 'Expiring Soon', 'Active/Pending', 'Closed'],
+      datasets: [
+        {
+          data: [dist.expired, dist.expiringSoon, dist.activePending, dist.closed],
+          backgroundColor: [
+            'rgba(239, 68, 68, 0.75)',   // Red
+            'rgba(245, 158, 11, 0.75)',  // Amber
+            'rgba(16, 185, 129, 0.75)',  // Emerald
+            'rgba(100, 116, 139, 0.75)'  // Slate
+          ],
+          borderColor: [
+            'rgba(239, 68, 68, 1)',
+            'rgba(245, 158, 11, 1)',
+            'rgba(16, 185, 129, 1)',
+            'rgba(100, 116, 139, 1)'
+          ],
+          borderWidth: 1.5
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: {
+            usePointStyle: true,
+            pointStyle: 'circle',
+            font: { size: 10, weight: 'bold' }
+          }
+        },
+        tooltip: {
+          backgroundColor: 'rgba(15, 23, 42, 0.95)',
+          titleFont: { size: 11, weight: 'bold' },
+          bodyFont: { size: 10 },
+          padding: 10,
+          cornerRadius: 8
+        }
+      },
+      cutout: '65%'
+    }
+  })
+}
+
+watch(activeTab, (newTab) => {
+  if (newTab === 'dashboard') {
+    renderCharts()
+  }
+})
+
+watch(rawDocuments, () => {
+  if (activeTab.value === 'dashboard') {
+    renderCharts()
+  }
+}, { deep: true })
+
 onMounted(() => {
   fetchDocuments();
 });
+
+onUnmounted(() => {
+  if (barChart) barChart.destroy()
+  if (doughnutChart) doughnutChart.destroy()
+})
 </script>
 
 <template>
-  <div class="p-6 w-full space-y-6">
-    <!-- Gradient Main Header Panel -->
-    <div class="rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 p-8 text-white shadow-lg relative overflow-hidden">
-      <div class="relative z-10 space-y-2">
-        <h1 class="text-4xl font-extrabold tracking-tight">Document Management</h1>
-        <p class="text-teal-50 font-medium">Manage your important documents and track their validity</p>
-      </div>
-      <!-- Accent Circles -->
-      <div class="absolute right-0 bottom-0 w-64 h-64 bg-white/10 rounded-full blur-2xl transform translate-x-12 translate-y-12"></div>
-      <div class="absolute left-1/3 top-0 w-32 h-32 bg-teal-300/20 rounded-full blur-xl"></div>
+  <div class="h-[calc(100vh-64px)] flex flex-col p-4 bg-gray-50 dark:bg-black gap-3 overflow-hidden">
+    <!-- Header -->
+    <DocHeader @add="openAddModal" />
+
+    <!-- Tab Selector -->
+    <div class="flex items-center gap-1 bg-white/70 dark:bg-gray-900/70 border border-gray-200 dark:border-gray-800 p-0.5 rounded-lg w-fit self-start shrink-0 text-[10px] font-bold uppercase tracking-wider">
+      <button 
+        @click="activeTab = 'dashboard'"
+        :class="activeTab === 'dashboard' ? 'bg-teal-500 text-white shadow-xs' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'"
+        class="px-3 py-1.5 rounded-md transition duration-200 cursor-pointer border-0 uppercase font-black"
+      >
+        📊 Dashboard
+      </button>
+      <button 
+        @click="activeTab = 'details'"
+        :class="activeTab === 'details' ? 'bg-teal-500 text-white shadow-xs' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'"
+        class="px-3 py-1.5 rounded-md transition duration-200 cursor-pointer border-0 uppercase font-black"
+      >
+        📂 Registry Details
+      </button>
     </div>
 
-    <!-- Success Toast Alert Bar -->
-    <div v-if="showNotificationSuccess" class="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl shadow-sm transition-all duration-300 animate-in slide-in-from-top-4">
-      <span class="text-xl">✅</span>
-      <div>
-        <p class="font-bold">Notifications sent successfully</p>
-        <p class="text-xs text-emerald-600">Processed alerts for {{ notificationSummary.total }} documents ({{ notificationSummary.expired }} expired, {{ notificationSummary.expiringSoon }} expiring soon).</p>
+    <!-- Tab 1: Dashboard View -->
+    <div v-show="activeTab === 'dashboard'" class="flex-1 min-h-0 overflow-y-auto space-y-4 pr-1">
+      <!-- 4 KPI Cards Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <!-- Card 1: Total Documents -->
+        <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-2xs flex items-center justify-between">
+          <div class="space-y-1">
+            <span class="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Total Documents</span>
+            <div class="text-xl font-extrabold text-gray-800 dark:text-gray-100">{{ totalDocsCount }}</div>
+          </div>
+          <div class="p-2.5 bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 rounded-lg text-lg flex items-center justify-center shrink-0 w-10 h-10">
+            📄
+          </div>
+        </div>
+
+        <!-- Card 2: Active Value Portfolio -->
+        <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-2xs flex items-center justify-between">
+          <div class="space-y-1">
+            <span class="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Active Portfolio Value</span>
+            <div class="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">{{ formatCurrency(activePortfolioValue) }}</div>
+          </div>
+          <div class="p-2.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500 dark:text-emerald-400 rounded-lg text-lg flex items-center justify-center shrink-0 w-10 h-10">
+            ₹
+          </div>
+        </div>
+
+        <!-- Card 3: Expired Alerts -->
+        <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-2xs flex items-center justify-between">
+          <div class="space-y-1">
+            <span class="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Expired Alerts</span>
+            <div class="text-xl font-extrabold text-red-600 dark:text-red-400">{{ expiredDocsCount }}</div>
+          </div>
+          <div class="p-2.5 bg-red-50 dark:bg-red-950/40 text-red-500 dark:text-red-400 rounded-lg text-lg flex items-center justify-center shrink-0 w-10 h-10">
+            ⚠️
+          </div>
+        </div>
+
+        <!-- Card 4: Expiring Soon -->
+        <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-2xs flex items-center justify-between">
+          <div class="space-y-1">
+            <span class="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Expiring Soon (&lt;30d)</span>
+            <div class="text-xl font-extrabold text-amber-600 dark:text-amber-400">{{ expiringSoonDocsCount }}</div>
+          </div>
+          <div class="p-2.5 bg-amber-50 dark:bg-amber-950/40 text-amber-500 dark:text-amber-400 rounded-lg text-lg flex items-center justify-center shrink-0 w-10 h-10">
+            ⏱️
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-5 gap-3.5">
+        <!-- Timeline Forecast Chart (Bar Chart) - takes 3/5 cols on desktop -->
+        <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-2xs lg:col-span-3 flex flex-col h-[300px]">
+          <h3 class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2.5">📅 Expiry Timeline Forecast (Portfolio Value)</h3>
+          <div class="flex-1 min-h-0 relative">
+            <canvas ref="barChartRef"></canvas>
+          </div>
+        </div>
+
+        <!-- Compliance Share Chart (Doughnut Chart) - takes 2/5 cols on desktop -->
+        <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-2xs lg:col-span-2 flex flex-col h-[300px]">
+          <h3 class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2.5">📊 Compliance Status share</h3>
+          <div class="flex-1 min-h-0 relative">
+            <canvas ref="doughnutChartRef"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Insights Grid (2 Columns: Top Expiry Risks vs High Value Contracts) -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
+        <!-- Column 1: Top Expiry Risks -->
+        <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-2xs flex flex-col">
+          <h3 class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">⚠️ Top Expiry Risks (Upcoming)</h3>
+          <div class="flex-1 overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="border-b border-gray-100 dark:border-gray-800">
+                  <th class="py-2 text-[10px] font-bold text-gray-400 uppercase">Document Name</th>
+                  <th class="py-2 text-[10px] font-bold text-gray-400 uppercase text-center">Expiry Date</th>
+                  <th class="py-2 text-[10px] font-bold text-gray-400 uppercase text-center">Urgency</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100/50 dark:divide-gray-800/50">
+                <tr v-for="doc in upcomingExpiries" :key="doc.id" class="hover:bg-gray-50/50 dark:hover:bg-gray-800/40 transition">
+                  <td class="py-2.5 font-semibold text-gray-800 dark:text-gray-200 max-w-[200px] truncate">{{ doc.name }}</td>
+                  <td class="py-2.5 text-center text-gray-500 font-medium">{{ formatDate(doc.expiry_date) }}</td>
+                  <td class="py-2.5 text-center">
+                    <span 
+                      v-if="doc.daysRemaining !== null && doc.daysRemaining < 0" 
+                      class="px-2 py-0.5 bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-400 rounded-md text-[10px] font-black uppercase"
+                    >
+                      Expired ({{ Math.abs(doc.daysRemaining) }}d ago)
+                    </span>
+                    <span 
+                      v-else-if="doc.daysRemaining !== null && doc.daysRemaining <= 30" 
+                      class="px-2 py-0.5 bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 rounded-md text-[10px] font-black uppercase"
+                    >
+                      ⏱️ {{ doc.daysRemaining }} Days Left
+                    </span>
+                    <span 
+                      v-else-if="doc.daysRemaining !== null" 
+                      class="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded-md text-[10px] font-black uppercase"
+                    >
+                      Safe ({{ doc.daysRemaining }}d)
+                    </span>
+                    <span v-else class="text-gray-400">-</span>
+                  </td>
+                </tr>
+                <tr v-if="upcomingExpiries.length === 0">
+                  <td colspan="3" class="py-6 text-center text-gray-400 font-medium">No active documents found.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Column 2: Highest Value Contracts -->
+        <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-2xs flex flex-col">
+          <h3 class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">💎 Highest Value Contracts</h3>
+          <div class="flex-1 overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="border-b border-gray-100 dark:border-gray-800">
+                  <th class="py-2 text-[10px] font-bold text-gray-400 uppercase">Document Name</th>
+                  <th class="py-2 text-[10px] font-bold text-gray-400 uppercase text-right">Value (INR)</th>
+                  <th class="py-2 text-[10px] font-bold text-gray-400 uppercase text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100/50 dark:divide-gray-800/50">
+                <tr v-for="doc in highestValueContracts" :key="doc.id" class="hover:bg-gray-50/50 dark:hover:bg-gray-800/40 transition">
+                  <td class="py-2.5 font-semibold text-gray-800 dark:text-gray-200 max-w-[200px] truncate">{{ doc.name }}</td>
+                  <td class="py-2.5 text-right font-bold text-emerald-600 dark:text-emerald-400">{{ formatCurrency(doc.value) }}</td>
+                  <td class="py-2.5 text-center">
+                    <span 
+                      :class="{
+                        'bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-400': (doc.computed_status || doc.status).toLowerCase() === 'expired',
+                        'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400': (doc.computed_status || doc.status).toLowerCase() === 'expiring soon',
+                        'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400': ['active', 'pending'].includes((doc.computed_status || doc.status).toLowerCase()),
+                        'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-400': (doc.computed_status || doc.status).toLowerCase() === 'closed'
+                      }"
+                      class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider"
+                    >
+                      {{ doc.computed_status || doc.status }}
+                    </span>
+                  </td>
+                </tr>
+                <tr v-if="highestValueContracts.length === 0">
+                  <td colspan="3" class="py-6 text-center text-gray-400 font-medium">No contracts found.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Filter and Utility Controls -->
-    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-      <!-- Search Input -->
-      <div class="relative flex-1 max-w-md">
-        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-        </span>
-        <input 
-          v-model="searchQuery"
-          type="text" 
-          placeholder="Search documents..." 
-          class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all"
+    <!-- Tab 2: Details View -->
+    <div v-show="activeTab === 'details'" class="flex-1 min-h-0 flex flex-col gap-3">
+      <!-- Filters/Search Bar -->
+      <DocFilters 
+        v-model:searchQuery="searchQuery"
+        @download="downloadExcel"
+      />
+
+      <!-- Table Container -->
+      <div class="flex-1 min-h-0">
+        <DocTable 
+          :documents="paginatedDocuments"
+          :loading="loading"
+          :sortBy="sortBy"
+          :sortOrder="sortOrder"
+          @edit="openEditModal"
+          @delete="deleteDoc"
+          @sort="handleSort"
         />
       </div>
 
-      <!-- Action Buttons and Sorting -->
-      <div class="flex flex-wrap items-center gap-3">
-        <!-- Sort Control -->
-        <div class="flex items-center bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 gap-2">
-          <span class="text-xs font-semibold text-gray-500">Sort by:</span>
-          <select v-model="sortBy" class="bg-transparent text-sm font-bold text-gray-700 focus:outline-none cursor-pointer border-0 p-1">
-            <option value="expiry_date">Expiry Date</option>
-            <option value="name">Document Name</option>
-            <option value="value">Value</option>
-            <option value="reference_number">Reference Number</option>
-          </select>
-          <button 
-            @click="sortOrder = sortOrder === 'asc' ? 'desc' : 'asc'" 
-            class="text-gray-400 hover:text-gray-700 transition"
-            title="Toggle Sort Order"
-          >
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" :class="[sortOrder === 'desc' ? 'rotate-180' : '']">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
-            </svg>
-          </button>
-        </div>
-
-        <!-- Notify Button -->
-        <button 
-          @click="sendNotifications" 
-          class="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-md shadow-blue-200 hover:shadow-lg transition cursor-pointer"
-        >
-          <span>🔔</span> Send Notifications
-        </button>
-
-        <!-- Add Button -->
-        <button 
-          @click="openAddModal" 
-          class="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold shadow-md shadow-emerald-200 hover:shadow-lg transition cursor-pointer"
-        >
-          <span>➕</span> Add Document
-        </button>
-
-        <!-- Download Button -->
-        <button 
-          @click="downloadCSV" 
-          class="flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-bold shadow-md shadow-amber-200 hover:shadow-lg transition cursor-pointer"
-        >
-          <span>📥</span> Download Report
-        </button>
-      </div>
-    </div>
-
-    <!-- Main Documents Table List -->
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-      <div v-if="loading" class="flex flex-col items-center justify-center p-20 space-y-4">
-        <div class="w-10 h-10 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
-        <p class="text-sm font-semibold text-gray-500">Loading documents...</p>
-      </div>
-
-      <div v-else-if="documents.length === 0" class="flex flex-col items-center justify-center p-20 text-center space-y-3">
-        <span class="text-4xl">📂</span>
-        <h3 class="text-lg font-bold text-gray-800">No documents found</h3>
-        <p class="text-sm text-gray-500 max-w-sm">No records belong to this firm or match your search criteria. Add one above to get started!</p>
-      </div>
-
-      <div v-else class="overflow-x-auto">
-        <table class="w-full text-left border-collapse">
-          <thead>
-            <tr class="bg-gray-50/50 border-b border-gray-100 text-xs font-bold text-gray-400 uppercase tracking-wider">
-              <th class="px-6 py-4">Document Name</th>
-              <th class="px-6 py-4">Reference Number</th>
-              <th class="px-6 py-4">Description</th>
-              <th class="px-6 py-4">Start Date</th>
-              <th class="px-6 py-4">Expiry Date</th>
-              <th class="px-6 py-4">Value</th>
-              <th class="px-6 py-4">Status</th>
-              <th class="px-6 py-4 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-100 text-sm font-medium text-gray-700">
-            <tr v-for="doc in documents" :key="doc.id" class="hover:bg-gray-50/40 transition">
-              <!-- Name & File Indicator -->
-              <td class="px-6 py-4">
-                <div class="flex items-center gap-3">
-                  <span class="text-xl">📄</span>
-                  <div>
-                    <p class="font-bold text-gray-900">{{ doc.name }}</p>
-                    <p v-if="doc.file_name" class="text-xs text-gray-400 font-semibold max-w-xs truncate" :title="doc.file_name">
-                      📎 {{ doc.file_name }}
-                    </p>
-                  </div>
-                </div>
-              </td>
-              <!-- Ref No -->
-              <td class="px-6 py-4 text-xs font-mono font-bold text-gray-500 max-w-xs truncate" :title="doc.reference_number">
-                {{ doc.reference_number }}
-              </td>
-              <!-- Description -->
-              <td class="px-6 py-4 text-gray-500 font-normal max-w-xs truncate" :title="doc.description || ''">
-                {{ doc.description || 'No description provided' }}
-              </td>
-              <!-- Start Date -->
-              <td class="px-6 py-4 text-gray-500">
-                {{ formatDate(doc.start_date) }}
-              </td>
-              <!-- Expiry Date -->
-              <td class="px-6 py-4">
-                <div class="space-y-0.5">
-                  <p :class="[doc.extended_expiry_date ? 'text-gray-300 line-through text-xs font-normal' : 'font-semibold text-gray-800']">
-                    {{ formatDate(doc.original_expiry_date) }}
-                  </p>
-                  <p v-if="doc.extended_expiry_date" class="font-bold text-teal-600 flex items-center gap-1">
-                    {{ formatDate(doc.extended_expiry_date) }}
-                    <span class="text-[10px] bg-teal-50 text-teal-700 px-1.5 py-0.5 rounded font-black uppercase">Ext</span>
-                  </p>
-                </div>
-              </td>
-              <!-- Value -->
-              <td class="px-6 py-4 font-bold text-gray-900">
-                {{ formatCurrency(doc.value) }}
-              </td>
-              <!-- Status Pill -->
-              <td class="px-6 py-4">
-                <span 
-                  class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
-                  :class="{
-                    'bg-emerald-50 text-emerald-700 border border-emerald-100': doc.computed_status === 'Active',
-                    'bg-rose-50 text-rose-700 border border-rose-100': doc.computed_status === 'Expired',
-                    'bg-amber-50 text-amber-700 border border-amber-100': doc.computed_status === 'Pending',
-                    'bg-gray-50 text-gray-600 border border-gray-100': doc.computed_status === 'Closed'
-                  }"
-                >
-                  {{ doc.computed_status || doc.status }}
-                </span>
-              </td>
-              <!-- Actions -->
-              <td class="px-6 py-4 text-right">
-                <div class="flex justify-end gap-2.5">
-                  <!-- View/Download B2 File -->
-                  <a 
-                    v-if="doc.file_url"
-                    :href="doc.file_url" 
-                    target="_blank"
-                    class="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition"
-                    title="View uploaded file"
-                  >
-                    <svg class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                  </a>
-                  <!-- Edit Button -->
-                  <button 
-                    @click="openEditModal(doc)"
-                    class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition cursor-pointer border-0 bg-transparent"
-                    title="Edit Document"
-                  >
-                    <svg class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                  </button>
-                  <!-- Delete Button -->
-                  <button 
-                    @click="deleteDoc(doc.id)"
-                    class="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer border-0 bg-transparent"
-                    title="Delete Document"
-                  >
-                    <svg class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <!-- Pagination Controls -->
+      <DocPagination 
+        v-if="sortedDocuments.length > 0"
+        v-model:currentPage="currentPage"
+        v-model:pageSize="pageSize"
+        :totalItems="sortedDocuments.length"
+      />
     </div>
 
     <!-- Modal Form (Add / Edit) -->
-    <div v-if="isModalOpen" class="fixed inset-0 bg-black/55 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div class="bg-white rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl border border-gray-100 flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
+    <div v-if="isModalOpen" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+      <div class="bg-white dark:bg-gray-900 rounded-xl w-full max-w-lg overflow-hidden shadow-xl border border-gray-100 dark:border-gray-800 flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
         <!-- Modal Header -->
-        <div class="px-6 py-4 bg-gradient-to-r from-teal-500 to-cyan-500 text-white flex justify-between items-center">
-          <h2 class="text-xl font-bold">{{ isEditMode ? 'Edit Document' : 'Add New Document' }}</h2>
-          <button @click="isModalOpen = false" class="text-white/80 hover:text-white transition cursor-pointer bg-transparent border-0 text-xl font-bold">✕</button>
+        <div class="px-5 py-3.5 bg-gradient-to-r from-teal-500 to-cyan-500 text-white flex justify-between items-center shrink-0">
+          <h2 class="text-sm font-bold uppercase tracking-wider">{{ isEditMode ? 'Edit Document' : 'Add New Document' }}</h2>
+          <button @click="isModalOpen = false" class="text-white/80 hover:text-white transition cursor-pointer bg-transparent border-0 text-lg font-bold">✕</button>
         </div>
 
         <!-- Modal Body (Form Fields) -->
-        <div class="p-6 space-y-4 overflow-y-auto flex-1">
+        <div class="p-5 space-y-3.5 overflow-y-auto flex-1 text-xs">
           <!-- Document Name & Ref No -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div class="space-y-1">
-              <label class="text-xs font-bold text-gray-500 uppercase">Document Name*</label>
+              <label class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Document Name*</label>
               <input 
                 v-model="form.name"
                 type="text" 
                 placeholder="Enter document name"
-                class="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium"
+                class="w-full px-3 py-1.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 font-semibold"
               />
             </div>
             <div class="space-y-1">
-              <label class="text-xs font-bold text-gray-500 uppercase">Reference Number*</label>
+              <label class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Reference Number*</label>
               <input 
                 v-model="form.referenceNumber"
                 type="text" 
                 placeholder="Enter reference code/ID"
-                class="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium"
+                class="w-full px-3 py-1.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 font-semibold"
               />
             </div>
           </div>
 
           <!-- Description -->
           <div class="space-y-1">
-            <label class="text-xs font-bold text-gray-500 uppercase">Description*</label>
+            <label class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Description*</label>
             <textarea 
               v-model="form.description"
-              rows="3"
+              rows="2.5"
               placeholder="Provide a detailed summary of the document contents"
-              class="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium"
+              class="w-full px-3 py-1.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 font-semibold"
             ></textarea>
           </div>
 
           <!-- Dates Row 1: Start Date & Original Expiry Date -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div class="space-y-1">
-              <label class="text-xs font-bold text-gray-500 uppercase">Start Date</label>
+              <label class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Start Date</label>
               <input 
                 v-model="form.startDate"
                 type="date" 
-                class="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium"
+                class="w-full px-3 py-1.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 font-semibold cursor-pointer"
               />
             </div>
             <div class="space-y-1">
-              <label class="text-xs font-bold text-gray-500 uppercase">Original Expiry Date*</label>
+              <label class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Original Expiry Date*</label>
               <input 
                 v-model="form.originalExpiryDate"
                 type="date" 
-                class="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium"
+                class="w-full px-3 py-1.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 font-semibold cursor-pointer"
               />
             </div>
           </div>
 
           <!-- Dates Row 2: Closed Date & Extended Expiry Date -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div class="space-y-1">
-              <label class="text-xs font-bold text-gray-500 uppercase">Closed Date</label>
+              <label class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Closed Date</label>
               <input 
                 v-model="form.closedDate"
                 type="date" 
-                class="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium"
+                class="w-full px-3 py-1.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 font-semibold cursor-pointer"
               />
             </div>
             <div class="space-y-1">
-              <label class="text-xs font-bold text-gray-500 uppercase">Extended Expiry Date</label>
+              <label class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Extended Expiry Date</label>
               <input 
                 v-model="form.extendedExpiryDate"
                 type="date" 
-                class="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium"
+                class="w-full px-3 py-1.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 font-semibold cursor-pointer"
               />
             </div>
           </div>
 
           <!-- Value & Status -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div class="space-y-1">
-              <label class="text-xs font-bold text-gray-500 uppercase">Value (INR)*</label>
+              <label class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Value (INR)*</label>
               <input 
                 v-model.number="form.value"
                 type="number" 
                 min="0"
                 step="0.01"
-                class="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium"
+                class="w-full px-3 py-1.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 font-semibold"
               />
             </div>
             <div class="space-y-1">
-              <label class="text-xs font-bold text-gray-500 uppercase">Status</label>
+              <label class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Status</label>
               <select 
                 v-model="form.status"
-                class="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium cursor-pointer"
+                class="w-full px-3 py-1.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 font-semibold cursor-pointer"
               >
                 <option value="Active">Active</option>
                 <option value="Pending">Pending</option>
@@ -619,33 +1232,33 @@ onMounted(() => {
           </div>
 
           <!-- File Upload Section -->
-          <div class="space-y-1.5">
-            <label class="text-xs font-bold text-gray-500 uppercase">File Upload (Max size: 500 KB)</label>
-            <div class="border-2 border-dashed border-gray-200 hover:border-teal-400 p-4 rounded-xl flex flex-col items-center justify-center transition bg-gray-50/50">
+          <div class="space-y-1">
+            <label class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">File Upload (Max size: 500 KB)</label>
+            <div class="border border-dashed border-gray-200 dark:border-gray-700 hover:border-teal-400 p-3 rounded-lg flex flex-col items-center justify-center transition bg-gray-50/50 dark:bg-gray-850/50">
               <input 
                 :key="uploadInputKey"
                 type="file" 
                 @change="handleFileChange"
                 accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx"
-                class="text-sm text-gray-500 focus:outline-none w-full file:mr-4 file:py-1.5 file:px-3.5 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 cursor-pointer"
+                class="text-xs text-gray-500 focus:outline-none w-full file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-[10px] file:font-bold file:bg-teal-50 dark:file:bg-teal-950/60 file:text-teal-700 dark:file:text-teal-400 hover:file:bg-teal-100 cursor-pointer"
               />
-              <p class="text-xs text-gray-400 mt-2">Permitted formats: PDF, Images, Word, Excel (Max: 500 KB)</p>
+              <p class="text-[10px] text-gray-400 dark:text-gray-500 mt-1">Permitted formats: PDF, Images, Word, Excel (Max: 500 KB)</p>
             </div>
           </div>
         </div>
 
         <!-- Modal Footer -->
-        <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+        <div class="px-5 py-3.5 bg-gray-50 dark:bg-gray-850 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-2.5 shrink-0">
           <button 
             @click="isModalOpen = false" 
-            class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-bold shadow-sm transition cursor-pointer border-0"
+            class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold shadow-xs transition cursor-pointer border-0"
           >
             Cancel
           </button>
           <button 
             @click="submitForm" 
             :disabled="loading"
-            class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-sm transition disabled:opacity-50 cursor-pointer border-0"
+            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs transition disabled:opacity-50 cursor-pointer border-0"
           >
             {{ isEditMode ? 'Save Changes' : 'Add Document' }}
           </button>

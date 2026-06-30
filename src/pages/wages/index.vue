@@ -20,17 +20,17 @@ const tabs = [
 <template>
   <div class="h-[calc(100vh-64px)] flex flex-col p-4 bg-gray-50 dark:bg-black gap-4">
     <!-- Tab Navigation -->
-    <div class="flex items-center gap-1 bg-gray-200 dark:bg-gray-900 p-1 rounded-xl w-fit self-center shadow-inner">
+    <div class="flex items-center gap-1 bg-white/75 dark:bg-gray-900/75 backdrop-blur-md border border-gray-200/80 dark:border-gray-800/80 p-1 rounded-xl w-fit self-start shadow-xs transition-all duration-300">
       <button 
         v-for="tab in tabs" 
         :key="tab.id"
         @click="activeTab = tab.id"
-        class="flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-bold transition-all"
+        class="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 cursor-pointer"
         :class="activeTab === tab.id 
-          ? 'bg-white dark:bg-gray-800 text-primary shadow-sm scale-105' 
-          : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'"
+          ? 'bg-white dark:bg-gray-800 text-primary shadow-sm border border-gray-100/50 dark:border-gray-700/50 scale-[1.02]' 
+          : 'text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50/50 dark:hover:bg-gray-800/30'"
       >
-        <UIcon :name="tab.icon" class="w-4 h-4" />
+        <UIcon :name="tab.icon" class="w-4 h-4 transition-transform duration-200" :class="activeTab === tab.id ? 'scale-110' : ''" />
         {{ tab.label }}
       </button>
     </div>

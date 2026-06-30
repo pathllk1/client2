@@ -24,7 +24,7 @@ const handleSidebarToggle = (collapsed: boolean) => {
       ]"
     />
     
-    <div class="flex-1 flex relative">
+    <div class="flex-1 relative">
       <AppSidebar 
         v-if="isAuthenticated" 
         @toggle="handleSidebarToggle"
@@ -43,7 +43,7 @@ const handleSidebarToggle = (collapsed: boolean) => {
     </div>
 
     <AppFooter 
-      :left-margin-class="isAuthenticated ? (isSidebarCollapsed ? 'ml-16' : 'ml-48') : ''"
+      :left-class="isAuthenticated ? (isSidebarCollapsed ? 'left-16' : 'left-48') : 'left-0'"
     />
   </div>
 </template>
